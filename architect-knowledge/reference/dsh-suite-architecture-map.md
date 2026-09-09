@@ -39,6 +39,7 @@ owner: 主人
 | dsh-computer | 电脑操作 | — |
 | dsh-redact | 出站脱敏：`redact` 钩子 + `masking` 服务 | im-channel（出站脱敏） |
 | dsh-im-bot（im-channel + ui-settings-im） | IM 渠道 pushToUser/botsStatus；IM 设置界面 | dsh-memory（渠道身份挂载）、`masking`、dsh-actors |
+| dsh-architect | 架构师检查器：`dsh-architect` 服务（checkDesign/checkDigest/renderReviewSkeleton）+ `tool-architect` 工具入口（architect_digest/design/review） | 无套件依赖（纯函数零持久化）；方案落定后拆任务经既有 task_delegate，不直连看板/账本 |
 
 ## 关键接口速查
 

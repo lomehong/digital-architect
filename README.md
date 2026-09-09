@@ -49,14 +49,14 @@ digital-architect\
 3. 各仓 README + `docs\HANDOFF.md`
 4. 源码本身（10 仓，service-knowledge 阶段再系统生成）
 
-## 路线
+## 路线（2026-09-09 状态）
 
-- **阶段 1（当前）**：知识工程地基——纯文件，零代码。
-- **阶段 2**：自举首跑——对分身发起「基于数字分身套件现状，设计知识库体系的技术方案」，验证 prd-digest → design → review 全流程。
-- **阶段 3**：工具化——验证有效后拍板 dsh-architect 插件（结构化工具 + 看板联动 + 覆盖检查自动化）。
-- **阶段 4**：扩展——service-knowledge 生成、公众号管道对接。
+- **阶段 1 ✅**：知识工程地基——五类 13 条 + 3 SKILL + 模板（纯文件，零代码）。
+- **阶段 2 ✅**：自举首跑——三件套走查（`docs/designs/`），SKILL 挂载实测被宿主发现；**方案验收（五问）待主人确认**。
+- **阶段 3 ✅（代码落地）**：dsh-architect 插件 v0.1.0（`lomehong/dsh-architect`，24 测试全绿，宪章 v1.2 准入）；**profile 实际接线待主人在场确认**。
+- **阶段 4 ✅（首批）**：dsh-desktop System Card + 公众号采集 runbook（`docs\runbook-公众号采集.md`）；service-knowledge 全量化与管道常态化待主人排期。
 
-详见 `docs\HANDOFF.md` §6。
+详见 `docs\HANDOFF.md` §6 与 `docs\designs\`。
 
 ## 纪律（主人叮嘱，见 HANDOFF §9）
 

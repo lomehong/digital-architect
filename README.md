@@ -52,8 +52,8 @@ digital-architect\
 ## 路线（2026-09-09 状态）
 
 - **阶段 1 ✅**：知识工程地基——五类 13 条 + 3 SKILL + 模板（纯文件，零代码）。
-- **阶段 2 ✅**：自举首跑——三件套走查（`docs/designs/`），SKILL 挂载实测被宿主发现；**方案验收（五问）待主人确认**。
-- **阶段 3 ✅（代码落地）**：dsh-architect 插件 v0.1.0（`lomehong/dsh-architect`，24 测试全绿，宪章 v1.2 准入）；**profile 实际接线待主人在场确认**。
+- **阶段 2 ✅**：自举首跑——三件套走查（`docs/designs/`），SKILL 挂载实测被宿主发现；方案已获主人五问验收落定（2026-09-09）。
+- **阶段 3 ✅**：dsh-architect 插件 v0.1.0（`lomehong/dsh-architect`，24 测试全绿，宪章 v1.2 准入）；主人确认接线——profile 已接（junction + bundles），**重启桌面版生效**；分身工具行经 dsh-twin PRESET_VERSION 11 条件装配（aa88a49）。
 - **阶段 4 ✅（首批）**：dsh-desktop System Card + 公众号采集 runbook（`docs\runbook-公众号采集.md`）；service-knowledge 全量化与管道常态化待主人排期。
 
 详见 `docs\HANDOFF.md` §6 与 `docs\designs\`。

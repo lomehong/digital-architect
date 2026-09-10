@@ -12,6 +12,10 @@
 ```
 digital-architect\
 ├── docs\HANDOFF.md                 ← 交接文档（唯一上下文来源，含方法论蒸馏 §3 与执行清单 §6）
+├── adapters\                        ← 宿主适配层（决策 D9：一个宿主一个文件）
+│   ├── README.md                    ← 适配协议：五面映射 + 宿主判别规则
+│   ├── dsh.md                       ← dsh 适配（已验证）
+│   └── oh-my-pi.md                  ← oh-my-pi 适配
 ├── architect-knowledge\            ← 知识工程（五类结构，git 管理）
 │   ├── meta\                       ← 业务元语/核心对象/别名/边界/项目决策
 │   ├── principle\                  ← 跨场景原则（方法论/套件宪章原则/设计检查原则）
@@ -25,6 +29,17 @@ digital-architect\
 └── templates\
     └── executable-design.md        ← 可执行技术方案模板（六维度+五问）
 ```
+
+## 多宿主支持（dsh + oh-my-pi）
+
+架构师 Agent 的核心资产——知识库、三个 SKILL、方案模板——是**宿主中立**的（决策 D9，原则见 `architect-knowledge/principle/host-neutral-core.md`）。宿主特定机制（会话内提问、审批、任务面、记忆面、技能挂载、检查器安装）收敛在 `adapters/`，一个宿主一个文件；SKILL 执行前按会话可用工具判别宿主并装载对应适配文件，判别不了直接问主人，**治理机制缺席一律收敛保守侧（停止问主人，不静默放行）**。
+
+| 宿主 | 适配文件 | 检查工具 |
+|---|---|---|
+| dsh（DeepSeek Harness / digital-twin 套件） | [`adapters/dsh.md`](adapters/dsh.md) | dsh-architect 插件（tool-architect） |
+| [oh-my-pi](https://github.com/can1357/oh-my-pi)（omp） | [`adapters/oh-my-pi.md`](adapters/oh-my-pi.md) | dsh-architect 仓 `./omp` 导出（CustomToolFactory，与 dsh 同一组纯函数） |
+
+新增宿主 = 复制一份适配文件覆盖五个面；不修改 SKILL 与知识库。
 
 ## 三个 SKILL 的协作关系
 

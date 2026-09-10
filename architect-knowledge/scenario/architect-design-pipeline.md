@@ -31,17 +31,19 @@ owner: 主人
 
 ## 人工决策门六类（阶段 9，任何一类命中即停）
 
-| 门 | dsh 生态落地 |
-|---|---|
-| Unknown（未知） | ask_user 会话内提问 |
-| Conflict（知识/事实冲突） | ask_user + 按事实类型回对应来源核对 |
-| Business Trade-off（业务取舍） | ask_user，主人拍板 |
-| Cross-team Commitment（跨团队/跨会话承诺） | 看板派发 + 御驿协同 |
-| Compliance（合规） | 账本 L2+ 审批（今日待办批准） |
-| High-risk Change（高风险变更） | 账本 L2/L3 拦截，强制人工审批 |
+落点按**宿主适配层**（`adapters/<host>.md`）执行；下表为各门在现有宿主的主映射。
+
+| 门 | dsh 落地 | oh-my-pi 落地 |
+|---|---|---|
+| Unknown（未知） | `ask_user` 会话内提问 | `ask` 工具结构化提问 |
+| Conflict（知识/事实冲突） | `ask_user` + 按事实类型回对应来源核对 | `ask` + 同一核对纪律 |
+| Business Trade-off（业务取舍） | `ask_user`，主人拍板 | `ask`，主人拍板 |
+| Cross-team Commitment（跨团队/跨会话承诺） | 看板派发 + 御驿协同 | `task` 子代理（跨设备无对应物，如实声明） |
+| Compliance（合规） | 账本 L2+ 审批（今日待办批准） | 无对应物 → 强制 `ask` 主人 + approval-mode，不得静默放行 |
+| High-risk Change（高风险变更） | 账本 L2/L3 拦截，强制人工审批 | 同左（保守侧降级） |
 
 ## 停止条件与回写
 
 - 任一阶段证据不足 → 显式登记「未知/待验证」，**不得编造补全**。
-- 方案落定 → 拆看板任务（task_delegate 立项）→ 认领执行 → task_report 自报 → **主人确认** → 「已验证结果」沉淀 dsh-memory + 经验回灌本知识库（Knowledge Evolution，决策 D8）。
+- 方案落定 → 按宿主适配文件拆任务（dsh=看板 `task_delegate` 立项 / oh-my-pi=`todo`+`task` 子代理）→ 认领执行 → 自报 → **主人确认**（语义两宿主一致）→ 「已验证结果」沉淀宿主记忆面（dsh=dsh-memory / oh-my-pi=memory 指针，仓库 git 均为权威）+ 经验回灌本知识库（Knowledge Evolution，决策 D8）。
 - 评审驳回 → 带五问/覆盖缺口意见返回阶段 7。

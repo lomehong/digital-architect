@@ -43,7 +43,7 @@ whenToUse: 主人提出需求、要求「需求准入」「prd-digest」「评�
 
 ### 第四步：人工决策门（命中即停，向主人提问）
 
-Unknown / Conflict / Business Trade-off / Cross-team Commitment / Compliance / High-risk Change——用 ask_user 向主人确认；涉及治理红线（高风险变更、合规）提醒走账本审批。**准入阶段不猜测主人意图。**
+Unknown / Conflict / Business Trade-off / Cross-team Commitment / Compliance / High-risk Change——按**宿主适配层**执行：读本仓库 `adapters/` 下当前宿主的适配文件（判别方法见 `adapters/README.md`；判别不了就直接问主人），用该宿主的会话内提问机制确认；治理红线（高风险变更、合规）按适配文件的审批机制走，**审批机制缺席时一律停止并问主人，不得静默放行**。**准入阶段不猜测主人意图。**
 
 ### 第五步：产出结构化需求包
 

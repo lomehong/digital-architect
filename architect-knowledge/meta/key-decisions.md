@@ -4,7 +4,7 @@ domain: dsh-ecosystem
 source:
   origin: digital-architect/docs/HANDOFF.md
   ref: §4.3
-confirmed: 2026-09-09
+confirmed: 2026-09-10
 status: 已确认
 owner: 主人
 ---
@@ -21,7 +21,9 @@ owner: 主人
 | D6 | 人工决策门实现 | ask_user（会话内）+ 账本审批（今日待办） | 与文章图 7 的六类决策门天然对应 |
 | D7 | 审计实现 | 任务看板 runs + memory 来源标注 | 已内建，不重复建设 |
 | D8 | Knowledge Evolution | 方案落定 → 拆看板任务 → 认领执行 → 自报 → 主人确认 → 经验沉淀回灌知识库 | 文章闭环（方案→任务→经验→知识库），套件机制已内建 |
+| D9 | 宿主范围 | **宿主中立核心 + 适配边缘**：知识库/SKILL/模板不绑定宿主；宿主机制差异（提问/审批/任务/记忆/挂载/工具）收敛到 `adapters/<host>.md`（现有 dsh、oh-my-pi） | 架构师职能属于流程与知识，不属于某个宿主；新增宿主只写适配文件，不改 SKILL 与知识库（见 `../../adapters/README.md`，2026-09-10 主人指示支持 oh-my-pi） |
 
-## SKILL 挂载方式（阶段 2 启用）
+## SKILL 挂载方式（按宿主，详见 `../../adapters/<host>.md`）
 
-技能发现根（dsh-skill-filesystem，深度为一层）：`<projectRoot>/.dsh/skills`（rank 100）、`$DSH_HOME/skills`（rank 400）等。挂载 = 把本仓库 `skills/<name>/` 以 junction/link 接入被扫描根目录；frontmatter 必填 `name`（kebab-case）+ `description`。
+- **dsh**：技能发现根（dsh-skill-filesystem，深度为一层）：`<projectRoot>/.dsh/skills`（rank 100）、`$DSH_HOME/skills`（rank 400）等。挂载 = 把本仓库 `skills/<name>/` 以 junction/link 接入被扫描根目录；frontmatter 必填 `name`（kebab-case）+ `description`。
+- **oh-my-pi**：`<skills-root>/<skill-name>/SKILL.md`（一层目录）——项目级 `.omp/skills/`（native）或 `.agents/skills/`（canonical），omp 亦默认读 `.claude/skills/`；frontmatter 同格式。检查工具经 dsh-architect 仓 `./omp` 导出（CustomToolFactory，同一组纯函数）。

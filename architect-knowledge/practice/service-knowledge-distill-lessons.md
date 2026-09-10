@@ -5,7 +5,7 @@ source:
   origin: digital-architect 执行实证（2026-09-10 三仓试点，提交 c1aef7d~5cd62cd）
   ref: docs/designs/2026-09-10-service-knowledge三仓试点-走查记录.md
 confirmed: 2026-09-10
-status: 待审核
+status: 已确认
 owner: 主人
 ---
 

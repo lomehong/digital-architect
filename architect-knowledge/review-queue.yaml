@@ -5,3 +5,7 @@
 - file: practice/multi-session-git-discipline.md
   reason: Knowledge Evolution 回灌新条目（多会话共树 git add -A 卷稿事故教训），待主人确认
   queued: 2026-09-10
+
+- file: practice/service-knowledge-distill-lessons.md
+  reason: Knowledge Evolution 回灌新条目（三仓蒸馏试点教训：委托-把关模式/字节指标结论/蒸馏即漂移探测），待主人确认
+  queued: 2026-09-10

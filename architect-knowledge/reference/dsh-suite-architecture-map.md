@@ -52,6 +52,18 @@ owner: 主人
 | 守卫纪律源码 | `dsh-twin\src\index.ts`（GUARD_TEXT，约 L241） |
 | 看板客户端双写面板样例 | `dsh-task-board\src\client\index.tsx`（L458+） |
 
+## 系统层知识面（service-knowledge 试点，2026-09-10）
+
+> **引用不复制**：以下知识全文在各自仓内，本表只做寻址。`status: 待审核` = 未经主人确认，引用前回源 sources。
+
+| 仓 | 知识面 | 说明 |
+|---|---|---|
+| dsh-memory | 仓内 `AGENTS.md` + `.knowledge/`（role/interfaces/dependencies/constraints） | 认识论治理/替代链/装配红线；consumed_by 含 im-channel·task-board·twin·actors·yuyi 逐符号映射 |
+| dsh-task-board | 同上 | 任务状态机两套+红线（自报≠完成/防自批/M-3 服务面收敛）；治理缺席降级矩阵 |
+| dsh-twin | 同上 | 预设物化版本机制/四卡生效门/守卫 GUARD_TEXT 红线；主/访客 fail-closed |
+
+试点走查与漂移发现（含三仓文档-代码矛盾 4 项）见 `docs/designs/2026-09-10-service-knowledge三仓试点-走查记录.md`。
+
 ## 架构层分析的使用提示
 
 - 做 dsh 生态影响面分析时：先查宪章 §2 矩阵确定「谁提供、谁消费、缺席降级是什么」，再进具体仓 README/源码核对**当前行为以代码为准**。

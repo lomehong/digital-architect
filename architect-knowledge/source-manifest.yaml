@@ -73,3 +73,11 @@
   date: 2026-09-09
   used_by:
     - reference/dsh-desktop-system-card.md
+
+- id: src-execution-20260910
+  origin: digital-architect 执行实证（知识蒸馏抓手落地，提交 0319b3c / 3b5f080）
+  ref: docs/designs/2026-09-10-知识蒸馏抓手-走查记录.md
+  type: 内部文档
+  date: 2026-09-10
+  used_by:
+    - practice/multi-session-git-discipline.md

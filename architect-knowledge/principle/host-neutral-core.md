@@ -5,7 +5,7 @@ source:
   origin: digital-architect 决策 D9（主人 2026-09-10 指示：方案需同时支持 dsh 与 oh-my-pi）
   ref: ../../adapters/README.md；与 suite-federation-principles 同构（核心不动、适配显式、降级保守）
 confirmed: 2026-09-10
-status: 待审核
+status: 已确认
 owner: 主人
 ---
 

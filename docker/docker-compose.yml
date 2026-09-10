@@ -1,0 +1,25 @@
+# =============================================================================
+#  oh-my-little-pi — docker-compose.yml
+#  Usage: docker compose up -d && docker compose attach pi
+#  Or:    docker compose run --rm pi -p "Summarize this project"
+# =============================================================================
+
+services:
+  pi:
+    build: .
+    # image: oh-my-little-pi:latest
+    container_name: oh-my-little-pi
+    command: pi-dashboard --dev
+    environment:
+      - TZ=Asia/Shanghai
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - PI_DASHBOARD_TRUSTNETWORK=0.0.0.0/0
+    volumes:
+      - ./workspace:/workspace
+      - ./pi:/home/pi/.pi
+      - ./entrypoint.sh:/usr/local/bin/pi-entrypoint.sh
+    restart: "unless-stopped"
+    ports:
+      - 8000:8000
+      - 9999:9999

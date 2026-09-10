@@ -17,7 +17,8 @@ services:
       # DeepSeek 官方 provider 凭据（pi 系同源机制，env 注入即被识别）
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
     volumes:
-      - ./workspace:/workspace
+      # 架构师 Agent 工作区 = 本总仓整仓（compose 位于 docker/ 子目录，故挂父目录）
+      - ..:/workspace
       - ./omp:/home/pi/.omp
       - ./entrypoint.sh:/usr/local/bin/omp-entrypoint.sh
     restart: "unless-stopped"

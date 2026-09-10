@@ -70,3 +70,15 @@ owner: 主人
 | 记忆 | dsh-memory（HTTP，替代语义） | memory bank（retain/recall）+ 本仓库 git 为权威 |
 | 技能挂载 | `$DSH_HOME/skills` / `.dsh/skills` | `.omp/skills` / `.agents/skills` / `.claude/skills` |
 | 检查工具 | dsh-architect 插件（cordis tools.register） | dsh-architect 仓 `./omp` 导出（CustomToolFactory） |
+
+## 容器化接入（已落地，2026-09-10）
+
+docker/ 目录提供官方 omp 宿主的容器形态，**本总仓整仓挂载为工作区**（`/workspace`）：
+
+- 镜像：node24 + Bun（npm 分发）+ 官方 `@oh-my-pi/pi-coding-agent`（omp 18.x，预编译 natives）；
+- 工作区：整仓挂载——知识库/SKILL/模板/适配层相对路径全通，`dsh-architect` submodule 随仓在内；
+- 工具发现：仓库根 `.omp/tools/architect/index.ts` 转发模块 → submodule `src/omp.ts`（omp 扫描 cwd 的 `.omp/tools/<name>/index.ts`，实测已加载）；
+- 技能：仓库根 `.omp/skills/`（native）与 `.claude/skills/`（继承）双根副本，**源在 `skills/`，改技能后需同步副本**；
+- LLM：`.env`（DEEPSEEK_API_KEY，gitignore）→ `deepseek/deepseek-flash` 预配为 default 角色（`docker/omp/agent/config.yml`）；
+- 用法：`docker exec -it oh-my-pi omp`（TUI）/ `docker compose run --rm omp -p "需求"`；
+- 实测：模型在真实会话调用 `architect_digest` 返回完整六项覆盖表（工具链路已验证）。

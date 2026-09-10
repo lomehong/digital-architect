@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-knowledge:
+    name: 知识库结构校验（knowledge-lint）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          # 私有子模块（lomehong/dsh-architect）需要跨仓只读凭据；
+          # 未配置 SUBMODULE_TOKEN 时回退默认 token（将 403——属预期红灯，U1 见 docs/designs/2026-09-10-知识库机械校验-技术方案.md §4）
+          token: ${{ secrets.SUBMODULE_TOKEN || github.token }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 构建校验器（dsh-architect）
+        run: |
+          npm --prefix dsh-architect ci
+          npm --prefix dsh-architect run build
+      - name: knowledge-lint（error 阻断——主人 2026-09-10 拍板 Q1）
+        run: node dsh-architect/scripts/lint-knowledge.mjs architect-knowledge

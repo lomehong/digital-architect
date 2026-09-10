@@ -64,6 +64,40 @@ owner: 主人
 
 试点走查与漂移发现（含三仓文档-代码矛盾 4 项）见 `docs/designs/2026-09-10-service-knowledge三仓试点-走查记录.md`。
 
+## 核心五件调用关系与数据主责（2026-09-10 蒸馏，P2-2）
+
+> **权威声明**：成员依赖的权威是宪章 §2 矩阵；本节为**调用关系细化层**，冲突以宪章+代码为准。
+> 强弱判定 = 代码结构推断（硬注入/fail-closed=强；可选注入/软降级=弱），未做运行时实验。
+> 置信度：行 4/8/9/13 高（已确认 dependencies.yaml / P1-1 实证）；行 5/12 中（跨仓事实部分未逐仓 grep 全量）。
+
+### 调用边（提供 → 消费）
+
+| # | 边 | 接口类型 | 强/弱 | 缺席降级（消费方视角） | source |
+|---|---|---|---|---|---|
+| 1 | dsh-memory → dsh-twin | cordis 服务 | 弱 | 种子不落库、记忆规整不可用、开环状态源为空 | dsh-twin/.knowledge/dependencies.yaml |
+| 2 | dsh-memory → dsh-task-board | cordis 服务 | 弱 | 终态沉淀跳过，看板终态不受影响 | dsh-task-board/.knowledge/dependencies.yaml |
+| 3 | dsh-memory → dsh-im-bot(im-channel) | cordis 服务 | 弱 | 记忆工具缺席、摘要跳过、按回合装配默认关 | dsh-memory/.knowledge/dependencies.yaml |
+| 4 | dsh-memory → dsh-actors | 服务（关系轨读取） | 弱 | 仅注册表视图 | dsh-memory/.knowledge/dependencies.yaml |
+| 5 | dsh-task-board → dsh-ledger | cordis 服务 | **强**（治理语义） | 本地降级：L2 拦截+尽力通知、L3 拒绝 | dsh-task-board/.knowledge/dependencies.yaml |
+| 6 | dsh-task-board → dsh-im-bot(im-channel) | cordis 服务（通知） | 弱 | 静默跳过 | dsh-task-board/.knowledge/dependencies.yaml |
+| 7 | dsh-task-board → typertGateway | cordis 服务 | **强**（硬依赖） | 不适用（缺席不可运行）；投递失败可退避重试 | dsh-task-board/.knowledge/dependencies.yaml（gateway.ts:GatewayClient） |
+| 8 | dsh-twin → dsh-ledger | cordis 服务 | 弱 | 触达跳过闸门继续投递（D4 矛盾已登记）；否决不入学习队列 | dsh-twin/.knowledge/dependencies.yaml |
+| 9 | dsh-twin → dsh-task-board | cordis 服务（activityView） | 弱 | twin-activity 段降级为空串 | dsh-twin/.knowledge/dependencies.yaml |
+| 10 | dsh-im-bot(im-channel) → dsh-twin | cordis 服务（noteActor） | 弱（存在）/**强**（语义：fail-closed） | 未标注会话按访客视图渲染 | dsh-twin/.knowledge/constraints.yaml |
+| 11 | dsh-twin → 预设可选工具行五包 | preset 行探测 | 弱 | 不追加对应工具行，预设仍可挂载 | dsh-twin/.knowledge/interfaces.yaml |
+| 12 | 分身/主人会话 → dsh-yuyi | 模型工具（对外消息） | **强**（对外语义） | 对外消息不可发（显式报错，非静默） | 御驿需求包 §8.1（2026-09-10-御驿消息重试-需求包.md） |
+| 13 | 架构师/分身会话 → dsh-architect | 模型工具 + cordis 服务 | 弱 | 工具缺席 SKILL 照跑（六维/五问人工执行） | adapters/dsh.md 降级面；P1-1 实证 |
+
+### 数据主责（谁拥有哪类数据的唯一事实源）
+
+| 件 | 数据主责 | 存储 | 一致性边界 | source |
+|---|---|---|---|---|
+| dsh-memory | 共享记忆/关系轨 | `$DSH_HOME/dsh-memory/`（json+归档+receipts） | 替代链禁原地覆盖；文件锁+原子写；活跃 500 上限；UTC | dsh-memory/.knowledge/constraints.yaml |
+| dsh-task-board | 任务账本 | `$DSH_HOME/dsh-task-board/ledger.json` | 主人确认才终态；原子写；接管留痕 | dsh-task-board/.knowledge/constraints.yaml |
+| dsh-twin | 人格四卡/学习队列 | `$DSH_HOME/.agent-presets/digital-twin/`（物化）+ config | 生效=确认+回归双条件；记忆规整信任域隔离 | dsh-twin/.knowledge/constraints.yaml |
+| dsh-yuyi | 出站账本/任务记忆 | `~/.yuyi/`（sent-messages.jsonl、tasks/） | message.id 幂等；Hub at-least-once；不自动重发（Hub 契约） | 御驿需求包 §8.1/§8.3 |
+| dsh-architect | 无（纯函数零持久化） | — | 同输入同输出 | dsh-architect/src/index.ts 头注 |
+
 ## 架构层分析的使用提示
 
 - 做 dsh 生态影响面分析时：先查宪章 §2 矩阵确定「谁提供、谁消费、缺席降级是什么」，再进具体仓 README/源码核对**当前行为以代码为准**。

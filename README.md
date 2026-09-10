@@ -26,9 +26,15 @@ digital-architect\
 │   ├── architect-prd-digest\       ← 需求准入：六项覆盖检查 → 结构化需求包
 │   ├── architect-design\           ← 设计主流程：渐进披露四层装载 → Gap Analysis → 六维度方案
 │   └── architect-review\           ← 方案评审：五问检查 + 六维度覆盖评分
-└── templates\
-    └── executable-design.md        ← 可执行技术方案模板（六维度+五问）
+├── templates\
+│   └── executable-design.md        ← 可执行技术方案模板（六维度+五问）
+├── dsh-architect\                   ← submodule：架构师检查器插件（lomehong/dsh-architect，决策 D10）
+└── dsh-yuyi\                        ← submodule：御驿通信（lomehong/dsh-yuyi，双总仓共享——架构师经它与数字分身通讯）
 ```
+
+## 仓库定位与总仓边界（决策 D10）
+
+**digital-architect 与 digital-twin（数字分身套件）是两个平级总仓**：本仓是架构师体系根仓（知识 + SKILL + 模板 + 适配层 + dsh-architect 插件）；dsh-architect 已从套件清单退出（宪章 v1.4），以 submodule 归入本仓。**dsh-yuyi 以 submodule 双总仓共享**——两个总仓各持独立指针，同一协议底座：套件侧服务分身，本仓侧支撑架构师 Agent 与数字分身通讯（场景见 `architect-knowledge/scenario/architect-twin-collaboration.md`）。
 
 ## 多宿主支持（dsh + oh-my-pi）
 

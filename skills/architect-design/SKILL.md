@@ -52,7 +52,8 @@ whenToUse: 需求准入（architect-prd-digest）通过后，主人要求「出�
 
 1. 技术方案写入主人指定位置（默认 `docs/designs/<slug>.md`），文件头标注来源需求包路径；
 2. 方案经 architect-review 通过、主人确认后，把六维度内容**拆解为宿主任务面的任务**（按适配文件：dsh=看板 `task_delegate` 立项 / oh-my-pi=`todo` + `task` 子代理；任务描述含可验收条目）；
-3. 执行结果回流后，把新经验回灌 `architect-knowledge/practice/`（Knowledge Evolution，沉淀路径同样按适配文件：dsh=另存 dsh-memory / oh-my-pi=指针 retain，仓库 git 均为权威）。
+3. **执行方是数字分身且不在本宿主时，经御驿（yuyi）委派**（场景映射见 `architect-knowledge/scenario/architect-twin-collaboration.md`）：委派内容带任务号与可验收条目，执行结果经 yuyi 回流 + task_report 自报——自报 ≠ 完成，仍须主人确认；
+4. 执行结果回流后，把新经验回灌 `architect-knowledge/practice/`（Knowledge Evolution，沉淀路径同样按适配文件：dsh=另存 dsh-memory / oh-my-pi=指针 retain，仓库 git 均为权威）。
 
 ## 停止条件
 

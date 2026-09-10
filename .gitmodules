@@ -1,0 +1,6 @@
+[submodule "dsh-architect"]
+	path = dsh-architect
+	url = https://github.com/lomehong/dsh-architect.git
+[submodule "dsh-yuyi"]
+	path = dsh-yuyi
+	url = https://github.com/lomehong/dsh-yuyi.git

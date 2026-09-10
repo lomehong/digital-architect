@@ -22,6 +22,7 @@ owner: 主人
 | D7 | 审计实现 | 任务看板 runs + memory 来源标注 | 已内建，不重复建设 |
 | D8 | Knowledge Evolution | 方案落定 → 拆看板任务 → 认领执行 → 自报 → 主人确认 → 经验沉淀回灌知识库 | 文章闭环（方案→任务→经验→知识库），套件机制已内建 |
 | D9 | 宿主范围 | **宿主中立核心 + 适配边缘**：知识库/SKILL/模板不绑定宿主；宿主机制差异（提问/审批/任务/记忆/挂载/工具）收敛到 `adapters/<host>.md`（现有 dsh、oh-my-pi） | 架构师职能属于流程与知识，不属于某个宿主；新增宿主只写适配文件，不改 SKILL 与知识库（见 `../../adapters/README.md`，2026-09-10 主人指示支持 oh-my-pi） |
+| D10 | 仓库域归属 | **digital-architect 与 digital-twin 是两个平级总仓**：dsh-architect 从 digital-twin 退出（宪章 v1.4 撤销 v1.2 行），以 submodule 归入本总仓；dsh-yuyi 以 **submodule 双总仓共享**（两仓各持独立指针）；架构师 Agent 经 **yuyi 与数字分身通讯** | 总仓边界 = 领域边界：架构师体系（知识/SKILL/插件/模板）不属分身套件；通信件（yuyi）是两个体系共享的协议底座（2026-09-10 主人拍板） |
 
 ## SKILL 挂载方式（按宿主，详见 `../../adapters/<host>.md`）
 

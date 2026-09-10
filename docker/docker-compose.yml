@@ -1,27 +1,25 @@
 # =============================================================================
-#  oh-my-little-pi — docker-compose.yml
-#  Usage: docker compose up -d && docker compose attach pi
-#  Or:    docker compose run --rm pi -p "Summarize this project"
+#  oh-my-pi（omp 官方版）— docker-compose.yml
+#  官方仓库：https://github.com/can1357/oh-my-pi（omp.sh）
+#  Usage:
+#    docker compose up -d                          # 常驻（exec 进去跑 omp）
+#    docker exec -it oh-my-pi omp                  # 交互 TUI
+#    docker compose run --rm omp -p "总结这个项目"   # 一次性任务
 # =============================================================================
-
 services:
-  pi:
+  omp:
     build: .
-    # image: oh-my-little-pi:latest
-    container_name: oh-my-little-pi
-    command: pi-dashboard --dev
-    env_file:
-      - .env
+    container_name: oh-my-pi
     environment:
       - TZ=Asia/Shanghai
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
-      - PI_DASHBOARD_TRUSTNETWORK=0.0.0.0/0
+      # DeepSeek 官方 provider 凭据（pi 系同源机制，env 注入即被识别）
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
     volumes:
       - ./workspace:/workspace
-      - ./pi:/home/pi/.pi
-      - ./entrypoint.sh:/usr/local/bin/pi-entrypoint.sh
+      - ./omp:/home/pi/.omp
+      - ./entrypoint.sh:/usr/local/bin/omp-entrypoint.sh
     restart: "unless-stopped"
-    ports:
-      - 8000:8000
-      - 9999:9999
+    stdin_open: true
+    tty: true

@@ -1,14 +1,15 @@
-# ---- Stage 1: Base image ------------------------------------------------
-# Use the latest LTS slim image for a small footprint.
+# ---- oh-my-pi（omp 官方版）------------------------------------------------
+# 官方仓库：https://github.com/can1357/oh-my-pi（omp.sh）
+# npm 包：@oh-my-pi/pi-coding-agent（内置预编译 platform natives，无需本地 Rust）
+# 基础镜像复用本地 node:24-bookworm-slim（已经 1ms 加速站拉取）。
 FROM node:24-bookworm-slim
 
 ENV PUID=1000
 ENV PGID=1000
+ENV TZ=Asia/Shanghai
 
-# ---- Stage 2: Install system dependencies --------------------------------
-# pi's built-in tools need: bash (shell), ca-certificates (TLS/HTTPS),
-# git (version control), ripgrep (fast text search / rg tool).
-# findutils provides 'find' (absent in slim images).
+# omp 运行依赖：bash/shell、ca-certificates、git、ripgrep/glob 有内置 Rust 实现
+# 但 git/ssh 等外部工具仍是工作流一部分；findutils 补 slim 镜像缺失。
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     bash \
@@ -20,38 +21,31 @@ RUN apt-get update \
     sudo \
     gosu \
     jq \
+    python3 \
   && rm -rf /var/lib/apt/lists/* \
   && apt-get clean
 
-# ---- Stage 3: Install pi ------------------------------------------------
-# --ignore-scripts is safe: pi does not need post-install scripts for
-# normal npm installations.
-RUN npm install -g --ignore-scripts @earendil-works/pi-coding-agent \
- && npm install -g @blackbelt-technology/pi-agent-dashboard \
- && npm install -g @studyzy/openspec-cn \
- && ln -s openspec-cn /usr/local/bin/openspec \
- && npm cache clean --force 
+# ---- 安装官方 oh-my-pi -----------------------------------------------------
+# omp 运行时为 Bun（官方推荐 bun ≥ 1.3.14）；经 npm 装官方 bun 分发，再装 omp 包
+# （natives 以平台子包预编译分发，无需本地 Rust）。
+RUN npm install -g bun \
+ && bun --version \
+ && npm install -g @oh-my-pi/pi-coding-agent \
+ && npm cache clean --force
 
-# ---- Stage 4: Prepare runtime user & directories ------------------------
-# Remove the pre-existing `node` user so it doesn't conflict when the
-# entrypoint creates the pi user with the requested PUID/PGID.
+# ---- 运行用户与目录 --------------------------------------------------------
 RUN deluser node 2>/dev/null || true \
   && delgroup node 2>/dev/null || true \
   && groupadd -g $PUID pi \
   && useradd -m -u $PGID -g pi -s /bin/bash pi \
   && usermod -aG sudo pi
 
-# ---- Stage 6: Install entrypoint script ----------------------------------
-COPY entrypoint.sh /usr/local/bin/pi-entrypoint.sh
-RUN chmod +x /usr/local/bin/pi-entrypoint.sh
+COPY entrypoint.sh /usr/local/bin/omp-entrypoint.sh
+RUN chmod +x /usr/local/bin/omp-entrypoint.sh
 
-ENV TZ=Asia/Shanghai
-ENV PI_DASHBOARD_HOST=0.0.0.0
-ENV PI_GATEWAY_BIND=0.0.0.0
-
-# ---- Stage 7: Final configuration ----------------------------------------
-VOLUME  /home/pi/.pi
+# omp 配置根：/home/pi/.omp（models.yml / config.yml / agent/auth）
+VOLUME  /home/pi/.omp
 VOLUME  /workspace
 WORKDIR /workspace
-ENTRYPOINT ["/usr/local/bin/pi-entrypoint.sh"]
-CMD ["pi-dashboard"]
+ENTRYPOINT ["/usr/local/bin/omp-entrypoint.sh"]
+CMD ["sleep", "infinity"]

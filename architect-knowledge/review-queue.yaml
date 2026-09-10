@@ -1,0 +1,19 @@
+# review-queue.yaml · 待审核队列（与条目 frontmatter status: 待审核 一一对应）
+# 维护纪律：主人确认后移除对应行，并把条目 status 改「已确认」、更新 confirmed 日期。
+# 台账是索引，frontmatter 仍是唯一权威（防双权威漂移）。
+
+- file: principle/host-neutral-core.md
+  reason: D9 宿主中立原则尚未经双宿主完整走查回归（omp 侧适配待主人验收）
+  queued: 2026-09-10
+
+- file: principle/agent-runtime-five-layers.md
+  reason: knowledge-distill 首蒸走查产出（文章 §6.3/§6.4）；五层能力面对应关系未经真实设计任务回归
+  queued: 2026-09-10
+
+- file: principle/solution-completeness-standard.md
+  reason: knowledge-distill 首蒸走查产出（文章 §6.5/§6.6）；「结构分≠内容覆盖度」口径需经一次人评实践验证
+  queued: 2026-09-10
+
+- file: principle/multi-scenario-knowledge-base.md
+  reason: knowledge-distill 首蒸走查产出（文章 §6.2/§7/§8）；P3 职能未启动，条目只立知识
+  queued: 2026-09-10

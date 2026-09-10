@@ -1,0 +1,75 @@
+# source-manifest.yaml · 蒸馏来源清单（引用不复制；一条来源可被多条目引用）
+# 维护纪律：新增/更新条目时同步登记；字段语义见 docs/designs/2026-09-10-知识蒸馏抓手-技术方案.md 附录 B。
+# 台账是索引，frontmatter 仍是唯一权威（防双权威漂移）。
+
+- id: src-charter
+  origin: digital-twin/docs/suite-charter.md
+  ref: E:\Development\Code\nodejs\digital-twin\docs\suite-charter.md
+  type: 内部宪章
+  date: 2026-09-09
+  used_by:
+    - meta/dsh-ecosystem-concept-model.md
+    - principle/suite-federation-principles.md
+    - practice/knowledge-drift-cases.md
+    - practice/suite-build-lessons.md
+    - reference/dsh-suite-architecture-map.md
+    - scenario/architect-twin-collaboration.md
+
+- id: src-handoff
+  origin: digital-architect/docs/HANDOFF.md
+  ref: docs/HANDOFF.md
+  type: 内部文档
+  date: 2026-09-09
+  used_by:
+    - meta/project-scope-and-roles.md
+    - meta/key-decisions.md
+    - practice/suite-build-lessons.md
+    - reference/dsh-suite-architecture-map.md
+
+- id: src-article-ai-friendly
+  origin: dsh-memory 条目 mem_1788973443918_oagd2n（阿里技术《后端架构 AI Friendly 的标准与路径》，刘瑞洲，2026-06-15）
+  ref: https://mp.weixin.qq.com/s/XpSpAiWY-nXjw8d8QPbabg
+  type: 公众号文章
+  date: 2026-09-09
+  used_by:
+    - principle/ai-friendly-nine-points.md
+
+- id: src-article-architect-agent
+  origin: dsh-memory 条目 mem_1788978083156_yycfzp（千问AI平台《【AI 创新实践】"架构师 Agent" 系统化落地》，刘瑞洲/阳迪，2026-09-09，含 8 张图多模态解读）
+  ref: https://mp.weixin.qq.com/s/Yj96bBD7LLhq_U1THdke8A
+  type: 公众号文章
+  date: 2026-09-09
+  used_by:
+    - principle/architect-agent-core-methodology.md
+    - principle/executable-design-six-dimensions.md
+    - principle/knowledge-first-domain-not-rag.md
+    - principle/progressive-disclosure-four-layers.md
+    - scenario/architect-design-pipeline.md
+  used_by_2026-09-10_二次蒸馏:   # 全文经原文页快照 + AI星球镜像交叉核对（knowledge-distill SKILL 首蒸走查）
+    - principle/agent-runtime-five-layers.md
+    - principle/solution-completeness-standard.md
+    - principle/multi-scenario-knowledge-base.md
+
+- id: src-owner-d9
+  origin: 主人指示（2026-09-10：方案需同时支持 dsh 与 oh-my-pi）
+  ref: meta/key-decisions.md D9
+  type: 口头指示
+  date: 2026-09-10
+  used_by:
+    - principle/host-neutral-core.md
+
+- id: src-owner-d10
+  origin: 主人指示（2026-09-10：digital-architect 与 digital-twin 平级总仓；dsh-yuyi submodule 双总仓共享）
+  ref: meta/key-decisions.md D10
+  type: 口头指示
+  date: 2026-09-10
+  used_by:
+    - scenario/architect-twin-collaboration.md
+
+- id: src-official-checkout
+  origin: E:\Development\Code\nodejs\deepseek-harness（官方源码 checkout，tag dsh-v0.1.5-alpha.2，commit b2e3b2a）
+  ref: 仓库结构实测 + HANDOFF §2.1/§2.3
+  type: 源码
+  date: 2026-09-09
+  used_by:
+    - reference/dsh-desktop-system-card.md

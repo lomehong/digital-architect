@@ -43,6 +43,16 @@ owner: 主人                  # 负责人
 - **知识漂移**：实证与知识冲突时，先修方案再回写知识（案例见 `practice/knowledge-drift-cases.md`）。
 - **不同事实回不同来源确认**：当前行为以代码为准、业务意图以已确认知识为准、历史原因以实践记录为准。
 
+## 台账与索引（2026-09-10 起，knowledge-distill SKILL 配套）
+
+| 台账 | 语义 |
+|---|---|
+| `source-manifest.yaml` | 蒸馏来源清单：一条来源可被多条目引用（`used_by` 反向索引） |
+| `review-queue.yaml` | 待审核队列：与条目 `status: 待审核` 一一对应，主人确认后移除并升级条目 |
+| `<目录>/index.md` | 逐目录索引：条目 | 一句话定位 | 状态；新条目落库必须同步增行 |
+
+> 台账是索引，**frontmatter 仍是唯一权威**（防双权威漂移）；`evidence/images/` 由蒸馏流程按需创建（有图示才建）。
+
 ## 检索路径（渐进式披露）
 
-SKILL 按「业务层 → 架构层 → 系统层 → 基建层」四层顺序装载本库（见 `principle/progressive-disclosure-four-layers.md`）；`meta/` 常读，`reference/` 只在跨领域时打开。
+SKILL 按「业务层 → 架构层 → 系统层 → 基建层」四层顺序装载本库（见 `principle/progressive-disclosure-four-layers.md`）：**先读目标目录 `index.md` 定位条目，再按需读全文**；`meta/` 常读，`reference/` 只在跨领域时打开；外部知识蒸馏走 `knowledge-distill` SKILL（登记台账）。

@@ -8,7 +8,14 @@
 # =============================================================================
 services:
   omp:
-    build: .
+    build:
+      context: .
+      args:
+        # 国内加速默认值在 Dockerfile；如需切官方源或换加速站：
+        #   docker compose build --build-arg APT_MIRROR=deb.debian.org --build-arg NPM_REGISTRY=https://registry.npmjs.org
+        NODE_IMAGE: ${NODE_IMAGE:-node:24-bookworm-slim}
+        APT_MIRROR: ${APT_MIRROR:-mirrors.aliyun.com}
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com}
     container_name: oh-my-pi
     environment:
       - TZ=Asia/Shanghai

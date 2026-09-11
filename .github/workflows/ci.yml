@@ -16,8 +16,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-          # 私有子模块（lomehong/dsh-architect）需要跨仓只读凭据；
-          # 未配置 SUBMODULE_TOKEN 时回退默认 token（将 403——属预期红灯，U1 见 docs/designs/2026-09-10-知识库机械校验-技术方案.md §4）
+          # 子模块 lomehong/dsh-architect 已公开（2026-09-11 主人拍板路线 C，U1 销账）：
+          # 默认 github.token 即可拉取；SUBMODULE_TOKEN 回退保留为无害冗余（兼容将来重新私有化）。
           token: ${{ secrets.SUBMODULE_TOKEN || github.token }}
       - uses: actions/setup-node@v4
         with:
@@ -28,3 +28,5 @@ jobs:
           npm --prefix dsh-architect run build
       - name: knowledge-lint（error 阻断——主人 2026-09-10 拍板 Q1）
         run: node dsh-architect/scripts/lint-knowledge.mjs architect-knowledge
+      - name: SKILL 三副本一致性校验（G3，权威源 skills/）
+        run: node scripts/check-skills-sync.mjs

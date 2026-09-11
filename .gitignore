@@ -1,0 +1,3 @@
+# 依赖与构建产物一律不入库（2026-09-11 教训：git add -A 卷入 node_modules 78 万行）
+node_modules/
+packages/architect-core/lib/

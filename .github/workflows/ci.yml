@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch: # 允许 Actions 页手动触发（验证 secret/凭据等场景）
 
 permissions:
   contents: read

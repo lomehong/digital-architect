@@ -28,6 +28,16 @@ services:
       - ..:/workspace
       - ./omp:/home/pi/.omp
       - ./entrypoint.sh:/usr/local/bin/omp-entrypoint.sh
+      # ── 分层只读（2026-09-11 主人拍板）：宿主设施与核心资产对容器内模型只读 ──
+      # 模型消费规则，不能改规则；更新路径 = 改仓库 → CI（G3 哈希校验副本一致）→ docker compose up -d 重新生效。
+      # 工作对象（architect-knowledge/、docs/）保持可写——蒸馏落库与方案产出是工作流写入面，
+      # 由 review-queue + 主人确认 + git 历史兜底。
+      - ../.omp:/workspace/.omp:ro
+      - ../.claude:/workspace/.claude:ro
+      - ../skills:/workspace/skills:ro
+      - ../dsh-architect:/workspace/dsh-architect:ro
+      - ../adapters:/workspace/adapters:ro
+      - ../templates:/workspace/templates:ro
     restart: "unless-stopped"
     stdin_open: true
     tty: true

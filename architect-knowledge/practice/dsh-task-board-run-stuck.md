@@ -5,7 +5,7 @@ source:
   origin: 主人 2026-09-11 实测发现（重启 dsh-desktop 后看板仍显示 18 项「待审批」run；ledger 服务 /dsh-ledger/approvals = [] 实测确认无令牌）
   ref: github.com/lomehong/dsh-task-board
 confirmed: 2026-09-11
-status: 待审核
+status: 已确认
 owner: 主人
 ---
 

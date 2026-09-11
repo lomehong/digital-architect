@@ -5,7 +5,7 @@ source:
   origin: 主人 2026-09-11 实测——重启 dsh-desktop 后「今日待办」面板仍漏显示 1 项 task-board run 的「待确认」状态（TB-1789095261962-r4ach）；`/state` 返回 1 项但活动面板无渲染
   ref: github.com/lomehong/dsh-twin
 confirmed: 2026-09-11
-status: 待审核
+status: 已确认
 owner: 主人
 ---
 

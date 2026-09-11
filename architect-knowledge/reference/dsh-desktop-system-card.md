@@ -5,7 +5,7 @@ source:
   origin: github.com/deepseek-ai/deepseek-harness（官方源码，tag dsh-v0.1.5-alpha.2，commit b2e3b2a）
   ref: 仓库结构实测 + HANDOFF §2.1/§2.3（2026-09-09 生成）
 confirmed: 2026-09-11
-status: 待审核
+status: 已确认
 owner: 主人
 ---
 

@@ -5,7 +5,7 @@ source:
   origin: dsh-memory 条目 mem_1788978083156_yycfzp + digital-twin/docs/suite-charter.md §5
   ref: 渐进式披露实证 / 违规登记册
 confirmed: 2026-09-09
-status: 待审核
+status: 已确认
 owner: 主人
 ---
 

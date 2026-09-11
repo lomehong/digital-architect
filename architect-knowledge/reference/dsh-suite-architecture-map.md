@@ -5,7 +5,7 @@ source:
   origin: dsh/docs/suite-charter.md + digital-architect/docs/HANDOFF.md
   ref: 宪章 §2 依赖矩阵；HANDOFF §8 关键文件与接口速查；2026-09-11 成员巡逻（仓库地址与成员目录实况）
 confirmed: 2026-09-11
-status: 待审核
+status: 已确认
 owner: 主人
 ---
 
@@ -74,7 +74,7 @@ owner: 主人
 
 ## 系统层知识面（service-knowledge 试点，2026-09-10）
 
-> **引用不复制**：以下知识全文在各自仓内，本表只做寻址。`status: 待审核` = 未经主人确认，引用前回源 sources。
+> **引用不复制**：以下知识全文在各自仓内，本表只做寻址。`status: 已确认` = 未经主人确认，引用前回源 sources。
 
 | 仓 | 知识面 | 说明 |
 |---|---|---|

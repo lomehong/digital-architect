@@ -1,12 +1,4 @@
 # review-queue.yaml · 待审核队列（与条目 frontmatter status: 待审核 一一对应）
 # 维护纪律：主人确认后移除对应行，并把条目 status 改「已确认」、更新 confirmed 日期。
 # 台账是索引，frontmatter 仍是唯一权威（防双权威漂移）。
-# 当前队列为空（2026-09-11：本会话「模块迁移断链」条目经主人确认升级，历史 10 条均已确认入库）。
-
-- file: principle/ai-native-team-engineering.md
-  reason: knowledge-distill 蒸馏（腾讯 Vibe Flowing 文章 §1-5/协同）；「本仓落点」映射未经真实任务回归
-  queued: 2026-09-11
-
-- file: principle/token-efficiency-and-human-feedback.md
-  reason: knowledge-distill 蒸馏（同文 Lessons 节）；「能力地图」可落地项待主人点头后验证
-  queued: 2026-09-11
+# 当前队列为空（2026-09-11：本会话两条 Vibe Flowing 蒸馏条目经主人确认升级，累计 12 条均已确认入库）。

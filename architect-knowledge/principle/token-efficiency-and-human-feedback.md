@@ -5,7 +5,7 @@ source:
   origin: 腾讯技术工程公众号《从 Vibe Coding 到 AI 原生研发团队：一套能落地的工程实践》（masoncai，2026-07-21）§Lessons
   ref: https://mp.weixin.qq.com/s/DrIpzHm777Zd8klcyAICBA（原文浏览器快照；全文经网易镜像交叉核对 https://m.163.com/dy/article/L2CS0M180518R7MO.html）
 confirmed: 2026-09-11
-status: 待审核
+status: 已确认
 owner: 主人
 ---
 

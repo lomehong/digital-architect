@@ -2,8 +2,8 @@
 
 | 条目 | 一句话定位 | 状态 |
 |---|---|---|
-| [ai-native-team-engineering.md](ai-native-team-engineering.md) | AI 原生研发三层体系（底座/护栏/协作）+ Rules-Skills 关系 + 轻量 SDD + 去腐化双技能（腾讯 Vibe Flowing 蒸馏） | 待审核 |
-| [token-efficiency-and-human-feedback.md](token-efficiency-and-human-feedback.md) | Token 效率六法+负结论；廉价习得感警告；非开发者能力地图（Vibe Flowing Lessons） | 待审核 |
+| [ai-native-team-engineering.md](ai-native-team-engineering.md) | AI 原生研发三层体系（底座/护栏/协作）+ Rules-Skills 关系 + 轻量 SDD + 去腐化双技能（腾讯 Vibe Flowing 蒸馏） | 已确认 |
+| [token-efficiency-and-human-feedback.md](token-efficiency-and-human-feedback.md) | Token 效率六法+负结论；廉价习得感警告；非开发者能力地图（Vibe Flowing Lessons） | 已确认 |
 | [production-writeback-pipeline.md](production-writeback-pipeline.md) | 生产态写回管线：候选区/两段式收割/插件知识快照/并发人工裁决 | 已确认 |
 | [coding-delegation-and-branch-discipline.md](coding-delegation-and-branch-discipline.md) | 自编/委派主人点名制 + 编码分支纪律（强制 feature 分支、红灯不提交） | 已确认 |
 | [agent-runtime-five-layers.md](agent-runtime-five-layers.md) | 架构推理 Runtime 五层能力面（KBase/AITOM/Skill/ServiceKnowledge/Git）+ 人类角色转变 | 已确认 |

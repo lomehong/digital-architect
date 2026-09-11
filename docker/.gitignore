@@ -11,4 +11,5 @@ gpu_cache.json
 cache/
 terminal-sessions/
 run/
-last-changelog-versionplugins/
+last-changelog-version
+plugins/

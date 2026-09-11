@@ -30,16 +30,27 @@ owner: 主人
 | Compliance（合规） | 账本 L2+ 审批（3 分钟令牌 + 今日待办批准 + 30 天授权） |
 | High-risk Change（高风险变更） | 账本 L2/L3 拦截，强制人工审批 |
 
-## 任务执行
+## 任务执行（任务面契约的 dsh 实现）
 
-- 方案落定后：`task_delegate` 立项（任务描述含可验收条目，附方案路径）→ 执行会话 `task_claim` 认领 → 干活 → `task_report` 自报；
+**契约**：`architect-knowledge/principle/task-and-memory-surface.md`（五操作 create/claim/report/confirm/list + 四态状态机 + 四不变量）。SKILL 只写操作名，本文给出 dsh 侧映射：
+
+| 契约操作 | dsh 实现 |
+|---|---|
+| `create` | `task_delegate` 立项（任务描述含可验收条目，附方案路径） |
+| `claim` | `task_claim`（会话压缩后 session 变化由看板接管语义处理） |
+| `report` | `task_report` |
+| `confirm` | 今日待办确认/驳回（**只有主人可发起**） |
+| `list` | 看板面板 / activity 查询 |
+
 - **验收语义**：自报 ≠ 完成——进「待确认」，主人在今日待办确认/驳回后才落定终态；
-- 会话压缩后 session id 变化由看板接管语义处理，任务绑定不依赖固定 session id。
+- **治理**：push/发布/删除等走账本 L2+ 审批（令牌 + 授权窗口），未获授权即停。
 
-## 记忆沉淀
+## 记忆沉淀（记忆面契约的 dsh 实现）
+
+**契约**：同 `principle/task-and-memory-surface.md` §二（write/read/supersede/verify + 来源必填 + 替代不删除）。dsh 映射：
 
 - 已验证结果（主人确认后）沉淀 dsh-memory（`POST /dsh-memory/entries`，`x-memory-token`；替代语义更新不覆盖历史）；
-- 经验/教训回灌本仓库 `architect-knowledge/practice/`（git 管理，条目格式见知识库 README）；
+- 结构化知识以本仓库 git 条目为权威（`architect-knowledge/`，条目格式见知识库 README）；
 - 人格/任务/记忆语义查 dsh-memory 与宪章，工程架构事实查本知识库（边界见 meta 概念模型）。
 
 ## 代码执行面（architect-implement 落地面，2026-09-11）

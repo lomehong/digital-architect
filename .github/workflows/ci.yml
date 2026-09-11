@@ -30,3 +30,7 @@ jobs:
         run: node dsh-architect/scripts/lint-knowledge.mjs architect-knowledge
       - name: SKILL 三副本一致性校验（G3，权威源 skills/）
         run: node scripts/check-skills-sync.mjs
+      - name: 任务台账契约校验（Task Surface：自测红绿 + 结构校验）
+        run: |
+          node scripts/task-ledger.mjs --selftest
+          node scripts/task-ledger.mjs --validate --root .

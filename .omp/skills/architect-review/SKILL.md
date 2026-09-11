@@ -79,4 +79,4 @@ whenToUse: 有一份技术方案（architect-design 产出或其他来源）需�
 ## 落定
 
 
-评审通过 + 主人确认后：方案状态改「已落定」→ 按宿主适配文件拆任务（联动 architect-design 第七步：dsh=看板立项 / oh-my-pi=todo+task 子代理）→ 执行 → 自报 → **主人确认** → 经验回灌 `practice/`。
+评审通过 + 主人确认后：方案状态改「已落定」→ 按适配文件用**任务面操作**拆任务（`create` → `claim` → `report` → 主人 `confirm`；契约见 `architect-knowledge/principle/task-and-memory-surface.md`）→ 执行 → 自报 → **主人确认** → 经验回灌 `practice/`。

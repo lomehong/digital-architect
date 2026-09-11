@@ -32,18 +32,34 @@ owner: 主人
 | Compliance（合规） | **无账本对应物**——降级 = 强制 `ask` 主人确认 + 依赖宿主 approval-mode 权限门；**不得静默放行**（降级收敛保守侧） |
 | High-risk Change（高风险变更） | 同上：一律停止问主人；omp 的破坏性工具权限确认是底线而非替代 |
 
-## 任务执行
+## 任务执行（任务面契约的 omp 实现）
 
-- 方案落定后：`todo` 建会话内有序任务清单（含 phase 跟踪）；独立并行的工作用 `task` 子代理（schema 化结果回读）；
-- **验收语义不变**：omp 无跨会话看板与确认按钮——产出自报后必须经 `ask` 向主人请求验收，
-  **主人确认才落定**；子代理产出等同自报，不因 fan-out 而免验收。
+**契约**：`architect-knowledge/principle/task-and-memory-surface.md`（五操作 + 四态状态机 + 四不变量）。omp **无跨会话看板**，故以**文件台账**承载持久任务痕迹（纪律二「一切知识进结构」）：
 
-## 记忆沉淀
+| 契约操作 | omp 实现 |
+|---|---|
+| `create` | `node scripts/task-ledger.mjs new --id <任务号> --title … --accept … --root <目标项目>` |
+| `claim` | `… claim --id … --by <会话标识>`（分支名带同一任务号，便于追溯） |
+| `report` | `… report --id … --summary "diff 摘要 + 测试证据 + 未兑现清单"` |
+| `confirm` | `… confirm --id … --confirmed-by <主人标识> --confirmed-via <ask 交互引用>`（**只有主人可发起**；脚本拒绝无来源确认） |
+| `list`/`archive` | `… list` / `… archive`（归档需已落定或显式 --force） |
 
-- **结构化知识以本仓库 git 提交为准**：经验/教训回灌 `architect-knowledge/practice/`（条目格式见知识库 README）；
+- **落点**：`<目标项目>/.architect/tasks/<taskId>.yaml`（git 管理、跨会话可查、随项目版本化；大脑仓只读故不落此处）；
+- **状态机**：待执行 → 执行中 → 待确认 → 已落定（驳回回执行中）；**非法跳步脚本级拒绝**；
+- **todo 是视图不是存储**：会话内任务清单用 `todo` 呈现，权威记录在台账；
+- **验收语义不变**：`report` 后由 `ask` 向主人请求确认，结果写入 `confirmedBy/confirmedVia`；
+- **治理**：无账本 → push/发布/删除一律停并 `ask`，并在台账事件中登记授权来源；
+- CI：`scripts/task-ledger.mjs --selftest` + `--validate`（结构校验，损坏台账阻断）。
+
+## 记忆沉淀（记忆面契约的 omp 实现）
+
+**契约**：`principle/task-and-memory-surface.md` §二（write/read/supersede/verify + 来源必填 + 替代不删除）。omp 映射：
+
+- **结构化知识以本仓库 git 提交为准**：经验/教训回灌 `architect-knowledge/practice/`（条目格式见知识库 README，新条目 `status: 待审核`）；
 - 检索面可选双写：`retain` 一条指针（含知识条目路径）进 memory bank，`recall` 供跨会话召回；
 - 可复用的操作型经验可用 `learn`（可提升为 managed skill）；managed 技能优先级最低
-  （omp 同名技能先命中 authored 技能），**不会覆盖本知识库的权威性**。
+  （omp 同名技能先命中 authored 技能），**不会覆盖本知识库的权威性**；
+- 替代语义由 git 历史承载（不物理删除旧版本）。
 
 ## 挂载与工具
 

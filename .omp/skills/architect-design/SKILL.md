@@ -1,6 +1,6 @@
 ---
 name: architect-design
-description: 架构师设计主流程：按渐进式披露四层装载知识（业务层→架构层→系统层→基建层）→ 架构链路分析 → Gap Analysis → 按六维度+五问产出可执行技术方案。人工决策门走 ask_user 与账本审批。
+description: 架构师设计主流程：按渐进式披露四层装载知识（业务层→架构层→系统层→基建层）→ 架构链路分析 → Gap Analysis → 按六维度+五问产出可执行技术方案。人工决策门按适配层走会话内提问与治理审批。
 whenToUse: 需求准入（architect-prd-digest）通过后，主人要求「出技术方案」「做设计」「architect-design」时使用；产出交 architect-review 评审。
 ---
 
@@ -62,13 +62,13 @@ whenToUse: 需求准入（architect-prd-digest）通过后，主人要求「出�
 
 
 1. 技术方案写入主人指定位置（默认 `docs/designs/<slug>.md`），文件头标注来源需求包路径；
-2. 方案经 architect-review 通过、主人确认后，把六维度内容**拆解为宿主任务面的任务**（按适配文件：dsh=看板 `task_delegate` 立项 / oh-my-pi=`todo` + `task` 子代理；任务描述含可验收条目）；
-3. **执行方是数字分身且不在本宿主时，经御驿（yuyi）委派**（场景映射见 `architect-knowledge/scenario/architect-twin-collaboration.md`）：委派内容带任务号与可验收条目，执行结果经 yuyi 回流 + task_report 自报——自报 ≠ 完成，仍须主人确认；
+2. 方案经 architect-review 通过、主人确认后，把六维度内容**拆解为任务**——用**任务面操作名**（契约见 `architect-knowledge/principle/task-and-memory-surface.md`）：`create` 立项（含任务号与可验收条目）→ 执行方 `claim` 认领 → `report` 自报 → 主人 `confirm` 落定；**具体实现按适配文件映射**（dsh=看板任务工具 + 今日待办；oh-my-pi=`scripts/task-ledger.mjs` 文件台账 + `ask` 确认）；
+3. **执行方由主人点名**（自编 / 委派，规则见 `principle/coding-delegation-and-branch-discipline.md`）；执行方是数字分身且不在本宿主时，经御驿（yuyi）委派（场景映射见 `architect-knowledge/scenario/architect-twin-collaboration.md`）：委派内容带任务号与可验收条目，执行结果经 yuyi 回流 + 任务面 `report` 自报——自报 ≠ 完成，仍须主人 `confirm`；
 4. 执行结果回流后，把新经验回灌 `architect-knowledge/practice/`（Knowledge Evolution，沉淀路径同样按适配文件：dsh=另存 dsh-memory / oh-my-pi=指针 retain，仓库 git 均为权威）。
 
 ## 停止条件
 
 
-- 四层装载发现知识库与代码冲突且无法裁决 → 停，走 ask_user；
+- 四层装载发现知识库与代码冲突且无法裁决 → 停，走会话内提问（按适配层）；
 - 决策门未清 → 停，不得带未决事项出方案；
 - Gap Analysis 全部命中既有能力且改动为零 → 产出「无需开发」结论，直接进入验收。

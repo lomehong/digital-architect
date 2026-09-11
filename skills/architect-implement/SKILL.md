@@ -52,7 +52,7 @@ whenToUse: 方案经 architect-review 通过且主人确认落定后，主人点
 
 ### 第六步：自报与验收
 
-1. `task_report`（dsh）或 `ask` 汇报（omp）：**diff 摘要 + 测试证据 + 未兑现清单 + 分支与 commit 范围**；
+1. 任务面 `report` 自报（实现按适配文件映射：dsh=看板 task_report / oh-my-pi=`scripts/task-ledger.mjs report`）：**diff 摘要 + 测试证据 + 未兑现清单 + 分支与 commit 范围**；
 2. **自报 ≠ 完成**：实现评审（`architect-review` 实现评审模式，由非编码会话执行更佳）→ 主人确认 → 方可合并主分支/交付；
 3. 合并后经验回灌 `architect-knowledge/practice/`（走待审核流程）。
 

@@ -69,8 +69,8 @@ owner: 主人
   frontmatter `name` + `description` 必填（本仓三个 SKILL 均满足；`whenToUse` 作为未知元数据保留）。
 - **知识库路径**：`skill://<name>` 只解析技能目录内部（拒绝 `..` 穿越）；`architect-knowledge/`
   在技能目录之外，SKILL 中的相对路径以**仓库根**为基准用普通 `read` 读取——omp 会话 cwd 须在本仓库根（或在项目 AGENTS.md 声明仓库根路径）。
-- **检查工具**：dsh-architect 仓 `./omp` 导出（`src/omp.ts`，CustomToolFactory ×3）——与 dsh 工具
-  同名同语义（`architect_digest` / `architect_design` / `architect_review`），复用同一组纯函数。
+- **检查工具**：dsh-architect 仓 `./omp` 导出（`src/omp.ts`，CustomToolFactory ×4）——与 dsh 工具
+  同名同语义（`architect_digest` / `architect_design` / `architect_review` / **`architect_lint`**），复用同一组纯函数。
   安装：把构建产物 `lib/omp.js`（或 `src/omp.ts`，Bun 直接加载 TS）路径配置进 omp 工具发现
   （`~/.omp/agent/tools`、项目 `.omp/tools`，或 settings 的工具配置路径）。
 - **降级面**：检查工具缺席 → SKILL 流程照跑（六维度/五问人工执行）；无账本 → 治理类动作
@@ -104,7 +104,7 @@ docker/ 目录提供官方 omp 宿主的容器形态。**v3 起大脑与现场�
 
 - **workspace = 目标项目**（参数化）：`TARGET_PROJECT=<目标项目路径> docker compose up -d`——架构师服务谁，workspace 就绑谁；
 - **大脑 = digital-architect 仓**：挂 `/opt/architect:ro`（SKILL/检查器/适配层规则面，模型不可改），两个写入面单独放行：`architect-knowledge`（蒸馏落库）与 `docs`（方案产出）rw；
-- **系统级能力（agent 级，不随 workspace 切换）**：SKILL 权威源挂 `/home/pi/.omp/agent/skills:ro`；检查器经 `/home/pi/.omp/agent/tools`（docker/agent-tools）以绝对路径 `/opt/architect/dsh-architect/src/omp.ts` 转发（CustomToolFactory ×3）；
+- **系统级能力（agent 级，不随 workspace 切换）**：SKILL 权威源挂 `/home/pi/.omp/agent/skills:ro`；检查器经 `/home/pi/.omp/agent/tools`（docker/agent-tools）以绝对路径 `/opt/architect/dsh-architect/src/omp.ts` 转发（CustomToolFactory ×4）；
 - **路径约定**：SKILL 正文仓库相对路径相对大脑仓根 `/opt/architect` 解析（各 SKILL 头部「路径基准」注）；
 - 镜像：node24 + Bun（npm 分发）+ 官方 `@oh-my-pi/pi-coding-agent`（omp 18.x）；LLM 经 `docker/.env` 的 DEEPSEEK_API_KEY → `deepseek/deepseek-flash`（config.yml）；
 - 用法：`docker exec -it oh-my-pi omp`（TUI）/ `docker compose run --rm omp -p "需求"`；

@@ -67,5 +67,5 @@ owner: 主人
 ## 挂载与工具
 
 - **SKILL 挂载**：技能发现根（dsh-skill-filesystem，深度一层）：`<projectRoot>/.dsh/skills`（rank 100）、`$DSH_HOME/skills`（rank 400）等；挂载 = 把本仓库 `skills/<name>/` 以 junction/link 接入被扫描根目录；frontmatter 必填 `name`（kebab-case）+ `description`。
-- **检查工具**：dsh-architect 插件（`@dsh-extra/dsh-architect`）：主插件行注册 `dsh-architect` 服务；模型工具行 `@dsh-extra/dsh-architect/tools` 在 agent 预设插件列表追加（条件装配——装了才有行）。工具：`architect_digest` / `architect_design` / `architect_review`。
+- **检查工具**：dsh-architect 插件（`@dsh-extra/dsh-architect`）：主插件行注册 `dsh-architect` 服务；模型工具行 `@dsh-extra/dsh-architect/tools` 在 agent 预设插件列表追加（条件装配——装了才有行）。工具：`architect_digest` / `architect_design` / `architect_review` / **`architect_lint`**（知识库机械校验 R1~R9，知识库改动提交前必跑）。
 - **降级面**：检查工具缺席 → SKILL 流程照跑（六维度/五问人工执行）；账本缺席 → 治理动作一律拦截并问主人，**不得静默放行**（联邦原则：治理缺席收敛保守侧）。

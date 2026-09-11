@@ -25,8 +25,9 @@ description: 架构师知识库蒸馏：把公众号文章、历史技术方案�
 4. **领域判定**：新领域 → 建五类目录（meta/principle/scenario/practice/reference）；既有领域 → 按主题定位落点（方法论→principle；事故/复盘→practice；外部契约→reference 引用不复制；概念/边界→meta；场景映射→scenario）；
 5. **落库**：按 `architect-knowledge/README.md` 条目格式写 markdown——frontmatter 六字段（title/domain/source.origin+ref/confirmed/status/owner）必填；**新蒸馏条目一律 `status: 待审核`，未经主人确认不得静默升级为事实**；材料不足处登记「未知/待验证」，不编造；
 6. **台账登记**：`source-manifest.yaml` 增/更新来源（used_by 反向索引）+ `review-queue.yaml` 增待审核行 + 对应目录 `index.md` 增行（三处缺一不可；台账是索引，frontmatter 是唯一权威）；
-7. **提交**：git 中文提交（备注注明来源与条目数）；
-8. **升级**：主人确认后，条目 status → 已确认、更新 confirmed 日期、review-queue 移除对应行。
+7. **机械校验（提交前必跑）**：跑 knowledge-lint（R1~R9）——按适配层映射：dsh=`architect_lint` 工具；omp=`architect_lint` 工具或 bash 兜底 `node /opt/architect/dsh-architect/scripts/lint-knowledge.mjs /opt/architect/architect-knowledge`；**error 非空不得提交**（含 R9 设备路径禁止入库）；
+8. **提交**：git 中文提交（备注注明来源与条目数）；
+9. **升级**：主人确认后，条目 status → 已确认、更新 confirmed 日期、review-queue 移除对应行。
 
 ## 降级与停止纪律
 
@@ -40,6 +41,7 @@ description: 架构师知识库蒸馏：把公众号文章、历史技术方案�
 
 - [ ] 条目 frontmatter 六字段齐、status: 待审核；
 - [ ] 三台账同步（source-manifest / review-queue / index）；
+- [ ] knowledge-lint 通过（error 为空；含 R9 设备路径检查）；
 - [ ] 图示已解读或有「不建 evidence」理由；
 - [ ] git 中文提交完成；
 - [ ] 待主人确认清单已呈报。

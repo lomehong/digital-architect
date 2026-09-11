@@ -27,6 +27,7 @@ whenToUse: 方案经 architect-review 通过且主人确认落定后，主人点
 ### 第三步：小步编码与提交
 
 - 每步只做一件事并立即验证：改代码 → 跑该步测试 → 绿灯才提交；
+- **涉知识库改动时**：提交前必跑 knowledge-lint（按适配层：dsh=`architect_lint` 工具；omp=同名工具或 bash 兜底 `node /opt/architect/dsh-architect/scripts/lint-knowledge.mjs <KB根>`），error 非空不得提交；
 - 提交信息中文，**注明改动归属**（如「方案 §2 系统覆盖：xxx 仓新增 yyy」）；
 - **红灯不提交**——测试是交通信号灯；测试不通过时不得靠改测试绕过（除非测试本身错，且须在提交信息说明）；
 - 不顺手重构、不夹带无关改动（方案外改动一律另记待确认）。

@@ -4,3 +4,6 @@
 [submodule "dsh-yuyi"]
 	path = dsh-yuyi
 	url = https://github.com/lomehong/dsh-yuyi.git
+[submodule "omp-architect"]
+	path = omp-architect
+	url = https://github.com/lomehong/omp-architect.git

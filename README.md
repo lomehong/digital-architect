@@ -30,13 +30,16 @@ digital-architect\
 │   └── knowledge-distill\          ← 知识蒸馏：外部材料 → 五类结构落库（待审核入库）
 ├── templates\
 │   └── executable-design.md        ← 可执行技术方案模板（六维度+五问）
-├── dsh-architect\                   ← submodule：架构师检查器插件（lomehong/dsh-architect，决策 D10）
-└── dsh-yuyi\                        ← submodule：御驿通信（lomehong/dsh-yuyi，双总仓共享——架构师经它与数字分身通讯）
+├── packages\
+│   └── architect-core\              ← 宿主中立核心（纯函数唯一事实源：coverage/digest/lint/kbcollect）
+├── dsh-architect\                    ← submodule：dsh 宿主外壳插件（lomehong/dsh-architect，决策 D10/D11）
+├── omp-architect\                    ← submodule：omp 宿主外壳（lomehong/omp-architect，决策 D11）
+└── dsh-yuyi\                         ← submodule：御驿通信（lomehong/dsh-yuyi，双总仓共享——架构师经它与数字分身通讯）
 ```
 
 ## 仓库定位与总仓边界（决策 D10）
 
-**digital-architect 与 digital-twin（数字分身套件）是两个平级总仓**：本仓是架构师体系根仓（知识 + SKILL + 模板 + 适配层 + dsh-architect 插件）；dsh-architect 已从套件清单退出（宪章 v1.4），以 submodule 归入本仓。**dsh-yuyi 以 submodule 双总仓共享**——两个总仓各持独立指针，同一协议底座：套件侧服务分身，本仓侧支撑架构师 Agent 与数字分身通讯（场景见 `architect-knowledge/scenario/architect-twin-collaboration.md`）。
+**digital-architect 与数字分身套件是两个平级总仓**：本仓是架构师体系根仓（知识 + SKILL + 模板 + 适配层 + 宿主中立核心 `packages/architect-core` + 两个宿主外壳子模块）；dsh-architect 已从套件清单退出（宪章 v1.4），以 submodule 归入本仓。**dsh-yuyi 以 submodule 双总仓共享**——两个总仓各持独立指针，同一协议底座：套件侧服务分身，本仓侧支撑架构师 Agent 与数字分身通讯（场景见 `architect-knowledge/scenario/architect-twin-collaboration.md`）。
 
 ## 多宿主支持（dsh + oh-my-pi）
 
@@ -45,7 +48,7 @@ digital-architect\
 | 宿主 | 适配文件 | 检查工具 |
 |---|---|---|
 | dsh（DeepSeek Harness / digital-twin 套件） | [`adapters/dsh.md`](adapters/dsh.md) | dsh-architect 插件（tool-architect） |
-| [oh-my-pi](https://github.com/can1357/oh-my-pi)（omp） | [`adapters/oh-my-pi.md`](adapters/oh-my-pi.md) | dsh-architect 仓 `./omp` 导出（CustomToolFactory，与 dsh 同一组纯函数） |
+| [oh-my-pi](https://github.com/can1357/oh-my-pi)（omp） | [`adapters/oh-my-pi.md`](adapters/oh-my-pi.md) | omp-architect（CustomToolFactory ×4，同一核心） |
 
 新增宿主 = 复制一份适配文件覆盖五个面；不修改 SKILL 与知识库。
 

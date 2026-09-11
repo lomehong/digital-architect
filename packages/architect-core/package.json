@@ -1,0 +1,29 @@
+{
+  "name": "architect-core",
+  "version": "0.1.0",
+  "description": "架构师核心（宿主中立纯函数）：需求准入六项覆盖 / 方案六维度+五问 / 知识库 lint（R1~R9）/ 快照采集——dsh-architect 与 omp-architect 两个宿主外壳的唯一事实源",
+  "license": "MIT",
+  "type": "module",
+  "main": "./lib/index.js",
+  "types": "./lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    }
+  },
+  "files": [
+    "lib/**"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc -b tsconfig.json --noEmit",
+    "prepare": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
+  }
+}

@@ -1,5 +1,4 @@
 # review-queue.yaml · 待审核队列（与条目 frontmatter status: 待审核 一一对应）
 # 维护纪律：主人确认后移除对应行，并把条目 status 改「已确认」、更新 confirmed 日期。
 # 台账是索引，frontmatter 仍是唯一权威（防双权威漂移）。
-# 当前队列 1 条（2026-09-11：主人确认另一线 8 条升级；余本会话「模块迁移断链」1 条待确认）。
-- file: practice/module-migration-reference-check.md
+# 当前队列为空（2026-09-11：本会话「模块迁移断链」条目经主人确认升级，历史 10 条均已确认入库）。

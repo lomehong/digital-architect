@@ -5,7 +5,7 @@ source:
   origin: digital-architect 执行实证（2026-09-11 拉取后冒烟，dsh-architect e31df61→8e7aec8）
   ref: dsh-architect/scripts/lint-knowledge.mjs；父仓 ci.yml L30；docs/metrics/方案完备度基线.md 同期
 confirmed: 2026-09-11
-status: 待审核
+status: 已确认
 owner: 主人
 ---
 

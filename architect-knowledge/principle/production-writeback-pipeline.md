@@ -5,7 +5,7 @@ source:
   origin: 主人 2026-09-11 拍板「开发状态/生产运行状态分离」+ 三项决议（候选区路径/git-harvest 首版/知识快照全量五类）
   ref: principle/host-neutral-core.md 执行细则 6；principle/task-and-memory-surface.md；docs/designs/2026-09-11-omp插件化-走查记录.md
 confirmed: 2026-09-11
-status: 待审核
+status: 已确认
 owner: 主人
 ---
 

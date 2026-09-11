@@ -7,3 +7,5 @@
 | [multi-session-git-discipline.md](multi-session-git-discipline.md) | 多会话共享工作树提交纪律：git add -A 卷稿事故与三条教训 | 已确认 |
 | [service-knowledge-distill-lessons.md](service-knowledge-distill-lessons.md) | 蒸馏试点三教训：委托-把关模式、字节指标不成立、蒸馏即漂移探测 | 已确认 |
 | [suite-build-lessons.md](suite-build-lessons.md) | 套件建设事故教训三则、工程兼容原因表、流程经验 | 已确认 |
+| [ro-mount-case-alias-bypass.md](ro-mount-case-alias-bypass.md) | ro 子挂载被大小写别名绕过，v2 反转为父只读+精确白名单 | 待审核 |
+

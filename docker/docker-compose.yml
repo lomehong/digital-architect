@@ -24,20 +24,17 @@ services:
       # DeepSeek 官方 provider 凭据（pi 系同源机制，env 注入即被识别）
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
     volumes:
-      # 架构师 Agent 工作区 = 本总仓整仓（compose 位于 docker/ 子目录，故挂父目录）
-      - ..:/workspace
+      # ── 分层只读 v2（2026-09-11，修正大小写别名绕过）──
+      # v1 教训：整仓 rw + 子目录 ro 的方向在 9p 大小写不敏感透传下可被
+      # 大小写别名绕过（/workspace/SKILLS 落到同一 Windows 目录但错过 ro 挂载点，写入真实落盘）。
+      # v2 反转：整仓 :ro 为底，仅工作对象以精确路径 rw 子挂载放行——
+      # 任何大小写变体的写入都会落在 ro 父挂载上被拒，护栏不可绕过。
+      # 更新路径：改仓库 → CI（G3 哈希守副本一致）→ docker compose up -d 重新生效。
+      - ..:/workspace:ro
+      - ../architect-knowledge:/workspace/architect-knowledge:rw
+      - ../docs:/workspace/docs:rw
       - ./omp:/home/pi/.omp
       - ./entrypoint.sh:/usr/local/bin/omp-entrypoint.sh
-      # ── 分层只读（2026-09-11 主人拍板）：宿主设施与核心资产对容器内模型只读 ──
-      # 模型消费规则，不能改规则；更新路径 = 改仓库 → CI（G3 哈希校验副本一致）→ docker compose up -d 重新生效。
-      # 工作对象（architect-knowledge/、docs/）保持可写——蒸馏落库与方案产出是工作流写入面，
-      # 由 review-queue + 主人确认 + git 历史兜底。
-      - ../.omp:/workspace/.omp:ro
-      - ../.claude:/workspace/.claude:ro
-      - ../skills:/workspace/skills:ro
-      - ../dsh-architect:/workspace/dsh-architect:ro
-      - ../adapters:/workspace/adapters:ro
-      - ../templates:/workspace/templates:ro
     restart: "unless-stopped"
     stdin_open: true
     tty: true

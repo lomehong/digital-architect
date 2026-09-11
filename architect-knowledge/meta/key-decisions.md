@@ -24,6 +24,7 @@ owner: 主人
 | D9 | 宿主范围 | **宿主中立核心 + 适配边缘**：知识库/SKILL/模板不绑定宿主；宿主机制差异（提问/审批/任务/记忆/挂载/工具）收敛到 `adapters/<host>.md`（现有 dsh、oh-my-pi） | 架构师职能属于流程与知识，不属于某个宿主；新增宿主只写适配文件，不改 SKILL 与知识库（见 `../../adapters/README.md`，2026-09-10 主人指示支持 oh-my-pi） |
 | D10 | 仓库域归属 | **digital-architect 与 digital-twin 是两个平级总仓**：dsh-architect 从 digital-twin 退出（宪章 v1.4 撤销 v1.2 行），以 submodule 归入本总仓；dsh-yuyi 以 **submodule 双总仓共享**（两仓各持独立指针）；架构师 Agent 经 **yuyi 与数字分身通讯** | 总仓边界 = 领域边界：架构师体系（知识/SKILL/插件/模板）不属分身套件；通信件（yuyi）是两个体系共享的协议底座（2026-09-10 主人拍板） |
 | D11 | 宿主外壳独立仓 + 核心入总仓 | 校验/评分纯函数抽到总仓 `packages/architect-core/`（单一事实源）；`dsh-architect`（子模块）与新建 `omp-architect`（`github.com/lomehong/omp-architect`，子模块）为**各宿主外壳**，只做注册与呈现，禁止复制核心逻辑；知识库禁记设备路径（细则见 host-neutral-core 执行细则 6） | 落实「核心不动、适配显式」；omp 无看板 → 任务面走文件台账（D11 同批） |
+| D12 | Agent 协同基建归属 | **不发明新协同基建**：架构师↔架构师（及与分身/执行方）的发现、通知、过程留痕、验收闭环一律经**御驿既有原语**（Hub roster `yuyi_peers`、`yuyi_send` 双模投递、任务记忆层 goal/verify/artifact）；2026-09-10《架构师 Agent 团队的知识共享机制》联邦草案撤销（peers.yaml/索引联邦/changelog 由御驿承接）；契约条目字段纪律（owner/consumers/verify）保留为知识条目格式增强另议 | 御驿是主人自有的通信平面（企业 Agent 基础设施三平面之一），单一事实源红线禁止重复建设；协同方法论沿用 agent-org 评审委员会与任务记忆层（2026-09-11 主人指示） |
 
 ## SKILL 挂载方式（按宿主，详见 `../../adapters/<host>.md`）
 

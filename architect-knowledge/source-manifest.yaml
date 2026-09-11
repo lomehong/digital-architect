@@ -81,3 +81,20 @@
   date: 2026-09-10
   used_by:
     - practice/multi-session-git-discipline.md
+
+- id: src-yuyi-docs
+  origin: Yuyi 仓 docs（HuizeSecurity/yuyi：《御驿-任务记忆层-设计》v0.2、《agent-org/御驿-Agent团队协作体系-设计》v1.0、《御驿-Agent协作最佳实践》、《企业Agent基础设施-顶层架构设计》v0.2）
+  ref: 仓库 HuizeSecurity/yuyi（内网 git）docs/ 目录；对照与取舍见 docs/designs/2026-09-11-架构师协同御驿化-需求包.md §0
+  type: 内部文档
+  date: 2026-09-11
+  used_by:
+    - scenario/architect-architect-collaboration.md
+
+- id: src-owner-federation-revoke
+  origin: 主人指示（2026-09-11：不发明新基建，Agent 协同基建以御驿承接；撤销 2026-09-10 团队知识共享联邦草案）
+  ref: docs/designs/2026-09-11-架构师协同御驿化-需求包.md §0；meta/key-decisions.md D12
+  type: 口头指示
+  date: 2026-09-11
+  used_by:
+    - scenario/architect-architect-collaboration.md
+    - meta/key-decisions.md

@@ -3,7 +3,7 @@ title: 重大卷稿事故与 git 历史改写（filter-branch 实战 + 推送纪
 domain: dsh-ecosystem
 source:
   origin: digital-architect 执行实证（2026-09-11，11d1494→30cd70f→cc09dad 链；filter-branch 2026-09-11）
-  ref: docs/designs/2026-09-11-生产化阶段二-走查记录.md；commit 备份分支 backup/pre-rewrite-20260911 + bundle E:\code\nodejs\digital-architect-backup-pre-rewrite.bundle
+  ref: docs/designs/2026-09-11-生产化阶段二-走查记录.md；commit 备份分支 backup/pre-rewrite-20260911 + 包外 bundle（仓库父目录下的 backup bundle 文件）
 confirmed: 2026-09-11
 status: 待审核
 owner: 主人
@@ -37,7 +37,7 @@ owner 批准后执行清理（2026-09-11），记录供复用：
 ```bash
 # 0. 备份
 git branch backup/<日期>-pre-rewrite main
-git bundle create <repo-parent>/<repo>-backup-pre-rewrite.bundle main
+git bundle create <repo-parent>/<repo-name>-backup-pre-rewrite.bundle main
 
 # 1. filter-branch（index-filter 仅删路径，不重写工作树；O(提交数) 快）
 git filter-branch --index-filter \

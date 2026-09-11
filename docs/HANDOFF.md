@@ -241,3 +241,7 @@ E:\Development\Code\nodejs\digital-architect\
 2. **一切知识进结构**：工作必须有看板痕迹与知识库痕迹；无痕迹的工作等于没做。
 3. **验收语义**：自报 ≠ 完成；只有主人确认才落定并沉淀「已验证结果」。
 4. 机制优先于人工：发现流程缺口先修机制（像本套件一路的做法），不要用手工搬状态顶替机制。
+
+---
+
+> **路径变更提示（2026-09-11 补记）**：本文档 §2.1/§8 中的套件根 E:\Development\Code\nodejs\digital-twin、家目录 C:\Users\lome\...、官方 checkout E:\Development\Code\nodejs\deepseek-harness 三处路径**已失效**（实测不存在）。现址见 rchitect-knowledge/reference/dsh-suite-architecture-map.md（2026-09-11 漂移回写，待主人确认）。本文档其余内容作为交接时点快照保留，不回改。

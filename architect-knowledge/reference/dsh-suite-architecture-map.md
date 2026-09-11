@@ -2,10 +2,10 @@
 title: dsh 套件成员清单与关键路径速查（Architecture Map 索引）
 domain: dsh-ecosystem
 source:
-  origin: digital-twin/docs/suite-charter.md + digital-architect/docs/HANDOFF.md
-  ref: 宪章 §2 依赖矩阵；HANDOFF §8 关键文件与接口速查
-confirmed: 2026-09-09
-status: 已确认
+  origin: dsh/docs/suite-charter.md + digital-architect/docs/HANDOFF.md
+  ref: 宪章 §2 依赖矩阵；HANDOFF §8 关键文件与接口速查；2026-09-11 本仓实测（路径与成员巡逻：`ls E:\code\nodejs\dsh`、家目录与 checkout 存在性检验）
+confirmed: 2026-09-11
+status: 待审核
 owner: 主人
 ---
 
@@ -13,19 +13,26 @@ owner: 主人
 
 > **引用不复制**：本条目只是索引。成员能力的权威描述以宪章 §2 依赖矩阵为准；各仓细节以其 README 为准。
 
+> **⚠️ 漂移回写记录（2026-09-11）**：本条目原记的套件根/家目录/官方 checkout 三处路径均已失效（实测旧路径不存在或为空气），
+> 成员清单亦缺 4 个新成员。以下已按实测回写；**新增成员的能力描述未核，留待蒸馏**（不得编造）。
+> 漂移发现方式：架构师 v3 解耦走查中 `TARGET_PROJECT` 指向旧路径时容器 workspace 为空。处置遵循 `practice/knowledge-drift-cases.md` 回写机制（先修方案/知识，再回写）。
+
 ## 套件根与宿主
 
 | 项 | 值 |
 |---|---|
-| 套件根 | `E:\Development\Code\nodejs\digital-twin`（git，remote=github.com/lomehong/*） |
-| 套件宪章（Architecture Map） | `digital-twin\docs\suite-charter.md` |
-| 桌面宿主 | dsh-desktop（Tauri），核心 0.1.5-alpha.2，web 端口固定 3088 |
-| 家目录（DSH_HOME） | `C:\Users\lome\AppData\Local\dsh-desktop-app-data\home` |
-| web profile | `home\profiles\web\package.json`（14 个 bundle；插件经 junction/link 指向套件源码仓） |
+| 套件根 | `E:\code\nodejs\dsh`（git，remote=github.com/lomehong/*）〔2026-09-11 实测更正；旧记 `E:\Development\Code\nodejs\digital-twin` 已不存〕 |
+| 套件宪章（Architecture Map） | `dsh\docs\suite-charter.md` |
+| 桌面宿主 | dsh-desktop（Tauri），核心 0.1.5-alpha.2，web 端口固定 3088〔版本号未复核，待主人确认现值〕 |
+| 家目录（DSH_HOME） | `C:\Users\hz0704027\AppData\Local\dsh-desktop-app-data\home`〔实测更正；旧记 `C:\Users\lome\...` 不存在〕 |
+| web profile | `home\profiles\web\package.json`（bundle 清单；插件经 junction/link 指向套件源码仓）〔bundle 数量待复核〕 |
 | 宿主 HTTP 基址 | `http://127.0.0.1:3088`（web 会话 cookie；token 在 `dsh-desktop.log` 尾部 `dsh web:` 行） |
-| 官方源码 checkout | `E:\Development\Code\nodejs\deepseek-harness`（tag dsh-v0.1.5-alpha.2，研究宿主 API 用） |
+| 官方源码 checkout | `E:\code\nodejs\deepseek-harness`（研究宿主 API 用）〔实测更正；旧记 `E:\Development\...` 不存在〕 |
 
 ## 成员清单（提供 → 谁消费）
+
+> 2026-09-11 实测成员目录共 14 个（+外部件 dsh-architect）：下表 11 条为既有已核条目；
+> 新发现的 4 个成员列于表末「待蒸馏」区，**能力描述未核前不得引用**。
 
 | 插件 | 提供 | 被谁增强消费（缺席降级） |
 |---|---|---|
@@ -40,6 +47,17 @@ owner: 主人
 | dsh-redact | 出站脱敏：`redact` 钩子 + `masking` 服务 | im-channel（出站脱敏） |
 | dsh-im-bot（im-channel + ui-settings-im） | IM 渠道 pushToUser/botsStatus；IM 设置界面 | dsh-memory（渠道身份挂载）、`masking`、dsh-actors |
 | dsh-architect（**外部协作件**，宪章 v1.4 已退出套件清单） | `dsh-architect` 服务（checkDesign/checkDigest/renderReviewSkeleton）+ `tool-architect` 工具入口（architect_digest/design/review） | **归 digital-architect 总仓**（submodule，决策 D10）；仍零套件依赖、纯函数零持久化；经宿主 profile 加载，dsh-twin 按包名探测追加工具行（与挂靠哪个总仓无关）；影响面分析时按「宿主加载的外部插件」对待 |
+
+### 待蒸馏成员（2026-09-11 实测新增，**能力未核**）
+
+| 目录 | 状态 |
+|---|---|
+| dsh-model-failover | 存在（实测）；提供/消费关系**未知**，待蒸馏后补 |
+| dsh-plugin-manager | 存在（实测）；同上 |
+| dsh-remote | 存在（实测）；同上 |
+| dsh-yuheng | 存在（实测）；同上 |
+
+> 纪律：未核成员不得参与影响面分析结论；需要时先走 `knowledge-distill` 或 service-knowledge 蒸馏。
 
 ## 关键接口速查
 

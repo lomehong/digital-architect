@@ -2,6 +2,7 @@
 
 | 条目 | 一句话定位 | 状态 |
 |---|---|---|
+| [dsh-twin-pending-confirms-not-rendered.md](dsh-twin-pending-confirms-not-rendered.md) | dsh-twin 活动视图漏渲染 pendingConfirms 通道（宿主侧 bug 观察） | 待审核 |
 | [dsh-task-board-run-stuck.md](dsh-task-board-run-stuck.md) | run.status 状态机缺推进路径（套件侧 bug 观察 + scripts/task-board-cleanup.mjs 运维清理工具） | 待审核 |
 | [commit-omission-mirror-drift.md](commit-omission-mirror-drift.md) | 漏 add 权威源致镜像/权威倒挂，G3 副本校验 CI 首次实战拦截 | 已确认 |
 | [knowledge-drift-cases.md](knowledge-drift-cases.md) | 知识漂移四案例与四步回写机制（先修方案再回写知识） | 待审核 |

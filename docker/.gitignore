@@ -8,3 +8,7 @@ workspace
 sessions/
 logs/
 gpu_cache.json
+cache/
+terminal-sessions/
+run/
+last-changelog-version

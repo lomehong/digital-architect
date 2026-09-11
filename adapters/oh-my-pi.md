@@ -44,7 +44,7 @@ owner: 主人
 | `confirm` | `… confirm --id … --confirmed-by <主人标识> --confirmed-via <ask 交互引用>`（**只有主人可发起**；脚本拒绝无来源确认） |
 | `list`/`archive` | `… list` / `… archive`（归档需已落定或显式 --force） |
 
-- **落点**：`<目标项目>/.architect/tasks/<taskId>.yaml`（git 管理、跨会话可查、随项目版本化；大脑仓只读故不落此处）；
+- **落点**：`<目标项目>/docs/tasks/<taskId>.yaml`（git 管理、跨会话可查、随项目版本化；**文档类产出统一落目标项目 `docs/`**——designs/reports/tasks 分目录，主人 2026-09-11 拍板）；
 - **状态机**：待执行 → 执行中 → 待确认 → 已落定（驳回回执行中）；**非法跳步脚本级拒绝**；
 - **todo 是视图不是存储**：会话内任务清单用 `todo` 呈现，权威记录在台账；
 - **验收语义不变**：`report` 后由 `ask` 向主人请求确认，结果写入 `confirmedBy/confirmedVia`；

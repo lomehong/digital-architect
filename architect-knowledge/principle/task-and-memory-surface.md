@@ -5,7 +5,7 @@ source:
   origin: 主人 2026-09-11 指出「omp 无法使用 dsh 看板——看板实现按宿主调整，方法论不变」
   ref: docs/designs/2026-09-11-任务面记忆面宿主抽象-需求包.md；adapters/README.md 五面框架
 confirmed: 2026-09-11
-status: 已确认
+status: 待审核
 owner: 主人
 ---
 
@@ -45,7 +45,7 @@ owner: 主人
 
 | 面 | dsh | oh-my-pi（omp） |
 |---|---|---|
-| 存储 | 看板服务（跨会话权威） | **文件台账** `目标项目/.architect/tasks/<taskId>.yaml`（git 管理） |
+| 存储 | 看板服务（跨会话权威） | **文件台账** `目标项目/docs/tasks/<taskId>.yaml`（git 管理；文档类产出统一落目标项目 `docs/`，主人 2026-09-11 拍板） |
 | 操作入口 | `task_delegate` / `task_claim` / `task_report` + 今日待办确认 | `scripts/task-ledger.mjs`（new/claim/report/confirm/list/archive） |
 | 呈现 | 看板面板 + 今日待办 | `todo`（视图，非存储） |
 | 人工确认通道 | 今日待办确认按钮 | `ask` 交互（结果写入 `confirmedBy/confirmedVia`） |

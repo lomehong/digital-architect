@@ -5,7 +5,7 @@ whenToUse: 需求准入（architect-prd-digest）通过后，主人要求「出�
 ---
 
 # architect-design · 设计主流程
-> **路径基准**：本文出现的 architect-knowledge/、docs/designs/、templates/ 等仓库相对路径，均相对**大脑仓根**解析；大脑仓挂载点按适配文件解析（dsh=本仓库根；omp=/opt/architect，其中 architect-knowledge 与 docs 可写，其余只读）。
+> **路径基准（v3.3，2026-09-11 主人拍板「开发状态/生产运行状态分离」）**：①知识库 `architect-knowledge/` 相对**大脑仓根**（omp=/opt/architect，仅 architect-knowledge 可写）；②**工作产出（方案/报告/执行记录）一律落目标项目 `docs/` 下**（designs/reports 分目录；自举场景目标项目=大脑仓本体）——大脑仓 docs 不再是生产产出落点；③模板/适配层相对大脑仓根（只读）。
 
 
 
@@ -61,7 +61,7 @@ whenToUse: 需求准入（architect-prd-digest）通过后，主人要求「出�
 ### 第七步：产出与落定
 
 
-1. 技术方案写入主人指定位置（默认 `docs/designs/<slug>.md`），文件头标注来源需求包路径；
+1. 技术方案写入主人指定位置（默认**目标项目** `docs/designs/<slug>.md`——落点规则见路径基准；文件头标注来源需求包路径）；
 2. 方案经 architect-review 通过、主人确认后，把六维度内容**拆解为任务**——用**任务面操作名**（契约见 `architect-knowledge/principle/task-and-memory-surface.md`）：`create` 立项（含任务号与可验收条目）→ 执行方 `claim` 认领 → `report` 自报 → 主人 `confirm` 落定；**具体实现按适配文件映射**（dsh=看板任务工具 + 今日待办；oh-my-pi=`scripts/task-ledger.mjs` 文件台账 + `ask` 确认）；
 3. **执行方由主人点名**（自编 / 委派，规则见 `principle/coding-delegation-and-branch-discipline.md`）；执行方是数字分身且不在本宿主时，经御驿（yuyi）委派（场景映射见 `architect-knowledge/scenario/architect-twin-collaboration.md`）：委派内容带任务号与可验收条目，执行结果经 yuyi 回流 + 任务面 `report` 自报——自报 ≠ 完成，仍须主人 `confirm`；
 4. 执行结果回流后，把新经验回灌 `architect-knowledge/practice/`（Knowledge Evolution，沉淀路径同样按适配文件：dsh=另存 dsh-memory / oh-my-pi=指针 retain，仓库 git 均为权威）。

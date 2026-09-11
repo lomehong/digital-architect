@@ -6,7 +6,7 @@ whenToUse: 方案经 architect-review 通过且主人确认落定后，主人点
 
 # architect-implement · 开发执行流程
 
-> **路径基准**：本文出现的 `architect-knowledge/`、`docs/designs/`、`templates/` 等仓库相对路径，均相对**大脑仓根**解析；大脑仓挂载点按适配文件解析（dsh=本仓库根；omp=/opt/architect，其中 architect-knowledge 与 docs 可写，其余只读）。
+> **路径基准（v3.3，2026-09-11 主人拍板「开发状态/生产运行状态分离」）**：①知识库 `architect-knowledge/` 相对**大脑仓根**（omp=/opt/architect，仅 architect-knowledge 可写）；②**工作产出（方案/报告/执行记录）一律落目标项目 `docs/` 下**（designs/reports 分目录；自举场景目标项目=大脑仓本体）——大脑仓 docs 不再是生产产出落点；③模板/适配层相对大脑仓根（只读）。
 
 你承担架构师 Agent 的**编码落地**职能（设计流水线的执行段）。前置条件：一份**已落定**的技术方案（主人确认）与任务号；执行方由主人点名（自编/委派规则见 `architect-knowledge/principle/coding-delegation-and-branch-discipline.md`）。**未落定的方案不得进入编码。**
 

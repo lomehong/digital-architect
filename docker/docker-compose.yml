@@ -36,11 +36,9 @@ services:
       - ${TARGET_PROJECT:-../}:/workspace
       # 大脑仓【不整仓挂载】：仅按职责白名单——
       #   规则面（ro）：skills / templates / adapters / packages(核心) / dsh-architect / omp-architect
-      #   写入面（rw）：architect-knowledge（蒸馏落库）/ docs（方案产出）
+      #   写入面（rw）：architect-knowledge（蒸馏落库，唯一写通道）；工作产出落目标项目 docs/（workspace 天然 rw）
       # 不进容器：.git（历史）、.github、scripts、docker（**密钥 .env 物理隔离**）、.claude、.omp、dsh-yuyi
-      # 代价（已接受）：omp 会话不能对大脑仓 git commit——知识库落库后由宿主侧提交（SKILL 按适配层降级）
       - ../architect-knowledge:/opt/architect/architect-knowledge:rw
-      - ../docs:/opt/architect/docs:rw
       - ../skills:/opt/architect/skills:ro
       - ../templates:/opt/architect/templates:ro
       - ../adapters:/opt/architect/adapters:ro

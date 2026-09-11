@@ -3,7 +3,7 @@
  * task-ledger.mjs —— 任务面（Task Surface）契约的 omp 宿主实现（文件台账）。
  *
  * 契约出处：architect-knowledge/principle/task-and-memory-surface.md（宿主无关五操作 + 四态状态机 + 四不变量）。
- * 落点：<目标项目>/.architect/tasks/<taskId>.yaml（git 管理、跨会话可查）。
+ * 落点：<目标项目>/docs/tasks/<taskId>.yaml（git 管理、跨会话可查；文档类产出统一落目标项目 docs/——主人 2026-09-11 拍板）。
  *
  * 命令：new / claim / report / confirm / list / archive / --validate / --selftest
  * 纪律：非法跳步一律拒绝并给出允许的下一步；解析/校验异常 exit 非 0，**绝不静默绿**；
@@ -64,7 +64,7 @@ export function assertTransition(task, op) {
 }
 
 function stamp() { return new Date().toISOString().replace('T', ' ').slice(0, 19) }
-function ledgerDir(root) { return join(root, '.architect', 'tasks') }
+function ledgerDir(root) { return join(root, 'docs', 'tasks') }
 function taskPath(root, id) { return join(ledgerDir(root), `${id}.yaml`) }
 function load(root, id) {
   const p = taskPath(root, id)

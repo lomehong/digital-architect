@@ -13,4 +13,4 @@
 | [progressive-disclosure-four-layers.md](progressive-disclosure-four-layers.md) | 渐进式披露四层装载（业务→架构→系统→基建）+ 事实核对纪律 | 已确认 |
 | [solution-completeness-standard.md](solution-completeness-standard.md) | 可执行方案六要素与 95% 完备度语义（内容覆盖度≠结构分） | 已确认 |
 | [suite-federation-principles.md](suite-federation-principles.md) | 套件联邦四原则与合规细则（宪法） | 已确认 |
-| [task-and-memory-surface.md](task-and-memory-surface.md) | 任务面五操作+四态状态机+四不变量；记忆面最小契约（宿主无关） | 已确认 |
+| [task-and-memory-surface.md](task-and-memory-surface.md) | 任务面五操作+四态状态机+四不变量；记忆面最小契约（宿主无关）；落点改 docs/tasks 待重确认 | 待审核 |

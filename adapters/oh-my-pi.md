@@ -4,8 +4,8 @@ domain: dsh-ecosystem
 source:
   origin: oh-my-pi 官方文档 docs/skills.md + docs/custom-tools.md（github.com/can1357/oh-my-pi @ main，2026-09-10 实读）
   ref: 技能发现（native/.agents/.claude 提供方，一层目录）+ CustomToolFactory 契约；dsh-architect 仓 ./omp 导出
-confirmed: 2026-09-10
-status: 待审核
+confirmed: 2026-09-11
+status: 已确认
 owner: 主人
 ---
 

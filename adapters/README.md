@@ -26,7 +26,7 @@
 | 宿主 | 适配文件 | 状态 |
 |---|---|---|
 | DeepSeek Harness（dsh / digital-twin 套件） | [`dsh.md`](dsh.md) | 已验证（自举首跑 + dsh-architect v0.1.0 接线） |
-| [oh-my-pi](https://github.com/can1357/oh-my-pi)（omp，pi 分支终端编码 Agent） | [`oh-my-pi.md`](oh-my-pi.md) | 适配就绪（SKILL 挂载 + omp 工具适配器，待主人验收） |
+| [oh-my-pi](https://github.com/can1357/oh-my-pi)（omp，pi 分支终端编码 Agent） | [`oh-my-pi.md`](oh-my-pi.md) | 已验收（2026-09-11 全链路走查六项全过 + 主人确认） |
 
 ## 新增宿主
 

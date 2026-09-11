@@ -1,5 +1,5 @@
 # review-queue.yaml · 待审核队列（与条目 frontmatter status: 待审核 一一对应）
 # 维护纪律：主人确认后移除对应行，并把条目 status 改「已确认」、更新 confirmed 日期。
 # 台账是索引，frontmatter 仍是唯一权威（防双权威漂移）。
-# 当前队列为空（2026-09-10：multi-session-git-discipline 与 service-knowledge-distill-lessons 经主人确认升级）。
+# 当前队列仅剩 1 条（2026-09-11：omp 适配文件经主人验收升级已确认；practice/commit-omission-mirror-drift 仍待确认）。
 - file: practice/commit-omission-mirror-drift.md

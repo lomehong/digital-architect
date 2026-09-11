@@ -160,3 +160,22 @@ describe('R9 设备路径检出（禁止入库）', () => {
     expect(r.errors.some(e => e.rule === 'R9')).toBe(false)
   })
 })
+
+describe('queueLenient（快照上下文）', () => {
+  const snap = () => ({
+    entries: [{ path: 'principle/x.md', fields: { title: 'X', domain: 'd', 'source.origin': 'o', 'source.ref': 'https://e.com', confirmed: '2026-09-11', status: '待审核', owner: '主人' } }],
+    reviewQueue: [],
+    indexes: [],
+  })
+  it('缺省：待审核未登记 queue/index → R4+R5 error', () => {
+    const r = lintKnowledge(snap())
+    expect(r.pass).toBe(false)
+    expect(r.errors.filter(e => e.rule === 'R4' || e.rule === 'R5').length).toBe(2)
+  })
+  it('queueLenient: R4/R5 降级为 warning，pass=true', () => {
+    const r = lintKnowledge(snap(), { queueLenient: true })
+    expect(r.pass).toBe(true)
+    expect(r.errors).toEqual([])
+    expect(r.warnings.filter(w => w.rule === 'R4' || w.rule === 'R5').length).toBe(2)
+  })
+})

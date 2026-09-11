@@ -72,6 +72,11 @@ export interface LintOptions {
    * 缺省时本模块对相对路径 ref 一律出 warning（由 CLI 等调用方补核查）。
    */
   refExists?: (entryPath: string, ref: string) => boolean | undefined
+  /**
+   * queueLenient（快照上下文，2026-09-11）：R4/R5 降级为 warning——
+   * 只读快照不携带大脑侧 queue/index，结构规则在快照语境不可判。
+   */
+  queueLenient?: boolean
 }
 
 const REQUIRED_FIELDS = ['title', 'domain', 'source.origin', 'source.ref', 'confirmed', 'status', 'owner'] as const
@@ -179,7 +184,11 @@ export function lintKnowledge(snapshot: KnowledgeSnapshot, opts: LintOptions = {
     else if ((e.fields.status ?? '').trim() !== '待审核') err('R4', file, `review-queue 引用了非待审核条目（status=${e.fields.status}）`)
   }
   for (const e of entries) {
-    if ((e.fields.status ?? '').trim() === '待审核' && !queued.has(e.path)) err('R4', e.path, '待审核条目未登记 review-queue')
+    if ((e.fields.status ?? '').trim() === '待审核' && !queued.has(e.path)) {
+      // queueLenient（快照上下文）：快照不携带大脑侧 queue，R4 降级为警告
+      if (opts.queueLenient) warn('R4', e.path, '待审核条目未登记 review-queue（快照上下文，跳过）')
+      else err('R4', e.path, '待审核条目未登记 review-queue')
+    }
   }
 
   const indexed = new Set<string>()
@@ -199,7 +208,11 @@ export function lintKnowledge(snapshot: KnowledgeSnapshot, opts: LintOptions = {
     }
   }
   for (const e of entries) {
-    if (!indexed.has(e.path)) err('R5', e.path, '条目未登记所在目录 index.md')
+    if (!indexed.has(e.path)) {
+      // queueLenient（快照上下文）：R5 同样降级为警告
+      if (opts.queueLenient) warn('R5', e.path, '条目未登记所在目录 index.md（快照上下文，跳过）')
+      else err('R5', e.path, '条目未登记所在目录 index.md')
+    }
   }
 
   const confirmed = entries.filter(e => (e.fields.status ?? '').trim() === '已确认').length

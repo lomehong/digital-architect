@@ -133,8 +133,8 @@ export function collectKnowledgeSnapshot(rootArg: string, cwd = process.cwd()): 
   return { root, snapshot: { entries, reviewQueue, indexes }, issues }
 }
 
-/** R7 存在性核查：候选相对【知识库根 / 仓库根 / 条目所在目录】三个基准解析。 */
-export function makeRefExists(root: string) {
+/** R7 存在性核查：候选相对【知识库根 / 仓库根 / 条目所在目录】三个基准解析。soft 模式（快照上下文）缺失返回 undefined（降 warning，不阻断）。 */
+export function makeRefExists(root: string, opts: { soft?: boolean } = {}) {
   const parentOfRoot = dirname(root)
   return (entryPath: string, ref: string): boolean | undefined => {
     const candidates = relativePathCandidates(ref)
@@ -142,19 +142,20 @@ export function makeRefExists(root: string) {
     const entryDir = join(root, dirname(entryPath))
     const bases = [root, parentOfRoot, entryDir]
     for (const c of candidates) {
-      if (isAbsolute(c) && !existsSync(c)) return false
+      if (isAbsolute(c) && !existsSync(c)) return opts.soft ? undefined : false
       if (isAbsolute(c)) continue
       const hit = bases.some(base => existsSync(resolve(base, c)))
-      if (!hit) return false
+      if (!hit) return opts.soft ? undefined : false
     }
     return true
   }
 }
 
-/** 采集 + 校验一体（CLI 与两宿主工具的唯一入口）：返回 lintKnowledge 结果 + 根 + 采集类问题合并后的 pass。 */
+/** 采集 + 校验一体（CLI 与两宿主工具的唯一入口）。快照上下文自动识别：knowledge/.snapshot 标记 → R4/R5/R7 宽松。 */
 export function lintKnowledgeAt(rootArg: string, cwd = process.cwd()): LintResultAt {
   const collected = collectKnowledgeSnapshot(rootArg, cwd)
-  const result = lintKnowledge(collected.snapshot, { refExists: makeRefExists(collected.root) })
+  const isSnapshot = existsSync(join(collected.root, '.snapshot'))
+  const result = lintKnowledge(collected.snapshot, { refExists: makeRefExists(collected.root, { soft: isSnapshot }), queueLenient: isSnapshot })
   for (const i of collected.issues) result.errors.push(i)
   result.pass = result.errors.length === 0
   return { ...result, root: collected.root }

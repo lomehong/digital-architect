@@ -5,7 +5,7 @@
 
 ## 一句话
 
-基于**数字分身套件已有的 Harness 机制**（任务看板/账本治理/共享记忆/守卫纪律/验收语义）+ **两篇方法论文章**（阿里技术《AI Friendly 后端架构》与千问平台《架构师 Agent 系统化落地》），搭建架构师 Agent。**架构师 Agent ≠ 从零写新 Agent**：分身已有的 Harness 不动，补三个新件——知识工程（`architect-knowledge/`）、三个流程 SKILL（`skills/`）、产出规范（`templates/`）。
+基于**数字分身套件已有的 Harness 机制**（任务看板/账本治理/共享记忆/守卫纪律/验收语义）+ **两篇方法论文章**（阿里技术《AI Friendly 后端架构》与千问平台《架构师 Agent 系统化落地》），搭建架构师 Agent。**架构师 Agent ≠ 从零写新 Agent**：分身已有的 Harness 不动，补三个新件——知识工程（`architect-knowledge/`）、**五个流程 SKILL**（`skills/`）、产出规范（`templates/`）。
 
 ## 目录结构
 
@@ -25,7 +25,9 @@ digital-architect\
 ├── skills\
 │   ├── architect-prd-digest\       ← 需求准入：六项覆盖检查 → 结构化需求包
 │   ├── architect-design\           ← 设计主流程：渐进披露四层装载 → Gap Analysis → 六维度方案
-│   └── architect-review\           ← 方案评审：五问检查 + 六维度覆盖评分
+│   ├── architect-review\           ← 方案评审 + 实现评审：五问检查 + 六维度覆盖评分
+│   ├── architect-implement\        ← 开发执行：测试清单先行 → feature 分支 → 小步提交 → 对照自检
+│   └── knowledge-distill\          ← 知识蒸馏：外部材料 → 五类结构落库（待审核入库）
 ├── templates\
 │   └── executable-design.md        ← 可执行技术方案模板（六维度+五问）
 ├── dsh-architect\                   ← submodule：架构师检查器插件（lomehong/dsh-architect，决策 D10）
@@ -38,7 +40,7 @@ digital-architect\
 
 ## 多宿主支持（dsh + oh-my-pi）
 
-架构师 Agent 的核心资产——知识库、三个 SKILL、方案模板——是**宿主中立**的（决策 D9，原则见 `architect-knowledge/principle/host-neutral-core.md`）。宿主特定机制（会话内提问、审批、任务面、记忆面、技能挂载、检查器安装）收敛在 `adapters/`，一个宿主一个文件；SKILL 执行前按会话可用工具判别宿主并装载对应适配文件，判别不了直接问主人，**治理机制缺席一律收敛保守侧（停止问主人，不静默放行）**。
+架构师 Agent 的核心资产——知识库、**五个 SKILL**、方案模板——是**宿主中立**的（决策 D9，原则见 `architect-knowledge/principle/host-neutral-core.md`）。宿主特定机制（会话内提问、审批、任务面、记忆面、技能挂载、检查器安装）收敛在 `adapters/`，一个宿主一个文件；SKILL 执行前按会话可用工具判别宿主并装载对应适配文件，判别不了直接问主人，**治理机制缺席一律收敛保守侧（停止问主人，不静默放行）**。
 
 | 宿主 | 适配文件 | 检查工具 |
 |---|---|---|
@@ -47,18 +49,26 @@ digital-architect\
 
 新增宿主 = 复制一份适配文件覆盖五个面；不修改 SKILL 与知识库。
 
-## 三个 SKILL 的协作关系
+## 五个 SKILL 的协作关系
 
 ```
 需求 ──→ architect-prd-digest ──→ 结构化需求包
               │（准入不通过：登记未知/待确认，返回补齐）
               ▼
         architect-design ──→ 可执行技术方案（templates/executable-design.md）
-              │（人工决策门：ask_user 会话内 + 账本审批今日待办）
+              │（人工决策门：按适配层——dsh=ask_user + 账本审批；omp=ask + 强制确认）
               ▼
-        architect-review ──→ 五问验收 + 覆盖评分
-              │（通过：方案落定 → 拆看板任务 → 认领执行 → 自报 → 主人确认 → 经验沉淀回灌知识库）
-              ▼（不通过：带评审意见返回 architect-design）
+        architect-review ──→ 方案评审：五问 + 六维度评分
+              │（通过 → 主人确认落定 → 执行方由主人点名）
+              ▼
+        architect-implement ──→ 测试清单先行 → feature 分支 → 小步提交 → 对照自检
+              │（停止条件命中即停；触治理面走宿主审批）
+              ▼
+        architect-review（实现评审：非编码会话复跑抽查）
+              │（通过 → 主人确认 → 合并交付 → 经验回灌 practice/）
+              ▼（评审不通过：带意见返回对应上游）
+
+横切：knowledge-distill ──→ 外部材料蒸馏 → 五类结构落库（status: 待审核 → 主人确认升级）
 ```
 
 ## 首个领域：dsh 生态自身（自举）

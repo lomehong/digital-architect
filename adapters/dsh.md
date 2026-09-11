@@ -42,6 +42,17 @@ owner: 主人
 - 经验/教训回灌本仓库 `architect-knowledge/practice/`（git 管理，条目格式见知识库 README）；
 - 人格/任务/记忆语义查 dsh-memory 与宪章，工程架构事实查本知识库（边界见 meta 概念模型）。
 
+## 代码执行面（architect-implement 落地面，2026-09-11）
+
+| 面 | dsh 落地 |
+|---|---|
+| 编码执行方 | 主人点名：架构师自编（本会话直接在目标项目编码）或委派分身（`task_delegate` + 可选御驿协同）；不自作主张 |
+| 分支纪律 | 目标项目内建 `feature/<任务号>-<slug>`；看板任务号即分支前缀（可追溯）；主工作树保持基线 |
+| 提交 | 小步中文 commit，注明改动归属（方案条目号）；commit 允许，**push/发布属 L2+ 走账本审批** |
+| 测试证据 | 执行会话自跑测试并把真实输出写进 `task_report`；实现评审由**非编码会话**执行（评审者复跑抽查） |
+| 验收 | 自报 ≠ 完成：实现评审通过 + 主人在今日待办确认 → 才可合并/交付；合并后经验回灌 practice/ |
+| 降级面 | 账本缺席 → 编码可继续（本地 commit），**push/发布一律停并问主人** |
+
 ## 挂载与工具
 
 - **SKILL 挂载**：技能发现根（dsh-skill-filesystem，深度一层）：`<projectRoot>/.dsh/skills`（rank 100）、`$DSH_HOME/skills`（rank 400）等；挂载 = 把本仓库 `skills/<name>/` 以 junction/link 接入被扫描根目录；frontmatter 必填 `name`（kebab-case）+ `description`。

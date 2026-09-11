@@ -2,6 +2,7 @@
 
 | 条目 | 一句话定位 | 状态 |
 |---|---|---|
+| [coding-delegation-and-branch-discipline.md](coding-delegation-and-branch-discipline.md) | 自编/委派主人点名制 + 编码分支纪律（强制 feature 分支、红灯不提交） | 待审核 |
 | [agent-runtime-five-layers.md](agent-runtime-five-layers.md) | 架构推理 Runtime 五层能力面（KBase/AITOM/Skill/ServiceKnowledge/Git）+ 人类角色转变 | 已确认 |
 | [ai-friendly-nine-points.md](ai-friendly-nine-points.md) | 《AI Friendly 后端架构》九条要点（六类事实/System Card/L0-L5 等） | 已确认 |
 | [architect-agent-core-methodology.md](architect-agent-core-methodology.md) | 核心方法论：Context Gap、四类断裂知识、业界三路线、三支柱、知识维护红线 | 已确认 |

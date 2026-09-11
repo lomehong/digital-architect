@@ -5,7 +5,7 @@ source:
   origin: omp 容器实测（2026-09-11，主人实测截图暴露 + 走查复现）
   ref: docs/designs/2026-09-11-omp容器分层只读-走查记录.md；docker/docker-compose.yml v2
 confirmed: 2026-09-11
-status: 待审核
+status: 已确认
 owner: 主人
 ---
 

@@ -5,7 +5,7 @@ source:
   origin: 主人 2026-09-11 指出「omp 无法使用 dsh 看板——看板实现按宿主调整，方法论不变」
   ref: docs/designs/2026-09-11-任务面记忆面宿主抽象-需求包.md；adapters/README.md 五面框架
 confirmed: 2026-09-11
-status: 待审核
+status: 已确认
 owner: 主人
 ---
 

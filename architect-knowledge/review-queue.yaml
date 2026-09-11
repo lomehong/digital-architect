@@ -1,10 +1,11 @@
 # review-queue.yaml · 待审核队列（与条目 frontmatter status: 待审核 一一对应）
 # 维护纪律：主人确认后移除对应行，并把条目 status 改「已确认」、更新 confirmed 日期。
 # 台账是索引，frontmatter 仍是唯一权威（防双权威漂移）。
-# 当前队列 6 条（2026-09-11：漂移回写 + 路径不入库规则 + 架构师协同场景 + 任务面契约落点改版[本会话]）。
+# 当前队列 7 条（2026-09-11：漂移回写 + 路径不入库规则 + 架构师协同场景 + 任务面契约落点改版[本会话]）。
 - file: reference/dsh-suite-architecture-map.md
 - file: practice/knowledge-drift-cases.md
 - file: reference/dsh-desktop-system-card.md
 - file: principle/host-neutral-core.md
 - file: scenario/architect-architect-collaboration.md
 - file: principle/task-and-memory-surface.md
+- file: principle/production-writeback-pipeline.md

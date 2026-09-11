@@ -5,7 +5,7 @@ source:
   origin: 架构师编码能力首试点实录（TB-1789102220672-cuxhc，2026-09-11，主人已知悉）
   ref: docs/designs/2026-09-11-架构师编码能力首试点-走查记录.md；commit b20b4de
 confirmed: 2026-09-11
-status: 待审核
+status: 已确认
 owner: 主人
 ---
 

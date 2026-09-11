@@ -9,4 +9,4 @@
 | [suite-build-lessons.md](suite-build-lessons.md) | 套件建设事故教训三则、工程兼容原因表、流程经验 | 已确认 |
 | [ro-mount-case-alias-bypass.md](ro-mount-case-alias-bypass.md) | ro 子挂载被大小写别名绕过，v2 反转为父只读+精确白名单 | 已确认 |
 
-| [newline-and-env-handling-lessons.md](newline-and-env-handling-lessons.md) | Windows 检出 CRLF 致 shebang 失效（.gitattributes 根治）+ .env 操作事故纪律 | 待审核 |
+| [newline-and-env-handling-lessons.md](newline-and-env-handling-lessons.md) | Windows 检出 CRLF 致 shebang 失效（.gitattributes 根治）+ .env 操作事故纪律 | 已确认 |

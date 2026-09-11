@@ -81,4 +81,5 @@ docker/ 目录提供官方 omp 宿主的容器形态，**本总仓整仓挂载�
 - 技能：仓库根 `.omp/skills/`（native）与 `.claude/skills/`（继承）双根副本，**源在 `skills/`，改技能后需同步副本**；
 - LLM：`.env`（DEEPSEEK_API_KEY，gitignore）→ `deepseek/deepseek-flash` 预配为 default 角色（`docker/omp/agent/config.yml`）；
 - 用法：`docker exec -it oh-my-pi omp`（TUI）/ `docker compose run --rm omp -p "需求"`；
-- 实测：模型在真实会话调用 `architect_digest` 返回完整六项覆盖表（工具链路已验证）。
+- 实测：模型在真实会话调用 `architect_digest` 返回完整六项覆盖表（工具链路已验证）；
+- **收口走查（2026-09-11，TB-1789091706786-aw170）**：digest 红/绿双态、design 自检红/绿、review G1 严格口径（全答 60/60 通过 / 缺一问 60/60 驳回）、SKILL 双根发现四技能——六项验收全过，见 `docs/designs/2026-09-11-omp适配收口-走查记录.md`；本文 status 升级待主人验收。

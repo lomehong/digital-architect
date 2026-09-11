@@ -23,8 +23,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: 构建校验器（dsh-architect）
+      - name: 构建校验器（architect-core → dsh-architect）
+        # 序不可倒：dsh-architect 的 file: 依赖在 npm ci 时会触发 core 的 prepare 构建，
+        # 冷环境必须先装好 core 的 devDependencies（2026-09-11 run #53 实证 TS2688）
         run: |
+          npm --prefix packages/architect-core ci
+          npm --prefix packages/architect-core run build
           npm --prefix dsh-architect ci
           npm --prefix dsh-architect run build
       - name: knowledge-lint（error 阻断——主人 2026-09-10 拍板 Q1）

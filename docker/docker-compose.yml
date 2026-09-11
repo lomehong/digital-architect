@@ -25,15 +25,23 @@ services:
       # DeepSeek 官方 provider 凭据（pi 系同源机制，env 注入即被识别）
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
     volumes:
-      # ── v3 大脑/现场解耦（2026-09-11 主人拍板）──
+      # ── v3.2 白名单挂载（2026-09-11 主人否决整仓挂载，D11 同批）──
       # workspace = 架构师当前服务的目标项目（参数化，随任务切换）：
       #   TARGET_PROJECT=E:\path\to\target docker compose up -d
       - ${TARGET_PROJECT:-../}:/workspace
-      # 大脑 = digital-architect 仓，固定挂 /opt/architect 只读；两个写入面单独放行：
-      #   architect-knowledge（蒸馏落库）与 docs（方案产出）
-      - ..:/opt/architect:ro
+      # 大脑仓【不整仓挂载】：仅按职责白名单——
+      #   规则面（ro）：skills / templates / adapters / packages(核心) / dsh-architect / omp-architect
+      #   写入面（rw）：architect-knowledge（蒸馏落库）/ docs（方案产出）
+      # 不进容器：.git（历史）、.github、scripts、docker（**密钥 .env 物理隔离**）、.claude、.omp、dsh-yuyi
+      # 代价（已接受）：omp 会话不能对大脑仓 git commit——知识库落库后由宿主侧提交（SKILL 按适配层降级）
       - ../architect-knowledge:/opt/architect/architect-knowledge:rw
       - ../docs:/opt/architect/docs:rw
+      - ../skills:/opt/architect/skills:ro
+      - ../templates:/opt/architect/templates:ro
+      - ../adapters:/opt/architect/adapters:ro
+      - ../packages:/opt/architect/packages:ro
+      - ../dsh-architect:/opt/architect/dsh-architect:ro
+      - ../omp-architect:/opt/architect/omp-architect:ro
       # 系统级能力：SKILL 挂 agent 级技能根；检查器以「插件」身份经 omp plugin link
       # 注册（docker/omp/plugins 持久化 link 状态），工具源在 /opt/architect/omp-architect
       # （2026-09-11 起 agent-tools 转发退役，插件为唯一承载）

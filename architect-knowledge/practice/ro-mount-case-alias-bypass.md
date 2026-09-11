@@ -3,7 +3,7 @@ title: 只读挂载被大小写别名绕过——ro 子挂载方向性缺陷与 
 domain: methodology
 source:
   origin: omp 容器实测（2026-09-11，主人实测截图暴露 + 走查复现）
-  ref: docs/designs/2026-09-11-omp容器分层只读-走查记录.md；docker/docker-compose.yml v2
+  ref: docs/designs/2026-09-11-omp容器分层只读-走查记录.md（含 compose 卷白名单，见该文档 §一）
 confirmed: 2026-09-11
 status: 已确认
 owner: 主人

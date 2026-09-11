@@ -34,10 +34,10 @@ services:
       - ..:/opt/architect:ro
       - ../architect-knowledge:/opt/architect/architect-knowledge:rw
       - ../docs:/opt/architect/docs:rw
-      # 系统级能力：SKILL 与检查器挂为 omp agent 级资产（/home/pi/.omp/agent），
-      # 不随 workspace 切换；skills/ 为权威源（G3 哈希守仓库内副本一致）
+      # 系统级能力：SKILL 挂 agent 级技能根；检查器以「插件」身份经 omp plugin link
+      # 注册（docker/omp/plugins 持久化 link 状态），工具源在 /opt/architect/omp-architect
+      # （2026-09-11 起 agent-tools 转发退役，插件为唯一承载）
       - ../skills:/home/pi/.omp/agent/skills:ro
-      - ./agent-tools:/home/pi/.omp/agent/tools:ro
       - ./omp:/home/pi/.omp
       - ./entrypoint.sh:/usr/local/bin/omp-entrypoint.sh
     restart: "unless-stopped"

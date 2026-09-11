@@ -39,7 +39,7 @@ owner: 主人
 
 ## 案例五：套件根迁移致索引条目全面失效（2026-09-11 本仓实测）
 
-- **漂移**：`reference/dsh-suite-architecture-map.md` 记的套件根 `E:\Development\Code\nodejs\digital-twin`、家目录 `C:\Users\lome\...`、官方 checkout `E:\Development\...\deepseek-harness` 三处**均已不存在**（旧路径残留为空目录）；成员清单缺 4 个新成员（dsh-model-failover / dsh-plugin-manager / dsh-remote / dsh-yuheng）。
+- **漂移**：`reference/dsh-suite-architecture-map.md` 记的**三处设备绝对路径**（套件根 / 家目录 / 官方源码 checkout，Windows 盘符路径）**均已不存在**（旧路径残留为空目录）；成员清单缺 4 个新成员（dsh-model-failover / dsh-plugin-manager / dsh-remote / dsh-yuheng）。
 - **发现**：v3 大脑/现场解耦走查中把容器 `TARGET_PROJECT` 指向旧路径 → workspace 为空 → 顺藤摸瓜核对三处路径的存在性与成员目录实况。
 - **处置**：按本条目回写机制——条目标 `待审核`、正文加「⚠️ 漂移回写记录」、三处路径按实测更正、新成员入「待蒸馏区」（**能力未核不得引用**）、`source.ref` 补实测依据；主人确认后升级。
 - **教训**：**路径类知识最容易无声失效**（改名/移动不报错，只在被引用时才暴露）；引用路径的知识条目应带「实测日期」，且跨仓路径迁移必须触发一次全库引用核查（可用 grep 全量扫旧路径）。

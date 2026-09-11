@@ -3,7 +3,7 @@ title: dsh 套件成员清单与关键路径速查（Architecture Map 索引）
 domain: dsh-ecosystem
 source:
   origin: dsh/docs/suite-charter.md + digital-architect/docs/HANDOFF.md
-  ref: 宪章 §2 依赖矩阵；HANDOFF §8 关键文件与接口速查；2026-09-11 本仓实测（路径与成员巡逻：`ls E:\code\nodejs\dsh`、家目录与 checkout 存在性检验）
+  ref: 宪章 §2 依赖矩阵；HANDOFF §8 关键文件与接口速查；2026-09-11 成员巡逻（仓库地址与成员目录实况）
 confirmed: 2026-09-11
 status: 待审核
 owner: 主人
@@ -13,21 +13,23 @@ owner: 主人
 
 > **引用不复制**：本条目只是索引。成员能力的权威描述以宪章 §2 依赖矩阵为准；各仓细节以其 README 为准。
 
-> **⚠️ 漂移回写记录（2026-09-11）**：本条目原记的套件根/家目录/官方 checkout 三处路径均已失效（实测旧路径不存在或为空气），
-> 成员清单亦缺 4 个新成员。以下已按实测回写；**新增成员的能力描述未核，留待蒸馏**（不得编造）。
-> 漂移发现方式：架构师 v3 解耦走查中 `TARGET_PROJECT` 指向旧路径时容器 workspace 为空。处置遵循 `practice/knowledge-drift-cases.md` 回写机制（先修方案/知识，再回写）。
+> **⚠️ 漂移回写记录（2026-09-11）**：本条目原记的三处**设备绝对路径**（套件根/家目录/官方 checkout）已失效；
+> 按主人 2026-09-11 指示——**知识库不记设备路径**（不同设备不同，违反宿主中立），改记**仓库地址 + 发现方式**。
+> 成员清单亦补 4 个新成员入「待蒸馏区」（能力未核，不得引用）。
+> 漂移发现方式：架构师 v3 解耦走查中 `TARGET_PROJECT` 指向旧路径时容器 workspace 为空。处置见 `practice/knowledge-drift-cases.md`。
 
-## 套件根与宿主
+## 套件仓库与宿主（记地址与发现方式，不记设备路径）
 
 | 项 | 值 |
 |---|---|
-| 套件根 | `E:\code\nodejs\dsh`（git，remote=github.com/lomehong/*）〔2026-09-11 实测更正；旧记 `E:\Development\Code\nodejs\digital-twin` 已不存〕 |
-| 套件宪章（Architecture Map） | `dsh\docs\suite-charter.md` |
-| 桌面宿主 | dsh-desktop（Tauri），核心 0.1.5-alpha.2，web 端口固定 3088〔版本号未复核，待主人确认现值〕 |
-| 家目录（DSH_HOME） | `C:\Users\hz0704027\AppData\Local\dsh-desktop-app-data\home`〔实测更正；旧记 `C:\Users\lome\...` 不存在〕 |
-| web profile | `home\profiles\web\package.json`（bundle 清单；插件经 junction/link 指向套件源码仓）〔bundle 数量待复核〕 |
+| 套件仓（10+ 插件 monorepo） | `github.com/lomehong/digital-twin`（本地目录名可能不同，如 `dsh`） |
+| 套件宪章（Architecture Map） | 套件仓内 `docs/suite-charter.md` |
+| 本仓（架构师体系） | `github.com/lomehong/digital-architect` |
+| 官方宿主源码 | `github.com/deepseek-ai/deepseek-harness`（研究宿主 API 用，按 tag 对齐核心版本） |
+| 桌面宿主 | dsh-desktop（Tauri），核心 0.1.5-alpha.2，web 端口固定 3088〔版本号未复核〕 |
+| 家目录（DSH_HOME） | **设备特定，不入库**；查询方式：宿主日志/设置界面（dsh-desktop 为 `dsh-desktop-app-data\home`），会话内以实际环境为准 |
+| web profile | `home\profiles\web\package.json`（相对 DSH_HOME；bundle 清单；插件经 junction/link 指向套件源码仓） |
 | 宿主 HTTP 基址 | `http://127.0.0.1:3088`（web 会话 cookie；token 在 `dsh-desktop.log` 尾部 `dsh web:` 行） |
-| 官方源码 checkout | `E:\code\nodejs\deepseek-harness`（研究宿主 API 用）〔实测更正；旧记 `E:\Development\...` 不存在〕 |
 
 ## 成员清单（提供 → 谁消费）
 

@@ -2,10 +2,10 @@
 title: System Card：dsh-desktop（桌面宿主，官方 checkout deepseek-harness @ dsh-v0.1.5-alpha.2）
 domain: dsh-ecosystem
 source:
-  origin: E:\Development\Code\nodejs\deepseek-harness（官方源码 checkout，tag dsh-v0.1.5-alpha.2，commit b2e3b2a）
+  origin: github.com/deepseek-ai/deepseek-harness（官方源码，tag dsh-v0.1.5-alpha.2，commit b2e3b2a）
   ref: 仓库结构实测 + HANDOFF §2.1/§2.3（2026-09-09 生成）
-confirmed: 2026-09-09
-status: 已确认
+confirmed: 2026-09-11
+status: 待审核
 owner: 主人
 ---
 
@@ -31,7 +31,7 @@ DeepSeek Harness 的桌面发行版（Tauri 应用）：**一个 dsh 实例 = �
 ## 运行特征
 
 - web 端口**固定 3088**（本机改动的固定端口功能）；HTTP 基址 `http://127.0.0.1:3088`，web 会话 cookie 认证，首引 token 在 `dsh-desktop.log` 尾部 `dsh web:` 行。
-- 家目录 `DSH_HOME = C:\Users\lome\AppData\Local\dsh-desktop-app-data\home`；插件数据各归 `$DSH_HOME/<插件id>/`。
+- 家目录 `DSH_HOME`：**设备特定，不入库**（dsh-desktop 形如 `<AppData>\dsh-desktop-app-data\home`，以会话实际环境为准）；插件数据各归 `$DSH_HOME/<插件id>/`。
 - web profile：`$DSH_HOME\profiles\web\package.json`（dsh.profile.bundles 列全部 bundle；套件插件经 junction/link 指向源码仓）。
 - **桌面版自愈**：升级/重装 profile 依赖自动完成——但 peer 物化不稳定，宿主包导入必须落 dependencies（套件已根治）。
 - 客户端面板 API：alpha.2 起 `conversation` slot 迁移为 `main` 的 conversation key（宿主升级自动点亮双写面板）。

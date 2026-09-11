@@ -21,18 +21,23 @@ services:
       - TZ=Asia/Shanghai
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
+      - KB_ROOT=/opt/architect/architect-knowledge
       # DeepSeek 官方 provider 凭据（pi 系同源机制，env 注入即被识别）
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
     volumes:
-      # ── 分层只读 v2（2026-09-11，修正大小写别名绕过）──
-      # v1 教训：整仓 rw + 子目录 ro 的方向在 9p 大小写不敏感透传下可被
-      # 大小写别名绕过（/workspace/SKILLS 落到同一 Windows 目录但错过 ro 挂载点，写入真实落盘）。
-      # v2 反转：整仓 :ro 为底，仅工作对象以精确路径 rw 子挂载放行——
-      # 任何大小写变体的写入都会落在 ro 父挂载上被拒，护栏不可绕过。
-      # 更新路径：改仓库 → CI（G3 哈希守副本一致）→ docker compose up -d 重新生效。
-      - ..:/workspace:ro
-      - ../architect-knowledge:/workspace/architect-knowledge:rw
-      - ../docs:/workspace/docs:rw
+      # ── v3 大脑/现场解耦（2026-09-11 主人拍板）──
+      # workspace = 架构师当前服务的目标项目（参数化，随任务切换）：
+      #   TARGET_PROJECT=E:\path\to\target docker compose up -d
+      - ${TARGET_PROJECT:-../}:/workspace
+      # 大脑 = digital-architect 仓，固定挂 /opt/architect 只读；两个写入面单独放行：
+      #   architect-knowledge（蒸馏落库）与 docs（方案产出）
+      - ..:/opt/architect:ro
+      - ../architect-knowledge:/opt/architect/architect-knowledge:rw
+      - ../docs:/opt/architect/docs:rw
+      # 系统级能力：SKILL 与检查器挂为 omp agent 级资产（/home/pi/.omp/agent），
+      # 不随 workspace 切换；skills/ 为权威源（G3 哈希守仓库内副本一致）
+      - ../skills:/home/pi/.omp/agent/skills:ro
+      - ./agent-tools:/home/pi/.omp/agent/tools:ro
       - ./omp:/home/pi/.omp
       - ./entrypoint.sh:/usr/local/bin/omp-entrypoint.sh
     restart: "unless-stopped"

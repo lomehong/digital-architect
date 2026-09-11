@@ -71,15 +71,14 @@ owner: 主人
 | 技能挂载 | `$DSH_HOME/skills` / `.dsh/skills` | `.omp/skills` / `.agents/skills` / `.claude/skills` |
 | 检查工具 | dsh-architect 插件（cordis tools.register） | dsh-architect 仓 `./omp` 导出（CustomToolFactory） |
 
-## 容器化接入（已落地，2026-09-10）
+## 容器化接入（已落地，2026-09-10；v3 大脑/现场解耦 2026-09-11）
 
-docker/ 目录提供官方 omp 宿主的容器形态，**本总仓整仓挂载为工作区**（`/workspace`）：
+docker/ 目录提供官方 omp 宿主的容器形态。**v3 起大脑与现场分离**：
 
-- 镜像：node24 + Bun（npm 分发）+ 官方 `@oh-my-pi/pi-coding-agent`（omp 18.x，预编译 natives）；
-- 工作区：整仓挂载——知识库/SKILL/模板/适配层相对路径全通，`dsh-architect` submodule 随仓在内；
-- 工具发现：仓库根 `.omp/tools/architect/index.ts` 转发模块 → submodule `src/omp.ts`（omp 扫描 cwd 的 `.omp/tools/<name>/index.ts`，实测已加载）；
-- 技能：仓库根 `.omp/skills/`（native）与 `.claude/skills/`（继承）双根副本，**源在 `skills/`，改技能后需同步副本**；
-- LLM：`.env`（DEEPSEEK_API_KEY，gitignore）→ `deepseek/deepseek-flash` 预配为 default 角色（`docker/omp/agent/config.yml`）；
+- **workspace = 目标项目**（参数化）：`TARGET_PROJECT=<目标项目路径> docker compose up -d`——架构师服务谁，workspace 就绑谁；
+- **大脑 = digital-architect 仓**：挂 `/opt/architect:ro`（SKILL/检查器/适配层规则面，模型不可改），两个写入面单独放行：`architect-knowledge`（蒸馏落库）与 `docs`（方案产出）rw；
+- **系统级能力（agent 级，不随 workspace 切换）**：SKILL 权威源挂 `/home/pi/.omp/agent/skills:ro`；检查器经 `/home/pi/.omp/agent/tools`（docker/agent-tools）以绝对路径 `/opt/architect/dsh-architect/src/omp.ts` 转发（CustomToolFactory ×3）；
+- **路径约定**：SKILL 正文仓库相对路径相对大脑仓根 `/opt/architect` 解析（各 SKILL 头部「路径基准」注）；
+- 镜像：node24 + Bun（npm 分发）+ 官方 `@oh-my-pi/pi-coding-agent`（omp 18.x）；LLM 经 `docker/.env` 的 DEEPSEEK_API_KEY → `deepseek/deepseek-flash`（config.yml）；
 - 用法：`docker exec -it oh-my-pi omp`（TUI）/ `docker compose run --rm omp -p "需求"`；
-- 实测：模型在真实会话调用 `architect_digest` 返回完整六项覆盖表（工具链路已验证）；
-- **收口走查（2026-09-11，TB-1789091706786-aw170）**：digest 红/绿双态、design 自检红/绿、review G1 严格口径（全答 60/60 通过 / 缺一问 60/60 驳回）、SKILL 双根发现四技能——六项验收全过，见 `docs/designs/2026-09-11-omp适配收口-走查记录.md`；本文 status 升级待主人验收。
+- 安全纪律（v2 教训）：默认拒绝 + 精确白名单；负向测试必须含大小写别名变体（见 `architect-knowledge/practice/ro-mount-case-alias-bypass.md`）。

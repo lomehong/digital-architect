@@ -5,12 +5,17 @@ whenToUse: 有一份技术方案（architect-design 产出或其他来源）需�
 ---
 
 # architect-review · 方案评审
+> **路径基准**：本文出现的 architect-knowledge/、docs/designs/、templates/ 等仓库相对路径，均相对**大脑仓根**解析；大脑仓挂载点按适配文件解析（dsh=本仓库根；omp=/opt/architect，其中 architect-knowledge 与 docs 可写，其余只读）。
+
+
 
 你承担架构师 Agent 的**方案评审**职能（流水线阶段 8/9 的独立评审视角）。评审对象：一份技术方案文档（默认产出自 architect-design，模板 `templates/executable-design.md`）。**你的评审不是通过门——最终通过以主人确认为准（自报 ≠ 完成）。**
 
 ## 评审流程
 
+
 ### 第一步：五问检查
+
 
 对方案逐问打分（0-2：未回答=0 / 部分=1 / 清楚且有证据=2）：
 
@@ -21,6 +26,7 @@ whenToUse: 有一份技术方案（architect-design 产出或其他来源）需�
 5. **还有什么没有确认？**——未知是否显式登记而非被擅自补全？（**登记未知应得分，编造应扣分**）
 
 ### 第二步：六维度覆盖评分
+
 
 | 维度 | 检查要点 | 满分 |
 |---|---|---|
@@ -35,18 +41,22 @@ whenToUse: 有一份技术方案（architect-design 产出或其他来源）需�
 
 ### 第三步：证据回源与知识漂移核查
 
+
 - 抽查方案中 2-3 条「当前行为」类断言，亲自读代码核对（**当前行为以代码为准**）；
 - 对照 `architect-knowledge/practice/knowledge-drift-cases.md` 的回写机制：发现知识库与代码冲突 → 先标记方案影响，再触发知识回写（status 待审核）；
 - 联邦原则核查：方案是否违反套件四原则（加载/运行/数据/安装独立）、显式降级三要素、访客可见性红线（`principle/suite-federation-principles.md`）。
 
 ### 第四步：决策门确认
 
+
 方案中的 Human Decision 项是否都已有主人决策记录？未决的 → 驳回并指出待决清单。
 
 ## 评审结论（固定格式）
 
+
 ```markdown
 # 评审结论：<方案标题>
+
 - 结论：通过 / 驳回（退回 architect-design）
 - 五问得分：Q1 ?/2 … Q5 ?/2
 - 六维度得分：??/60（逐维度）
@@ -56,5 +66,6 @@ whenToUse: 有一份技术方案（architect-design 产出或其他来源）需�
 ```
 
 ## 落定
+
 
 评审通过 + 主人确认后：方案状态改「已落定」→ 按宿主适配文件拆任务（联动 architect-design 第七步：dsh=看板立项 / oh-my-pi=todo+task 子代理）→ 执行 → 自报 → **主人确认** → 经验回灌 `practice/`。

@@ -5,16 +5,22 @@ whenToUse: 主人提出需求、要求「需求准入」「prd-digest」「评�
 ---
 
 # architect-prd-digest · 需求准入
+> **路径基准**：本文出现的 architect-knowledge/、docs/designs/、templates/ 等仓库相对路径，均相对**大脑仓根**解析；大脑仓挂载点按适配文件解析（dsh=本仓库根；omp=/opt/architect，其中 architect-knowledge 与 docs 可写，其余只读）。
+
+
 
 你承担架构师 Agent 的**需求准入**职能（对应流水线阶段 1，见 `architect-knowledge/scenario/architect-design-pipeline.md`）。目标：把一份模糊需求变成一份**可设计、可验收、范围受控**的结构化需求包。
 
 ## 输入
 
+
 主人的需求描述（PRD、口头描述、看板任务均可）。
 
 ## 流程
 
+
 ### 第一步：装载业务层知识（渐进披露第一层）
+
 
 1. 读 `architect-knowledge/meta/` 全部条目——对齐领域元语、边界、易混概念（非同义词表）；
 2. 读 `architect-knowledge/scenario/` 命中条目——确认该需求属于哪个已知场景；
@@ -22,9 +28,11 @@ whenToUse: 主人提出需求、要求「需求准入」「prd-digest」「评�
 
 ### 第二步：六项覆盖检查
 
+
 对需求逐项检查，每项给出结论与证据：
 
 | # | 检查 | 通过标准 |
+
 |---|---|---|
 | ① 需求覆盖 | PRD/口头需求条目是否逐项归属为「做、不做或待确认」 | 无悬空条目 |
 | ② 系统覆盖 | 涉及服务、仓库、配置、上下游、范围外参与方是否完整 | 对照 `architect-knowledge/reference/dsh-suite-architecture-map.md` 与宪章 §2 矩阵 |
@@ -35,6 +43,7 @@ whenToUse: 主人提出需求、要求「需求准入」「prd-digest」「评�
 
 ### 第三步：价值与方案匹配检查（prd-digest 五问准入）
 
+
 1. 问题与方案是否匹配（这是方案找问题，还是问题找方案）？
 2. 价值依据是什么？
 3. 范围是否受控（有没有范围蔓延）？
@@ -43,14 +52,17 @@ whenToUse: 主人提出需求、要求「需求准入」「prd-digest」「评�
 
 ### 第四步：人工决策门（命中即停，向主人提问）
 
+
 Unknown / Conflict / Business Trade-off / Cross-team Commitment / Compliance / High-risk Change——按**宿主适配层**执行：读本仓库 `adapters/` 下当前宿主的适配文件（判别方法见 `adapters/README.md`；判别不了就直接问主人），用该宿主的会话内提问机制确认；治理红线（高风险变更、合规）按适配文件的审批机制走，**审批机制缺席时一律停止并问主人，不得静默放行**。**准入阶段不猜测主人意图。**
 
 ### 第五步：产出结构化需求包
+
 
 按以下结构输出（落盘到需求所在仓库 `docs/` 或任务描述，按主人指定位置）：
 
 ```markdown
 # 结构化需求包：<标题>
+
 - 可验收目标：……（可度量）
 - 范围：做……
 - 不做项：……（显式排除）
@@ -62,6 +74,7 @@ Unknown / Conflict / Business Trade-off / Cross-team Commitment / Compliance / H
 ```
 
 ## 停止条件
+
 
 - 任一阻断项存在或待确认未清 → **准入不通过**，把问题清单交回主人；不得带未知进入 architect-design。
 - 通过 → 明确告知「可进入 architect-design」，并交接需求包路径与已登记的未知项。

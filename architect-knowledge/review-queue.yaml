@@ -10,3 +10,4 @@
 - file: principle/task-and-memory-surface.md
 - file: principle/production-writeback-pipeline.md
 - file: practice/git-filter-rewrite-and-disciplines.md
+- file: practice/dsh-task-board-run-stuck.md

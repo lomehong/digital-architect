@@ -1,3 +1,5 @@
 # 依赖与构建产物一律不入库（2026-09-11 教训：git add -A 卷入 node_modules 78 万行）
 node_modules/
 packages/architect-core/lib/
+# git filter-branch 自动备份（refs/original 已存同样信息；备份靠 backup/pre-rewrite 分支 + 仓库父目录 bundle 双保险）
+.git-rewrite/

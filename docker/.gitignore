@@ -1,3 +1,10 @@
 pi
 workspace
 .env
+
+*.db
+*.db-shm
+*.db-wal
+sessions/
+logs/
+gpu_cache.json

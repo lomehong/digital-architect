@@ -1,5 +1,5 @@
 modelRoles:
-  default: zhipu-plan/glm-5.3-flash
+  default: zhipu-coding-plan/glm-5.3-flash:high
 retry:
   fallbackChains:
     zhipu-coding-plan/glm-5.3-flash:

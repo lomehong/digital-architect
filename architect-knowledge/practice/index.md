@@ -13,3 +13,5 @@
 | [suite-build-lessons.md](suite-build-lessons.md) | 套件建设事故教训三则、工程兼容原因表、流程经验 | 已确认 |
 | [ro-mount-case-alias-bypass.md](ro-mount-case-alias-bypass.md) | ro 子挂载被大小写别名绕过，v2 反转为父只读+精确白名单 | 已确认 |
 | [newline-and-env-handling-lessons.md](newline-and-env-handling-lessons.md) | Windows 检出 CRLF 致 shebang 失效（.gitattributes 根治）+ .env 操作事故纪律 | 已确认 |
+| [omp-extension-contract-pitfalls.md](omp-extension-contract-pitfalls.md) | oh-my-pi 扩展四坑：默认 yolo×override 静默放行、tool_result 漏审计被拒调用、systemPrompt 是数组、loadMode 默认 discoverable | 待审核 |
+| [review-baseline-discipline.md](review-baseline-discipline.md) | 评审基准纪律：先锁定被评审对象声明的基准并取证，再评分（拿唯一可得实现当标准的五条误判） | 待审核 |

@@ -107,3 +107,20 @@
   used_by:
     - principle/ai-native-team-engineering.md
     - principle/token-efficiency-and-human-feedback.md
+
+- id: src-omp-implementation
+  origin: oh-my-pi 实装源码（npm 分发 @oh-my-pi/pi-coding-agent v18.1.18）+ 探针实测
+  ref: 仓库 github.com/can1357/oh-my-pi；包内路径 packages/coding-agent/src/...；发现方式 npm pack 解包
+  type: 源码
+  date: 2026-09-12
+  used_by:
+    - practice/omp-extension-contract-pitfalls.md
+
+- id: src-ops-pi-review
+  origin: OpsPi 方案评审实证（架构师会话 2026-09-12）
+  ref: 目标项目 docs/reports/ops-pi-design-review-2026-09-12.md（含勘误节）、docs/reports/probes/
+  type: 内部文档
+  date: 2026-09-12
+  used_by:
+    - practice/omp-extension-contract-pitfalls.md
+    - practice/review-baseline-discipline.md

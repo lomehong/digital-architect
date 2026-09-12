@@ -29,8 +29,8 @@ owner: 主人
 | Conflict（知识/事实冲突） | `ask` + 按事实类型回对应来源核对（代码/已确认知识/实践记录） |
 | Business Trade-off（业务取舍） | `ask`，主人拍板 |
 | Cross-team Commitment（跨团队/跨会话承诺） | `task` 子代理（单机并行，可隔离 worktree）；**跨设备协同无对应物**——如实声明能力边界，改由主人中转，不得假装已协同 |
-| Compliance（合规） | **无账本对应物**——降级 = 强制 `ask` 主人确认 + 依赖宿主 approval-mode 权限门；**不得静默放行**（降级收敛保守侧） |
-| High-risk Change（高风险变更） | 同上：一律停止问主人；omp 的破坏性工具权限确认是底线而非替代 |
+| Compliance（合规） | **无账本对应物**——降级 = 强制 `ask` 主人确认。**红线（v4.1 实测修订）：宿主 approval-mode 不可作为权限门依赖**——omp 默认 yolo 模式下 approval 档会静默放行（R-1 实测）。治理类动作必须在扩展层叠加**模式无关兜底层**（authorizedExec：`!ctx.hasUI && needsOwnerAuth → block`，不看 decision.policy/override），**不得静默放行** |
+| High-risk Change（高风险变更） | 同上：一律停止问主人；**兜底层与宿主模式无关**（yolo/approval 均须拦截），omp 的破坏性工具权限确认是底线而非替代 |
 
 ## 任务执行（任务面契约的 omp 实现）
 

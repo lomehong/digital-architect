@@ -5,3 +5,4 @@ packages/architect-core/lib/
 .git-rewrite/
 
 obs/
+observatory/server.pid

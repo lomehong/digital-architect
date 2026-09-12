@@ -21,6 +21,13 @@ const INSTANCES_DIR = join(OBS, 'instances')
 const EVENTS_DIR = join(OBS, 'events')
 const HEARTBEAT_FACTOR = 3
 
+// 台账目录（可重复 --tasks <dir>）：yaml 现值为权威状态源，事件流提供历史轨迹
+const TASK_DIRS = []
+{
+  const argv = process.argv
+  for (let i = 2; i < argv.length; i++) if (argv[i] === '--tasks') TASK_DIRS.push(argv[++i])
+}
+
 // ---- 内存聚合模型 ----
 const state = { instances: {}, events: [], alerts: [], lastError: null }
 
@@ -62,6 +69,24 @@ function loadReviewQueue() {
     return { raw, entries: (raw.match(/- /g) ?? []).length }
   } catch { return { raw: '', entries: 0 } }
 }
+function loadLedgerTasks() {
+  const out = {}
+  for (const dir of TASK_DIRS) {
+    try {
+      for (const f of readdirSync(dir).filter((f) => f.endsWith('.yaml'))) {
+        const raw = readFileSync(join(dir, f), 'utf8')
+        const id = (raw.match(/id:\s*'([^']+)'/) || [])[1]
+        if (!id) continue
+        const state = (raw.match(/state:\s*'([^']+)'/) || [])[1] ?? '未知'
+        const title = (raw.match(/title:\s*'([^']*)'/) || [])[1] ?? ''
+        const level = (raw.match(/level:\s*'([^']*)'/) || [])[1] ?? ''
+        out[id] = { taskId: id, state, title, level, source: 'ledger' }
+      }
+    } catch { /* 目录不可达：跳过该源 */ }
+  }
+  return out
+}
+
 function snapshot() {
   const instances = loadInstances()
   const events = loadEvents()
@@ -73,6 +98,17 @@ function snapshot() {
     if (e.domain === 'task' && e.payload?.taskId) {
       tasks[e.payload.taskId] = { system: e.system, state: e.payload.to ?? e.type, by: e.payload.by ?? '', ts: e.ts }
     }
+  }
+  // 台账 yaml 现值为权威（覆盖事件流推导的历史状态）
+  for (const dir of TASK_DIRS) {
+    try {
+      for (const f of readdirSync(dir).filter((f) => f.endsWith('.yaml'))) {
+        const raw = readFileSync(join(dir, f), 'utf8')
+        const id = (raw.match(/id:\s*'([^']+)'/) || [])[1]
+        const state = (raw.match(/state:\s*'([^']+)'/) || [])[1] ?? ''
+        if (id) tasks[id] = { ...(tasks[id] ?? {}), taskId: id, state, source: 'ledger' }
+      }
+    } catch { /* 目录不可达 */ }
   }
   return { generatedAt: new Date().toISOString(), instances: Object.values(instances), events: events.slice(-500), tasks, reviewQueue: rq, alerts: critical.slice(-50), governance: governance.slice(-50), lastError: state.lastError }
 }

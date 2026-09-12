@@ -29,6 +29,10 @@ services:
       - KB_ROOT=/opt/architect/architect-knowledge
       # DeepSeek 官方 provider 凭据（pi 系同源机制，env 注入即被识别）
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      # 智谱 GLM Coding Plan（zhipu-coding-plan provider；.env 填 key 后重建容器生效）
+      - ZHIPU_API_KEY=${ZHIPU_API_KEY:-}
+      # Z.AI 国际版套餐（备用）
+      - ZAI_API_KEY=${ZAI_API_KEY:-}
     volumes:
       # ── v3.2 白名单挂载（2026-09-11 主人否决整仓挂载，D11 同批）──
       # workspace = 架构师当前服务的目标项目（参数化，随任务切换）：
@@ -49,6 +53,8 @@ services:
       # 注册（docker/omp/plugins 持久化 link 状态），工具源在 /opt/architect/omp-architect
       # （2026-09-11 起 agent-tools 转发退役，插件为唯一承载）
       - ../skills:/home/pi/.omp/agent/skills:ro
+      # 规则面补充：AGENTS.md 挂用户级规则根（omp 每轮自动读取；内容=架构师身份/流程/纪律）
+      - ../AGENTS.md:/home/pi/.omp/agent/AGENTS.md:ro
       - ./omp:/home/pi/.omp
       - ./entrypoint.sh:/usr/local/bin/omp-entrypoint.sh
     restart: "unless-stopped"

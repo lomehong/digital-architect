@@ -16,7 +16,7 @@ import { join, resolve, dirname } from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { DatabaseSync } from 'node:sqlite'
-import { createHash } from 'node:crypto'
+import { createHash, timingSafeEqual } from 'node:crypto'
 import { readYuyiFace } from './yuyi-ingest.mjs'
 import { beatInstance } from './instance-beat.mjs'
 
@@ -33,17 +33,69 @@ const HEARTBEAT_INSTANCES = []
 let AGENT_DB = null
 // 告警抑制窗口（同一规则 N ms 内不重复入库/通知；抑制状态仍呈现但标记 suppressed）
 let ALERT_COOLDOWN_MS = 10 * 60 * 1000
+// —— 访问与上报认证（多宿主上报架构，2026-09-12 主人拍板实施）——
+// --host：监听地址（缺省 127.0.0.1 本机信任模式）；绑定非回环即进入受保护模式
+// 受保护模式强制要求 --admin-token（查看/治理）与 --yufu-url（上报者御符 token 验证），缺失拒绝启动
+let HOST = '127.0.0.1'
+let ADMIN_TOKEN = ''
+let AUTH_YUFU_URL = process.env.OBS_YUFU_URL || ''
+let REQUIRE_TOKEN = false
 {
   const argv = process.argv
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--root') ROOT = resolve(argv[++i])
     else if (argv[i] === '--data') OBS = resolve(argv[++i])
     else if (argv[i] === '--port') PORT = Number(argv[++i])
+    else if (argv[i] === '--host') HOST = argv[++i]
     else if (argv[i] === '--tasks') TASK_DIRS.push(argv[++i])
     else if (argv[i] === '--heartbeat') HEARTBEAT_INSTANCES.push(...String(argv[++i]).split(',').map((s) => s.trim()).filter(Boolean))
     else if (argv[i] === '--agentdb') AGENT_DB = argv[++i]
     else if (argv[i] === '--alert-cooldown-ms') ALERT_COOLDOWN_MS = Number(argv[++i])
+    else if (argv[i] === '--admin-token') ADMIN_TOKEN = argv[++i]
+    else if (argv[i] === '--yufu-url') AUTH_YUFU_URL = argv[++i]
+    else if (argv[i] === '--require-token') REQUIRE_TOKEN = true
   }
+}
+const isLoopbackHost = (h) => h === 'localhost' || h === '::1' || /^127\./.test(h)
+const SECURED = REQUIRE_TOKEN || !isLoopbackHost(HOST)
+// 受保护模式 fail-fast：缺配置直接拒绝启动（不得半暴露）
+if (SECURED && !isLoopbackHost(HOST) && !ADMIN_TOKEN) {
+  console.error('[observatory] 拒绝启动：绑定非回环地址必须提供 --admin-token（查看/治理凭据）。本机信任模式请用默认 127.0.0.1。')
+  process.exit(2)
+}
+if (SECURED && REQUIRE_TOKEN && !AUTH_YUFU_URL) {
+  console.error('[observatory] 拒绝启动：--require-token 需要同时提供 --yufu-url <御符地址>（用于验证上报者 token）。')
+  process.exit(2)
+}
+// 上报者 token 验证缓存：键=token 摘要，值={ok,agentId,at}；仅内存，10 分钟 TTL，不落盘不打印
+const reporterCache = new Map()
+const TOKEN_TTL_MS = 10 * 60 * 1000
+async function verifyReporter(authorization) {
+  const token = String(authorization || '').replace(/^Bearer\s+/i, '').trim()
+  if (!token) return { ok: false, why: '缺少 Authorization: Bearer <token>' }
+  const key = createHash('sha256').update(token).digest('hex').slice(0, 24)
+  const hit = reporterCache.get(key)
+  if (hit && Date.now() - hit.at < TOKEN_TTL_MS) return hit
+  let result = { ok: false, agentId: '', at: Date.now(), why: '' }
+  try {
+    const res = await fetch(`${AUTH_YUFU_URL.replace(/\/$/, '')}/api/v1/auth/agent/verify`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }),
+    })
+    const j = await res.json().catch(() => ({}))
+    const id = j.agent_id || j.agentId || ''
+    result = { ok: res.ok && j.valid !== false && Boolean(id), agentId: id, at: Date.now(), why: res.ok ? '御符返回 valid=false 或缺 agent_id' : `御符 HTTP ${res.status}` }
+  } catch (e) { result = { ok: false, agentId: '', at: Date.now(), why: `御符验证请求失败：${e.message}` } }
+  reporterCache.set(key, result)
+  if (reporterCache.size > 500) reporterCache.clear()
+  return result
+}
+const safeEq = (a, b) => {
+  const ab = Buffer.from(String(a)), bb = Buffer.from(String(b))
+  return ab.length === bb.length && timingSafeEqual(ab, bb)
+}
+function adminOk(req) {
+  if (!ADMIN_TOKEN) return !SECURED // 未配置令牌时仅本机信任模式放行
+  return safeEq(req.headers['x-obs-admin'] || '', ADMIN_TOKEN)
 }
 if (AGENT_DB === null) AGENT_DB = join(ROOT, 'docker', 'omp', 'agent', 'agent.db')
 const INSTANCES_DIR = join(OBS, 'instances')
@@ -481,8 +533,8 @@ function runtimeSnapshot() {
   } catch (e) { return { available: false, reason: e.message } }
 }
 
-// ---- HTTP 上报端点（二期：契约校验 + append 到 obs/events/http/）----
-function httpIngest(body) {
+// ---- HTTP 上报端点（二期：契约校验 + append 到 obs/events/http/；受保护模式下注记平台验证的上报者身份）----
+function httpIngest(body, verifiedAs) {
   const events = Array.isArray(body) ? body : [body]
   const problems = []
   const valid = []
@@ -498,7 +550,7 @@ function httpIngest(body) {
       local.push(`#${i} collab.message 须带 direction(inbound|outbound)：${ev.direction}`)
     }
     if (local.length > 0) problems.push(...local)
-    else valid.push(ev)
+    else valid.push({ ...ev, ...(verifiedAs ? { verifiedAs } : {}) })
   }
   if (valid.length > 0) {
     const dir = join(EVENTS_DIR, 'http')
@@ -516,12 +568,17 @@ function sendJson(res, code, body) {
 }
 
 const server = http.createServer((req, res) => {
-  const url = new URL(req.url, `http://127.0.0.1:${PORT}`)
+  const url = new URL(req.url, `http://${HOST}:${PORT}`)
   try {
+    // 看板外壳 openly 提供（无数据）；所有数据/写入端点按模式鉴权
     if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/index.html')) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
       res.end(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'public', 'index.html')))
       return
+    }
+    // 数据读取与治理：受保护模式要求管理员令牌
+    if (SECURED && !(url.pathname === '/api/events' && req.method === 'POST') && !adminOk(req)) {
+      return sendJson(res, 401, { error: '需要管理员令牌（x-obs-admin 头）' })
     }
     if (req.method === 'GET' && url.pathname === '/api/snapshot') {
       const snap = { ...snapshot(), runtime: runtimeSnapshot() }
@@ -546,11 +603,18 @@ const server = http.createServer((req, res) => {
     if (req.method === 'POST' && url.pathname === '/api/events') {
       let body = ''
       req.on('data', (c) => { body += c; if (body.length > 262144) req.destroy() })
-      req.on('end', () => {
+      req.on('end', async () => {
         try {
+          // 上报者认证：受保护/强制模式下，凭御符 token 验证「谁在上报」，验证通过才落盘
+          let verifiedAs = ''
+          if (SECURED || REQUIRE_TOKEN) {
+            const v = await verifyReporter(req.headers.authorization)
+            if (!v.ok) { sendJson(res, 401, { error: `上报被拒绝：${v.why}` }); return }
+            verifiedAs = v.agentId
+          }
           const parsed = JSON.parse(body || '{}')
           const events = Array.isArray(parsed) ? parsed : parsed.events ?? [parsed]
-          sendJson(res, 200, httpIngest(events))
+          sendJson(res, 200, httpIngest(events, verifiedAs))
         } catch (e) { sendJson(res, 400, { error: e.message }) }
       })
       return
@@ -652,7 +716,8 @@ try { writeFileSync(PID_FILE, String(process.pid)) } catch { /* 登记失败不�
 const cleanupPid = () => { try { unlinkSync(PID_FILE) } catch { /* 已不存在或目录只读 */ } }
 process.on('exit', cleanupPid)
 for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(sig, () => { cleanupPid(); process.exit(0) })
-server.listen(PORT, '127.0.0.1', () => {
-  console.log(`[observatory] 看板 http://127.0.0.1:${PORT}  数据根 ${OBS}`)
+server.listen(PORT, HOST, () => {
+  const mode = SECURED ? (REQUIRE_TOKEN || !isLoopbackHost(HOST) ? `受保护（上报=御符token 验证${AUTH_YUFU_URL ? ' @ ' + AUTH_YUFU_URL : '未配置!'}，管理=${ADMIN_TOKEN ? '令牌已设' : '未设'}）` : 'token 强制') : '本机信任（127.0.0.1，未鉴权）'
+  console.log(`[observatory] 看板 http://${HOST}:${PORT}  数据根 ${OBS}  认证模式：${mode}`)
   appendEvent({ domain: 'platform', type: 'platform.started', severity: 'info', subject: `observatory@${PORT}` })
 })

@@ -130,22 +130,33 @@
 const $ = (s) => document.querySelector(s)
 let SNAP = null, VIEW = 'team'
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[c]))
+/* 受保护模式的 API 访问：自动携带管理员令牌；401 时提示输入一次并存 sessionStorage 后重试 */
+async function api(url, opts = {}) {
+  const saved = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('obs-admin')) || ''
+  let r = await fetch(url, { ...opts, headers: { ...(opts.headers || {}), 'x-obs-admin': saved } })
+  if (r.status === 401) {
+    const t = prompt('此观测台处于受保护模式，请输入管理员令牌：')
+    if (t !== null && typeof sessionStorage !== 'undefined') sessionStorage.setItem('obs-admin', t)
+    r = await fetch(url, { ...opts, headers: { ...(opts.headers || {}), 'x-obs-admin': t || saved } })
+  }
+  return r
+}
 const tickClock = () => { const c = $('#clock'); if (c) c.textContent = new Date().toLocaleTimeString('zh-CN', { hour12: false }) }
 setInterval(tickClock, 1000); tickClock()
 
 async function refresh() {
   try {
-    const r = await fetch('/api/snapshot'); SNAP = await r.json()
+    const r = await api('/api/snapshot'); SNAP = await r.json()
     $('#err').textContent = SNAP.lastError ? '数据面告警: ' + SNAP.lastError : ''
     $('#gen').textContent = (SNAP.generatedAt || '').slice(11, 19)
     render()
     // 健康信息（独立端点，失败静默）
-    fetch('/api/health').then((x) => x.json()).then((h) => {
+    api('/api/health').then((x) => x.json()).then((h) => {
       const el = document.getElementById('health')
       if (el) el.innerHTML = `pid <b>${h.pid}</b>　运行 ${h.uptimeSec}s　告警规则 ${h.alertRules} 条<br>数据源 ${Object.entries(h.sources).map(([k, v]) => `<span class="${v === 'ok' ? 'teal' : v === 'disabled' ? 'dim' : 'crit'}">${k} ${v === 'ok' ? '✅' : v === 'disabled' ? '—' : '❌'}</span>`).join('　')}`
     }).catch(() => {})
     // 审计归档状态
-    fetch('/api/archive').then((x) => x.json()).then((a) => {
+    api('/api/archive').then((x) => x.json()).then((a) => {
       const el = document.getElementById('archive')
       if (!el) return
       el.innerHTML = a.seals === 0 ? (a.note || '尚无封印') : `封印 <b>${a.seals}</b> 条　链完整性 <span class="${a.chainOk ? 'teal' : 'crit'}">${a.chainOk ? '✅ 完好' : '❌ 断裂'}</span><br>最近 ${a.last.day}${a.last.closed ? '（闭日·严格）' : '（当日·检查点）'}　${a.last.files} 文件 / ${a.last.bytes} 字节${a.note ? '　' + a.note : ''}`
@@ -336,7 +347,7 @@ async function govern(action) {
   for (const taskId of ids) {
     try {
       // confirmReal: 人工已在上方 confirm 对话框二次确认；脚本路径须自行显式携带（服务端据此拦自动化误写）
-      const r = await fetch('/api/govern/task', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ taskId, root, action, by, confirmReal: true }) })
+      const r = await api('/api/govern/task', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ taskId, root, action, by, confirmReal: true }) })
       const j = await r.json()
       const msg = String(j.out ?? j.error ?? JSON.stringify(j)).trim().split('\n').filter(Boolean).pop()
       acc += `${j.ok ? '✅' : '❌'} ${taskId}：${msg}\n`
@@ -351,7 +362,7 @@ async function kPromote() {
   const by = ($('#g-by').value || '').trim()
   if (by === '') { window._govResult = '请先填「操作者」（平台不代填「主人」）'; $('#g-out').textContent = window._govResult; return }
   if (!confirm(`以「${by}」的名义将 ${entry} 升级为「已确认」？（将留治理审计）`)) return
-  const r = await fetch('/api/govern/knowledge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entry, to: '已确认', by }) })
+  const r = await api('/api/govern/knowledge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entry, to: '已确认', by }) })
   const j = await r.json(); window._govResult = j.ok ? `✅ 已升级：${entry}` : `❌ ${j.error ?? '失败'}`; $('#g-out').textContent = window._govResult; refresh()
 }
 async function approv(requestId, decision) {
@@ -359,7 +370,7 @@ async function approv(requestId, decision) {
   if (by === '') { alert('必须提供操作者标识（平台不代填「主人」）'); return }
   const reason = prompt(`${decision === 'allow' ? '批准' : '拒绝'}理由（可空）：`) || ''
   if (!confirm(`以「${by}」的名义对 ${requestId} 执行 ${decision.toUpperCase()}？（将留治理审计）`)) return
-  const r = await fetch('/api/govern/approval', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId, decision, by, reason }) })
+  const r = await api('/api/govern/approval', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId, decision, by, reason }) })
   const j = await r.json(); window._govResult = j.ok ? `✅ 已${decision === 'allow' ? '批准' : '拒绝'}：${requestId}` : `❌ ${j.error ?? '失败'}`; $('#g-out').textContent = window._govResult; refresh()
 }
 /* 视图切换：hash 深链——刷新 / 前进后退均保持当前视图（#govern 可直达朱批台） */

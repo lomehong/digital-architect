@@ -32,6 +32,7 @@ owner: 主人
 | 公众号采集必须走浏览器桥 | 微信反爬，服务端直抓撞验证墙 | 外部采集用真实浏览器会话指纹（Lum1104/dsh-browser） |
 | 看板接管语义（task_claim 接管+审计） | 会话压缩后 session id 变化 | 任务绑定不依赖固定 session id |
 | task_delegate 关键词地板 v2 | v1 把「删除几行 DEBUG 打印」误伤成 L3 致任务永不执行 | 提级规则只对明确对外/破坏性词；规则变更要回归真实案例 |
+| link: 安装的源仓，迁移/重克隆后必须重建构建产物 | lib/ dist/ 被 .gitignore 忽略，全新 clone 天然缺失；宿主启动 import 即 ERR_MODULE_NOT_FOUND（dsh-architect 迁仓实测 2026-09-11：迁移后未 build，重启加载失败） | link: 源仓在迁移/重克隆后跑一遍 `npm run build`；宿主日志见 `plugin tree failed to load` 优先查此因 |
 
 ## 流程经验
 

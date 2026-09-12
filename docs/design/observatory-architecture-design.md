@@ -1,0 +1,158 @@
+# 可执行技术方案：Architect Observatory — 架构师 Agent 团队可观测性平面
+
+```yaml
+---
+title: Architect Observatory — 架构师 Agent 团队可观测性平面
+status: 待确认          # 待主人确认后实施一期（治理面贯穿三期，见 §7.4）
+requirement: 主人 2026-09-12 口述需求 + 四项拍板（边界/承载/身份/治理面）
+author: 架构师会话（dsh 侧）
+created: 2026-09-12
+review:
+  score: 0
+  conclusion: 待评审
+---
+```
+
+## 0. 一句话与五问速答
+
+**一句话**：为架构师 Agent 团队（多实例 × 多宿主 × 多系统，含共管）建统一可观测性平面——实例注册发现 + 统一生命周期事件契约 + 可视化看板 + 治理操作面（confirm/审批经平台执行，确认权始终在主人）。
+
+| 五问 | 速答 |
+|---|---|
+| 改哪里？ | digital-architect 总仓新增 `observatory/`（平台服务+前端+契约）与 `obs/`（运行时数据根，gitignore）；omp 容器白名单挂载扩展 |
+| 为什么改？ | 生命周期数据散落在 yaml/db/会话/报告中，团队化后无统一视图无法治理；且承接设计 RR-2 遗留（跨会话不可变审计的外部系统） |
+| 影响谁？ | 新增自包含服务；omp 容器加一个 rw 挂载（obs 上报）；不改动 dsh-architect/omp-architect/task-ledger 任何既有代码——ledger 经 CLI 复用 |
+| 如何验证？ | 事件契约校验器 + 实例注册/心跳/任务 confirm 的端到端冒烟 + 双实例（omp 容器 + dsh 侧模拟实例）并跑 |
+| 还有什么没确认？ | 御符体系与实例身份的强绑定（一期字符串自报、后期接 Yufu 验证）；omp-stats 集成时机（二期） |
+
+## 1. 需求覆盖
+
+**Do**：实例注册与发现（御符身份+心跳）；统一生命周期事件契约 v1（文件约定起步，HTTP 预留）；四维看板（团队/系统/实例/知识）；治理操作面（任务 confirm/reject、知识条目升级——经 task-ledger CLI 执行，四不变量由既有机制强制）。
+**Don't**：不做指标时序库/告警引擎（二期）；不重造 omp-stats 的用量统计（二期评估集成）；不自动执行任何确认（治理操作必须主人点击）；不改 task-ledger/ops_audit 既有格式。
+**To Confirm**：御符与实例的强绑定验证（一期字符串自报）；平台部署位置的最终确认（一期=dsh 侧宿主进程）。
+
+## 2. 系统覆盖
+
+| 组件 | 变更 | 说明 |
+|---|---|---|
+| `observatory/`（总仓） | 增 | server.mjs（零 npm 依赖 Node 服务）、public/index.html（看板）、contracts/（事件 schema v1） |
+| `obs/`（总仓，gitignore） | 增 | 运行时数据根：instances/（注册+心跳）、events/（NDJSON 事件流） |
+| omp 容器 | 白名单+1 | `../obs:/opt/architect/obs:rw`（omp 实例上报通道）；Dockerfile 不动 |
+| dsh 实例 | 白名单+0 | dsh 侧实例直接写宿主 `obs/` |
+| task-ledger.mjs | **不动** | 治理操作经 CLI 复用（单一事实源，四不变量不旁路） |
+| 既有知识库/设计文档 | 只读读取 | 看板数据源 |
+
+## 3. 证据覆盖
+
+- 事件契约字段设计依据：task-ledger events[] 结构（op/ts/by）、ops_audit 字段（tool/toolCallId/isError/authz）、review-queue 结构（2026-09-12 实读）
+- 御符身份：dsh-architect `15183e2`（独立 preset id 实例，御符按实例注入）+ ops-pi §7.6（B1 身份判定）
+- gh/omp-stats 能力：omp README Monorepo Packages 表（2026-09-12 实读）
+
+## 4. 风险覆盖
+
+| 风险 | 对策 |
+|---|---|
+| 事件文件并发写（多实例同文件） | 按 instanceId 分目录——单实例单文件追加，跨实例无竞争 |
+| 事件丢失（实例宕机未 flush） | 逐条写+flush；NDJSON 容忍尾部残行（解析跳过） |
+| 治理操作误触 | confirm 需二次确认（前端）+ 操作经 ledger 不变量强制（状态机/来源必填）+ 平台自身发治理审计事件 |
+| obs/ 无限增长 | 按日期滚动文件；二期加保留策略（归档至 artifacts） |
+| 私有数据暴露（看板含密钥场景） | 看板只读元数据与状态；绑定 127.0.0.1；不做公网暴露 |
+
+## 5. 验证覆盖
+
+| 手段 | 内容 |
+|---|---|
+| Contract | 事件契约校验器（observatory/contracts/validate.mjs）：对 NDJSON 逐行断言必填字段/枚举/时间戳 |
+| Unit | server 的聚合逻辑（实例心跳超时判定、任务聚合）用 node:test |
+| 端到端冒烟 | 模拟实例写注册+事件 → 平台看板 API 返回聚合 → 治理 confirm → ledger yaml 状态变化 + 平台审计事件出现 |
+| 双实例并跑 | omp 容器实例（经挂载写）+ dsh 模拟实例（宿主直写）同时上报，聚合无串扰 |
+| Rollback | 停服务即回原状（obs/ 为追加数据，删除即回退）；不改任何既有系统 |
+
+## 6. 不确定性治理
+
+| # | 类型 | 项 | 处置 |
+|---|---|---|---|
+| 1 | Unknown | 御符强验证（Yufu 体系对接） | 一期字符串自报 + 登记；二期接 Yufu |
+| 2 | Unknown | omp-stats 集成形态 | 二期评估；一期运行时层仅接 session/审计事件 |
+| 3 | Human Decision（已决） | 边界/承载/身份/治理面 | 主人 2026-09-12 四项拍板（本文档即据此设计） |
+
+## 7. 架构设计
+
+### 7.1 实例注册与身份（御符）
+
+```yaml
+# obs/instances/<instanceId>.yaml   # instanceId = 御符 id（一期字符串自报）
+instanceId: omp-ops-pi-01           # 建议 <宿主>-<职责>-<序号>
+hostType: omp                       # dsh | omp | <未来>
+host: oh-my-pi 容器（TARGET_PROJECT=ops-pi）
+systems: [ops-pi]                   # 负责的系统清单（多值，可共管）
+capabilities: [prd-digest, design, review, implement, knowledge-distill]
+status: online                      # online | offline
+lastSeenAt: 2026-09-12T10:00:00Z
+heartbeatIntervalSec: 60
+```
+
+心跳 = 实例定期更新 lastSeenAt（重写本文件）。平台判定：`now - lastSeenAt > 3×interval` → offline（可发现降级，N-3 同哲学）。
+
+### 7.2 统一生命周期事件契约 v1（NDJSON，append-only）
+
+```
+obs/events/<instanceId>/<yyyy-mm-dd>.ndjson
+```
+
+每行一个事件（信封必填：`ts / instanceId / hostType / system / domain / type / severity`；可选：`subject / payload / traceId`）：
+
+| domain | type（一期枚举） | payload 要点 |
+|---|---|---|
+| task | state.changed | taskId, from, to, by, via(observatory/ledger/cli), reason |
+| task | created / claimed / reported | taskId, by, acceptCount |
+| design | status.changed | doc, from, to, reviewScore |
+| review | completed | doc, score, conclusion, gaps[] |
+| runtime | session.started / ended | sessionId, model, costTokens, costCny |
+| runtime | tool.called / tool.denied | tool, authz(preauth/deny/…), reasonClass |
+| runtime | approval.requested / resolved | subject, decision |
+| knowledge | status.changed | entry, from, to |
+| collab | message.sent / received | peer, channel（御驿，二期结构化） |
+| governance | confirmed / rejected | subject, by=主人, via=observatory |
+| platform | instance.online / offline / heartbeat.missed | instanceId |
+
+severity: `info | warning | critical`。**校验器**：`observatory/contracts/validate.mjs <ndjson>`（CI 与平台摄入共用）。
+
+### 7.3 平台服务（observatory/server.mjs，零 npm 依赖）
+
+- **数据面**：`fs.watch` obs/ 与各数据源（事件流/台账/评审队列/设计文档 status）；聚合内存模型 + `GET /api/snapshot` 全量快照、`GET /api/events?since=` 增量。
+- **治理面**：`POST /api/govern/confirm|reject|knowledge-promote` → 服务端**调用 task-ledger.mjs CLI**（`--confirmed-via observatory`）——四不变量由 ledger 强制，平台不旁路；治理动作自身发 `governance.*` 事件。
+- **前端**：`public/index.html` 单页（原生 JS，无构建）：团队总览 / 系统视图 / 实例视图 / 知识视图 / 治理操作（confirm 需二次确认）。绑定 `127.0.0.1:8787`。
+- **降级**：某实例事件缺失 → 实例视图标 stale（数据即状态，不虚构）。
+
+### 7.4 治理操作面（贯穿主线）与分期
+
+**治理面原则**：平台是主人的操作界面——所有确认/审批的**决定权在主人**，平台负责把「待治理事项」呈现到面前、把主人的决定**安全地执行到对应机制**（不旁路：任务经 task-ledger CLI、文档经 status 字段修订、知识经 status 升级——各自的不变量由既有机制强制），并**全量发 governance.* 审计事件**。
+
+**治理对象全景（按域）**：
+
+| 域 | 治理操作 | 执行机制（不旁路） |
+|---|---|---|
+| 任务 | confirm / reject（四态状态机的主人环节） | task-ledger.mjs CLI（--confirmed-via observatory） |
+| 设计/方案 | 文档落定确认（status: 待确认 → 已落定 + confirmedBy/confirmedVia 记录） | 文档 status 字段修订（**首个治理对象 = 本设计文档自身，自举**） |
+| 知识 | 条目升级（待审核 → 已确认）、驳回 | 条目 status 字段 + review-queue 处理 |
+| 评审队列 | review-queue.yaml 条目的确认/处置 | review-queue 修订 |
+| 运行时审批 | omp/各实例会话的 pending approval（工具审批请求）上屏，主人批准/拒绝 | **文件请求/应答协议**（与事件契约同哲学）：实例发 approval.requested 事件 + 轮询应答文件；二期实现 |
+| 跨 Agent 权限 | 跨 Agent 写路径/权限开放的逐项确认（ops-pi §7.6 B1 交付后） | 权限清单文件修订（P3 形态预授权） |
+
+**分期（治理操作作为主线贯穿三期）**：
+
+| 期 | 可观测性 | 治理操作 |
+|---|---|---|
+| **一期（本次）** | 契约 v1 + 校验器 + 实例注册/心跳 + 看板四视图 + omp 实例接入（心跳/任务事件） | **治理面基础**：任务 confirm/reject、**知识条目升级（待审核→已确认）**、**设计/方案文档落定确认**（自举：observatory 设计文档即首个对象）；治理操作全量发 governance.* 审计事件 |
+| **二期** | 运行时层摄取（agent.db/会话/成本）、告警规则、御驿消息结构化 | **治理面扩展**：**审批代办**（各实例 pending approval 上屏、主人在平台批准/拒绝——文件请求/应答协议）、评审队列确认面、跨 Agent 权限开放确认（B1 交付后）、ops_audit 治理视图 |
+| **三期** | 不可变审计归档（RR-2 闭环）、HTTP 上报端点、omp-stats 集成评估 | **治理面完备**：御符强验证下的签名治理（Yufu 对接，confirm 可验签）、跨实例统一治理（任一实例的任务/审批统一操作）、治理操作合规留档 |
+
+## 8. 决策门记录
+
+| 门 | 决策 | 决策人/时间 |
+|---|---|---|
+| 边界 | 团队架构全面设计、实现分期 | 主人 2026-09-12 |
+| 事件承载 | 文件约定起步 + HTTP 预留 | 主人 2026-09-12 |
+| 实例身份 | 御符（一期字符串自报） | 主人 2026-09-12 |
+| 治理面 | 包含 confirm/审批操作（平台=主人操作界面） | 主人 2026-09-12 |

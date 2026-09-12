@@ -56,6 +56,12 @@ const YAML_PATH = join(INSTANCES_DIR, `${INSTANCE}.yaml`)
 mkdirSync(INSTANCES_DIR, { recursive: true })
 mkdirSync(EVENTS_DIR, { recursive: true })
 
+// 未显式声明 --systems 时，从既有注册文件继承（事件 system 字段不得落 unknown）
+if (SYSTEMS.length === 0 && existsSync(YAML_PATH)) {
+  const m = readFileSync(YAML_PATH, 'utf8').match(/systems:\s*\[([^\]]*)\]/)
+  if (m) SYSTEMS.push(...m[1].split(',').map((s) => s.trim()).filter(Boolean))
+}
+
 const nowIso = () => new Date().toISOString()
 const log = (m) => { if (!QUIET) console.log(`[heartbeat] ${nowIso()} ${m}`) }
 

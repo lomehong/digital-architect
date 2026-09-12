@@ -57,6 +57,12 @@ async function refresh() {
       const el = document.getElementById('health')
       if (el) el.textContent = `pid ${h.pid} · 运行 ${h.uptimeSec}s · 告警规则 ${h.alertRules} 条 · 数据源 ${Object.entries(h.sources).map(([k, v]) => k + ':' + (v === 'ok' ? '✅' : v === 'disabled' ? '—' : '❌')).join(' ')}`
     }).catch(() => {})
+    // 审计归档状态
+    fetch('/api/archive').then((x) => x.json()).then((a) => {
+      const el = document.getElementById('archive')
+      if (!el) return
+      el.textContent = a.seals === 0 ? (a.note || '尚无封印') : `封印 ${a.seals} 条 · 链完整性 ${a.chainOk ? '✅ 完好' : '❌ 断裂'} · 最近 ${a.last.day}${a.last.closed ? '（闭日·严格）' : '（当日·检查点）'} ${a.last.files} 文件 / ${a.last.bytes} 字节 · ${a.note || ''}`
+    }).catch(() => {})
   } catch (e) { $('#err').textContent = '快照获取失败: ' + e.message }
 }
 function render() {
@@ -68,6 +74,8 @@ function render() {
       <h2>最近 critical 事件</h2><table><tr><th>类型</th><th>主体</th><th>时间</th></tr>${alerts || '<tr><td colspan=3 class=dim>无</td></tr>'}</table>
       <h2>告警</h2>
       ${(SNAP.alerts||[]).length === 0 ? '<p class=ok>✅ 无告警</p>' : `<table><tr><th>级别</th><th>告警</th><th>状态</th></tr>${SNAP.alerts.map((a) => `<tr><td class="${a.severity==='critical'?'crit':'warn'}">${esc(a.severity)}</td><td><b>${esc(a.title)}</b><br><span class=dim>${esc(a.message||'')}</span></td><td>${a.suppressed?'<span class=dim>抑制中</span>':('<span class=warn>新触发</span>'+(a.firedCount>1?` <span class=dim>×${a.firedCount}</span>`:''))}</td></tr>`).join('')}</table>`}
+      <h2>审计归档（哈希链封印）</h2>
+      <p class=dim id=archive>加载中…</p>
       <h2>健康</h2>
       <p class=dim id=health>加载中…</p>
       <h2>审批代办（pending）</h2>

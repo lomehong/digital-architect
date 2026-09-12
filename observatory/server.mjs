@@ -14,6 +14,7 @@ import { join, resolve, dirname } from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { DatabaseSync } from 'node:sqlite'
+import { createHash } from 'node:crypto'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const PORT = Number(process.argv.includes('--port') ? process.argv[process.argv.indexOf('--port') + 1] : 8787)
@@ -216,6 +217,28 @@ function recordAlertHistory(entry) {
   } catch { /* 历史写入失败不影响告警呈现 */ }
 }
 
+// ---- 审计归档（哈希链封印；完整内容校验走 seal.mjs --verify）----
+function archiveSnapshot() {
+  const sealsFile = join(OBS, 'archive', 'seals.ndjson')
+  if (!existsSync(sealsFile)) return { seals: 0, chainOk: null, last: null, note: '尚无封印（node observatory/seal.mjs）' }
+  const seals = readFileSync(sealsFile, 'utf8').split(/\r?\n/).filter((l) => l.trim())
+    .map((l) => { try { return JSON.parse(l) } catch { return null } }).filter(Boolean)
+  let chainOk = true
+  let prev = 'GENESIS'
+  for (const s of seals) {
+    const expect = createHash('sha256').update(prev).update('|').update(s.day).update('|').update(s.sha256).digest('hex')
+    if (s.prevSha !== prev || expect !== s.chainSha) { chainOk = false; break }
+    prev = s.chainSha
+  }
+  const last = seals[seals.length - 1]
+  return {
+    seals: seals.length,
+    chainOk,
+    last: last ? { day: last.day, closed: !!last.closed, files: last.files, bytes: last.bytes, ts: last.ts } : null,
+    note: '完整内容一致性校验：node observatory/seal.mjs --verify',
+  }
+}
+
 function healthSnapshot() {
   const startedAt = process.uptime()
   const probe = (fn) => { try { fn(); return 'ok' } catch (e) { return `error: ${e.message}` } }
@@ -331,6 +354,7 @@ const server = http.createServer((req, res) => {
     }
     if (req.method === 'GET' && url.pathname === '/api/runtime') return sendJson(res, 200, runtimeSnapshot())
     if (req.method === 'GET' && url.pathname === '/api/health') return sendJson(res, 200, healthSnapshot())
+    if (req.method === 'GET' && url.pathname === '/api/archive') return sendJson(res, 200, archiveSnapshot())
     if (req.method === 'GET' && url.pathname === '/api/alerts-history') {
       const p = join(OBS, 'alerts-history.ndjson')
       const items = existsSync(p) ? readFileSync(p, 'utf8').split(/\r?\n/).filter((l) => l.trim()).slice(-100).map((l) => { try { return JSON.parse(l) } catch { return null } }).filter(Boolean) : []

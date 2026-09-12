@@ -49,7 +49,29 @@ Stop-ScheduledTask -TaskName "ArchitectObservatory"
 | `GET /api/runtime` | 模型性能统计（agent.db 只读） |
 | `GET /api/events?limit=&instanceId=` | 事件流（增量读取用） |
 | `GET /api/alerts-history` | 告警历史（最近 100 条，落 `obs/alerts-history.ndjson`） |
+| `GET /api/archive` | 审计归档状态（封印条数 / 链完整性 / 最近封印） |
 | `POST /api/events` | **HTTP 上报端点**（契约校验后 append 到 `obs/events/http/`） |
+
+## 审计归档（不可变审计，RR-2 闭环）
+
+事件流是人类可读的追加文件；**哈希链封印**为其提供防篡改证据：
+
+```powershell
+# 封印（闭日严格；当日需显式 --include-today 作检查点）
+node observatory/seal.mjs                  # 封印所有已结束日期
+node observatory/seal.mjs --include-today  # 额外为当日打检查点
+
+# 校验（exit 0 = 通过）
+node observatory/seal.mjs --verify
+```
+
+**语义**：封印记录写入 `obs/archive/seals.ndjson`（只增不改），每条含 `sha256`（当日全部事件文件的路径+内容依序摘要）、`prevSha`/`chainSha`（哈希链）。
+- **闭日封印**（封印时该日已结束）：内容**严格**必须一致 → 任何改动 = FAIL
+- **当日检查点**：允许增长（事件仍在写入）；**删除/截断**（字节数缩水）→ FAIL
+- 链完整性：`prevSha` 与上一条 `chainSha` 必须吻合，否则说明封印记录被改
+- 快照清单：每次封印落 `obs/archive/snapshot-<ts>/manifest.json`
+
+**实测**（2026-09-12）：篡改已封印文件 → `--verify` FAIL 并指出内容与封印不符；复原 → PASS；链断裂/内容删除同样可检出。
 
 ## 数据契约
 
@@ -103,6 +125,7 @@ Register-ScheduledTask -TaskName "ArchitectObservatory" -Action $action -Trigger
 ```
 observatory/
 ├── server.mjs                 平台服务（零 npm 依赖，仅 node: 内置模块）
+├── seal.mjs                   审计归档封印与校验（哈希链）
 ├── alert-rules.yml            告警规则 v1（5 条，支持抑制窗口）
 ├── public/index.html          看板单页（原生 JS，无构建）
 ├── contracts/                 事件契约校验器 + 审批代办契约
@@ -113,6 +136,7 @@ obs/                           运行时数据根（gitignore）
 ├── events/<instanceId>/       事件流 NDJSON（按实例分文件，无并发竞争）
 ├── events/http/               HTTP 上报落点
 ├── approvals/{pending,decisions}/
+├── archive/                   封印链（seals.ndjson）+ 快照清单
 └── alerts-history.ndjson      告警历史
 ```
 
@@ -121,4 +145,5 @@ obs/                           运行时数据根（gitignore）
 - **一期 ✅**：契约 v1 + 校验器 + 实例注册/心跳 + 看板四视图 + omp 实例接入 + 任务治理 confirm + 双实例冒烟
 - **二期 ✅（部分）**：运行时层（agent.db 只读摄取）· HTTP 上报端点 · 告警规则 + 抑制 + 历史 · 健康端点 · 知识视图增强 · 事件实时流 · **审批代办端到端**（含参考实现）
 - **二期剩余**：御驿消息结构化（依赖 Yuyi 身份接口 B1 交付）
-- **三期**：不可变审计归档（RR-2 闭环）· 御符强验证（Yufu 对接）· 跨实例统一治理
+- **三期 ✅（部分）**：**不可变审计归档（哈希链封印 + 校验，RR-2 闭环）** 已完成并篡改检测实测
+- **三期剩余**：御符强验证（Yufu 对接）· 跨实例统一治理（现可按 `--root` 治理任一实例，待形式化）

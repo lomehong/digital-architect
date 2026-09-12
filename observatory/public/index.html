@@ -34,6 +34,7 @@
     <button data-v="team" class="active">团队总览</button>
     <button data-v="systems">系统视图</button>
     <button data-v="instances">实例视图</button>
+    <button data-v="collab">协作</button>
     <button data-v="knowledge">知识视图</button>
     <button data-v="govern">治理操作</button>
     <button data-v="runtime">运行时</button>
@@ -67,10 +68,24 @@ async function refresh() {
 }
 function render() {
   const v = $('#view'); if (!SNAP) { v.innerHTML = '<p class="dim">加载中…</p>'; return }
+  // 身份自验证据索引（团队/实例视图共用）
+  const idRows = {}
+  for (const r of ((SNAP.identity || {}).rows || [])) idRows[r.instanceId] = r
+  const idText = (r) => (!r || r.state === '未申报')
+    ? '身份未申报（实例未上报自验证据；平台不做身份验证）'
+    : `御符 ${r.identityId} · Owner ${r.owner || '—'} · 角色 ${r.role || '未设置'} · 权限 ${r.permissions.length} 项 · 经 ${r.via} 验证于 ${r.checkedAt}${typeof r.ageSec === 'number' ? `（${r.ageSec}s 前）` : ''}${r.reason ? ' · ' + r.reason : ''}`
   if (VIEW === 'team') {
-    const inst = SNAP.instances.map((i) => `<tr><td>${esc(i.instanceId)}</td><td>${esc(i.hostType)}</td><td>${esc(i.systems.join(', '))}</td><td class="${i.status === 'online' ? 'ok' : 'warn'}">${i.status}</td><td class="dim">${esc(i.lastSeenAt)}</td></tr>`).join('')
+    const idBadge = (r) => !r || r.state === '未申报' ? '<span class="dim">未申报</span>'
+      : r.state === '已验证' ? '<span class="ok">✅ 已验证</span>' : '<span class="crit">❌ 失效</span>'
+    const inst = SNAP.instances.map((i) => {
+      const r = idRows[i.instanceId]
+      return `<tr><td>${esc(i.instanceId)}</td><td>${esc(i.hostType)}</td><td>${esc(i.systems.join(', '))}</td><td class="${i.status === 'online' ? 'ok' : 'warn'}">${i.status}</td><td>${idBadge(r)}${r && r.drift ? `<br><span class="crit">${esc(r.drift)}</span>` : ''}${r && r.identityId ? `<br><span class="dim">${esc(r.identityId)}</span>` : ''}</td><td class="dim">${esc(i.lastSeenAt)}</td></tr>`
+    }).join('')
+    const idt = (SNAP.identity || {}).totals || {}
     const alerts = SNAP.alerts.map((e) => `<tr><td class="crit">${esc(e.type)}</td><td>${esc(e.subject)}</td><td class="dim">${esc(e.ts)}</td></tr>`).join('')
-    v.innerHTML = `<h2>实例</h2><table><tr><th>实例(御符)</th><th>宿主</th><th>负责系统</th><th>状态</th><th>心跳</th></tr>${inst || '<tr><td colspan=5 class=dim>暂无注册实例</td></tr>'}</table>
+    v.innerHTML = `<h2>实例</h2>
+      <p class="dim">身份自验（§7.1 三态之「自验」）：已验证 <b class="ok">${idt.verified ?? 0}</b> · 失效 <b class="${(idt.failed ?? 0) > 0 ? 'crit' : 'dim'}">${idt.failed ?? 0}</b> · 未申报 <b class="dim">${idt.unreported ?? 0}</b> —— 平台不做身份验证，仅存档实例侧 <code>yufu_verify</code> 证据。</p>
+      <table><tr><th>实例(御符)</th><th>宿主</th><th>负责系统</th><th>状态</th><th>身份（自验）</th><th>心跳</th></tr>${inst || '<tr><td colspan=6 class=dim>暂无注册实例</td></tr>'}</table>
       <h2>最近 critical 事件</h2><table><tr><th>类型</th><th>主体</th><th>时间</th></tr>${alerts || '<tr><td colspan=3 class=dim>无</td></tr>'}</table>
       <h2>告警</h2>
       ${(SNAP.alerts||[]).length === 0 ? '<p class=ok>✅ 无告警</p>' : `<table><tr><th>级别</th><th>告警</th><th>状态</th></tr>${SNAP.alerts.map((a) => `<tr><td class="${a.severity==='critical'?'crit':'warn'}">${esc(a.severity)}</td><td><b>${esc(a.title)}</b><br><span class=dim>${esc(a.message||'')}</span></td><td>${a.suppressed?'<span class=dim>抑制中</span>':('<span class=warn>新触发</span>'+(a.firedCount>1?` <span class=dim>×${a.firedCount}</span>`:''))}</td></tr>`).join('')}</table>`}
@@ -94,8 +109,10 @@ function render() {
     v.innerHTML = SNAP.instances.map((i) => {
       const evs = SNAP.events.filter((e) => e.instanceId === i.instanceId).slice(-15).reverse()
         .map((e) => `<tr><td class="dim">${esc(e.ts)}</td><td>${esc(e.domain)}/${esc(e.type)}</td><td>${esc(e.severity)}</td><td>${esc(e.subject ?? '')}</td></tr>`).join('')
+      const idr = idRows[i.instanceId]
       return `<h2>${esc(i.instanceId)} <span class="pill ${i.status === 'online' ? 'ok' : 'warn'}">${i.status}</span></h2>
         <p class="dim">宿主 ${esc(i.hostType)} · 负责 ${esc(i.systems.join(', '))} · 心跳间隔 ${i.heartbeatIntervalSec}s</p>
+        <p class="${idr && idr.state === '已验证' ? 'ok' : (idr && idr.state === '失效' ? 'crit' : 'dim')}">${esc(idText(idr))}${idr && idr.drift ? ` — <span class="crit">${esc(idr.drift)}</span>` : ''}</p>
         <table><tr><th>时间</th><th>事件</th><th>级别</th><th>主体</th></tr>${evs || '<tr><td colspan=4 class=dim>无事件</td></tr>'}</table>`
     }).join('') || '<p class="dim">暂无实例</p>'
   } else if (VIEW === 'events') {
@@ -103,6 +120,30 @@ function render() {
     v.innerHTML = `<h2>事件实时流（最近 60 条，10s 自动刷新）</h2>
       <p class="dim">实例 <select id="ev-filter" onchange="render()"><option value="">全部</option>${SNAP.instances.map((i) => `<option ${window._evFilter === i.instanceId ? 'selected' : ''} value="${esc(i.instanceId)}">${esc(i.instanceId)}</option>`).join('')}</select></p>
       <table><tr><th>时间</th><th>实例</th><th>域/类型</th><th>级别</th><th>主体</th></tr>${items.filter((e) => !window._evFilter || e.instanceId === window._evFilter).map((e) => `<tr><td class=dim>${esc(String(e.ts).slice(11, 19))}</td><td>${esc(e.instanceId)}</td><td>${esc(e.domain)}/${esc(e.type)}</td><td class="${e.severity === 'critical' ? 'crit' : e.severity === 'warning' ? 'warn' : 'dim'}">${esc(e.severity)}</td><td>${esc(e.subject ?? '')}</td></tr>`).join('') || '<tr><td colspan=5 class=dim>无事件</td></tr>'}</table>`
+  } else if (VIEW === 'collab') {
+    const c = SNAP.collab || { peers: [], totals: {} }
+    const t = c.totals || {}
+    const roleLabel = (r) => r === 'avatar' ? 'avatar（主人数字分身）' : (r || '未设置')
+    const rows = (c.peers || []).map((p) => `<tr>
+      <td>${p.identityVerified ? esc(p.agentId) : '<span class="warn">未验证</span>'}
+        <br><span class="dim">${esc(p.name || '')}${p.device ? ' @ ' + esc(p.device) : ''}</span></td>
+      <td>${esc(p.owner || '—')}<br><span class="dim">${esc(roleLabel(p.role))}</span></td>
+      <td>↓${p.inbound} / ↑${p.outbound}</td>
+      <td class="dim">${esc(Object.keys(p.systems || {}).join(', '))}</td>
+      <td class="dim">${esc(p.lastTs)}<br>${esc(p.lastSubject || '')}</td>
+      <td>${p.identityVerified ? '<span class="ok">✅ Hub 回填</span>' : '<span class="warn">⚠️ 身份未验证</span>'}</td></tr>`).join('')
+    const denied = (SNAP.events || []).filter((e) => String(e.type).startsWith('collab.gate-denied')).slice(-20).reverse()
+      .map((e) => `<tr><td class="dim">${esc(e.ts)}</td><td>${esc(e.subject ?? '')}</td><td class="warn">${esc(e.decision)}</td><td class="dim">${esc(e.reason || '')}</td></tr>`).join('')
+    const msgs = (SNAP.events || []).filter((e) => String(e.type).startsWith('collab.message')).slice(-25).reverse()
+      .map((e) => `<tr><td class="dim">${esc(String(e.ts).slice(11, 19))}</td><td>${esc(e.instanceId)}</td><td>${e.direction === 'inbound' ? '↓ 入' : '↑ 出'}</td><td>${e.peerAgentId ? esc(e.peerAgentId) : '<span class="warn">未验证</span>'}<br><span class="dim">${esc(e.peerName || e.peerDevice || '')}</span></td><td class="${e.severity === 'critical' ? 'crit' : e.severity === 'warning' ? 'warn' : 'dim'}">${esc(e.severity)}</td><td>${esc(e.subject ?? '')}</td></tr>`).join('')
+    v.innerHTML = `<h2>协作总览（御驿消息结构化）</h2>
+      <p>对端 <b>${t.peers ?? 0}</b> · 身份已验证 <b class="ok">${t.verified ?? 0}</b> · 未验证 <b class="${(t.unverified ?? 0) > 0 ? 'warn' : 'dim'}">${t.unverified ?? 0}</b> · 入向 ${t.inbound ?? 0} / 出向 ${t.outbound ?? 0} · 闸门拒绝 <b class="${(t.gateDenied ?? 0) > 0 ? 'warn' : 'dim'}">${t.gateDenied ?? 0}</b></p>
+      <p class="dim">身份字段由实例转写 Yuyi Hub 权威回填值（peerAgentId/peerOwner/peerRole）；平台不连 Hub、不查御符内部接口、不推测身份。peerAgentId 缺席即「未验证」（老 Hub 不回填），如实呈现。</p>
+      <table><tr><th>对端（御符）</th><th>Owner / 角色</th><th>流量</th><th>系统</th><th>最近</th><th>身份来源</th></tr>${rows || '<tr><td colspan=6 class=dim>暂无协作消息事件（实例未上报或本期无跨 Agent 通信）</td></tr>'}</table>
+      <h2>闸门拒绝证据（治理执行，最近 20）</h2>
+      <table><tr><th>时间</th><th>主体</th><th>闸门结论</th><th>依据</th></tr>${denied || '<tr><td colspan=4 class=dim>无拒绝记录</td></tr>'}</table>
+      <h2>消息事件（最近 25）</h2>
+      <table><tr><th>时间</th><th>实例</th><th>向</th><th>对端</th><th>级别</th><th>主体</th></tr>${msgs || '<tr><td colspan=6 class=dim>无消息事件</td></tr>'}</table>`
   } else if (VIEW === 'knowledge') {
     const rq = SNAP.reviewQueue || { entries: 0, raw: '' }
     const lines = (rq.raw || '').split(/\r?\n/).filter((l) => l.trim().startsWith('- ') || /^\s+\w+:/.test(l))
@@ -120,37 +161,70 @@ function render() {
     '<h2>模型性能（omp agent.db 只读摄取）</h2><table><tr><th>模型</th><th>样本</th><th>输出 tokens</th><th>平均生成 ms</th><th>平均 TTFT ms</th></tr>' +
     rt.models.map((m) => '<tr><td>' + esc(m.model) + '</td><td>' + m.samples + '</td><td>' + m.outputTokens + '</td><td>' + m.avgGenMs + '</td><td>' + m.avgTtftMs + '</td></tr>').join('') + '</table>'
 } else if (VIEW === 'govern') {
-    const taskIds = Object.keys(SNAP.tasks || {})
-    v.innerHTML = `<h2>任务 confirm / reject</h2>
-      <p class="dim">仅对「待确认」状态的任务有效；四不变量由 task-ledger 强制，平台不旁路。</p>
-      <p>任务号：<input id="g-task" placeholder="OPSP-xxx" size="12">
-         root：<input id="g-root" value="/workspace" size="24">
+    const tasks = SNAP.tasks || {}
+    const taskIds = Object.keys(tasks)
+    const roots = SNAP.roots || []
+    const opts = roots.map((r) => `<option value="${esc(r.instanceId)}" data-root="${esc(r.taskRoot)}">${esc(r.instanceId)} · ${esc(r.label || '')} [${esc(r.status)}]</option>`).join('')
+    v.innerHTML = `<h2>跨实例统一治理 · 任务 confirm / reject</h2>
+      <p class="dim">仅对「待确认」状态的任务有效；四不变量由 task-ledger 强制，平台不旁路。批量按逐个调用，各自留痕（部分失败逐条报告）。</p>
+      <p><b>操作者</b>：<input id="g-by" placeholder="主人（confirm 只能由主人发起）" size="24"> <span class="dim">必填——平台不代填「主人」，以谁的名义落定就记谁</span></p>
+      <p>实例：<select id="g-inst" onchange="pickRoot()"><option value="">— 选择实例（自动填 root）—</option>${opts}</select></p>
+      <p>任务号：<input id="g-task" placeholder="OPSP-P0, OPSP-P1（逗号/空格分隔 = 批量）" size="34">
+         root：<input id="g-root" value="${esc(roots[0] ? roots[0].taskRoot : '/workspace')}" size="34">
          <button class="btn" onclick="govern('confirm')">confirm</button>
          <button class="btn" onclick="govern('reject')">reject</button></p>
-      <p class="dim">已知任务：${taskIds.map(esc).join(', ') || '（暂无任务事件）'}</p>
+      <p class="dim">地址簿来源：${esc(SNAP.addressBookSource || '（未配置 data-roots.yml）')} · 任务（点击填入）：${
+        taskIds.map((id) => `<a href="#" onclick="fillTask('${esc(id)}');return false" class="${tasks[id].state === '已落定' ? 'dim' : ''}">${esc(id)}<span class="dim">(${esc(tasks[id].state)})</span></a>`).join(' ') || '（暂无任务事件）'}</p>
       <h2>知识条目升级（待审核 → 已确认）</h2>
       <p>条目名：<input id="k-entry" placeholder="omp-extension-contract-pitfalls" size="36">
          <button class="btn" onclick="kPromote()">升级为已确认</button></p>
-      <pre id="g-out" class="dim"></pre>`
+      <h2>治理结果</h2><pre id="g-out" class="dim">${esc(window._govResult || '')}</pre>`
   }
 }
+function pickRoot() {
+  const r = (SNAP.roots || []).find((x) => x.instanceId === $('#g-inst').value)
+  if (r) $('#g-root').value = r.taskRoot
+}
+function fillTask(id) {
+  const el = $('#g-task'); const cur = el.value.trim()
+  el.value = cur === '' ? id : (cur.split(/[,\s]+/).includes(id) ? cur : cur + ', ' + id)
+}
 async function govern(action) {
-  const taskId = $('#g-task').value.trim(), root = $('#g-root').value.trim()
-  if (!confirm(`确认对任务 ${taskId} 执行 ${action.toUpperCase()}？（主人操作，将留治理审计）`)) return
-  const r = await fetch('/api/govern/task', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ taskId, root, action, by: '主人' }) })
-  const j = await r.json(); $('#g-out').textContent = j.out ?? j.error ?? JSON.stringify(j); refresh()
+  const ids = $('#g-task').value.split(/[,\s]+/).map((s) => s.trim()).filter(Boolean)
+  const root = $('#g-root').value.trim()
+  const by = ($('#g-by').value || '').trim()
+  if (ids.length === 0) { $('#g-out').textContent = '请先填任务号（可逗号分隔批量）'; return }
+  if (by === '') { $('#g-out').textContent = '请先填「操作者」——平台不代填「主人」，confirm 只能由主人发起'; return }
+  if (!confirm(`以「${by}」的名义，对 ${ids.length} 个任务执行 ${action.toUpperCase()}？\n${ids.join('\n')}\nroot = ${root}\n（逐个调用 ledger，各自留痕；部分失败逐条报告）`)) return
+  let acc = ''
+  for (const taskId of ids) {
+    try {
+      // confirmReal: 人工已在上方 confirm 对话框二次确认；脚本路径须自行显式携带（服务端据此拦自动化误写）
+      const r = await fetch('/api/govern/task', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ taskId, root, action, by, confirmReal: true }) })
+      const j = await r.json()
+      const msg = String(j.out ?? j.error ?? JSON.stringify(j)).trim().split('\n').filter(Boolean).pop()
+      acc += `${j.ok ? '✅' : '❌'} ${taskId}：${msg}\n`
+    } catch (e) { acc += `❌ ${taskId}：${e.message}\n` }
+    window._govResult = acc
+    $('#g-out').textContent = acc
+  }
+  refresh()
 }
 async function kPromote() {
   const entry = $('#k-entry').value.trim(); if (!entry) return
-  if (!confirm(`确认将 ${entry} 升级为「已确认」？（主人操作，将留治理审计）`)) return
-  const r = await fetch('/api/govern/knowledge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entry, to: '已确认' }) })
-  const j = await r.json(); $('#g-out').textContent = j.ok ? `已升级：${entry}` : (j.error ?? '失败'); refresh()
+  const by = ($('#g-by').value || '').trim()
+  if (by === '') { window._govResult = '请先填「操作者」（平台不代填「主人」）'; $('#g-out').textContent = window._govResult; return }
+  if (!confirm(`以「${by}」的名义将 ${entry} 升级为「已确认」？（将留治理审计）`)) return
+  const r = await fetch('/api/govern/knowledge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entry, to: '已确认', by }) })
+  const j = await r.json(); window._govResult = j.ok ? `✅ 已升级：${entry}` : `❌ ${j.error ?? '失败'}`; $('#g-out').textContent = window._govResult; refresh()
 }
 async function approv(requestId, decision) {
+  const by = (prompt(`以谁的名义${decision === 'allow' ? '批准' : '拒绝'}？（操作者标识，必填——平台不代填「主人」）`) || '').trim()
+  if (by === '') { alert('必须提供操作者标识（平台不代填「主人」）'); return }
   const reason = prompt(`${decision === 'allow' ? '批准' : '拒绝'}理由（可空）：`) || ''
-  if (!confirm(`确认对 ${requestId} 执行 ${decision.toUpperCase()}？（主人操作，将留治理审计）`)) return
-  const r = await fetch('/api/govern/approval', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId, decision, by: '主人', reason }) })
-  const j = await r.json(); $('#g-out').textContent = j.ok ? `已${decision === 'allow' ? '批准' : '拒绝'}：${requestId}` : (j.error ?? '失败'); refresh()
+  if (!confirm(`以「${by}」的名义对 ${requestId} 执行 ${decision.toUpperCase()}？（将留治理审计）`)) return
+  const r = await fetch('/api/govern/approval', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId, decision, by, reason }) })
+  const j = await r.json(); window._govResult = j.ok ? `✅ 已${decision === 'allow' ? '批准' : '拒绝'}：${requestId}` : `❌ ${j.error ?? '失败'}`; $('#g-out').textContent = window._govResult; refresh()
 }
 document.querySelectorAll('nav button').forEach((b) => b.onclick = () => {
   document.querySelectorAll('nav button').forEach((x) => x.classList.remove('active')); b.classList.add('active')

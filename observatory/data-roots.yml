@@ -1,0 +1,17 @@
+# 治理地址簿（跨实例统一治理）：实例 → 台账根
+#
+# taskRoot 必须是 **observatory 平台所在主机视角** 的路径——平台调 scripts/task-ledger.mjs
+# 时直接以它作为 --root。容器实例在容器内看到的路径（如 /workspace）≠ 平台看到的宿主路径，
+# 故必须显式登记，平台不猜测、不推导。
+#
+# 限制（登记）：仅支持平台可访问的本地路径；跨主机实例需要远端执行面，当前不支持。
+roots:
+  - instanceId: omp-ops-pi-01
+    taskRoot: 'E:\Development\Code\nodejs\ops-pi'
+    label: ops-pi（omp 容器实例 · 宿主挂载源）
+  - instanceId: dsh-architect-01
+    taskRoot: 'E:\Development\Code\nodejs\digital-architect'
+    label: digital-architect（dsh 建设会话）
+  - instanceId: observatory-platform
+    taskRoot: 'E:\Development\Code\nodejs\digital-architect'
+    label: 平台自身（自举治理）

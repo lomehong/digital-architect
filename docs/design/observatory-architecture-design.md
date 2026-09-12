@@ -65,6 +65,9 @@ review:
 | Contract | 事件契约校验器（observatory/contracts/validate.mjs）：对 NDJSON 逐行断言必填字段/枚举/时间戳 |
 | Unit | server 的聚合逻辑（实例心跳超时判定、任务聚合）用 node:test |
 | 端到端冒烟 | 模拟实例写注册+事件 → 平台看板 API 返回聚合 → 治理 confirm → ledger yaml 状态变化 + 平台审计事件出现 |
+| 契约负测 | 故意违例（collab 缺 direction / 半可信身份 / 非法 role / gate-denied 缺 reason）逐条 FAIL；HTTP 摄入**混批**精确计数 accepted/rejected（历史混批漏收 bug 的回归） |
+| 渲染烟测 | `contracts/render-smoke.mjs`：node:vm + 最小 DOM stub 真实执行 `render()`，8 视图断言关键内容在位、无 `undefined`/`NaN` 泄漏、空态降级正常（无需浏览器） |
+| 数据根隔离 | `--data` 临时数据根起第二实例：PID 登记互不覆盖、总仓知识库/告警规则仍按 `--root` 读取 |
 | 双实例并跑 | omp 容器实例（经挂载写）+ dsh 模拟实例（宿主直写）同时上报，聚合无串扰 |
 | Rollback | 停服务即回原状（obs/ 为追加数据，删除即回退）；不改任何既有系统 |
 
@@ -72,7 +75,7 @@ review:
 
 | # | 类型 | 项 | 处置 |
 |---|---|---|---|
-| 1 | Unknown | 御符强验证（Yufu 体系对接） | 一期字符串自报 + 登记；二期接 Yufu |
+| 1 | Unknown → **已解除** | 御符强验证（Yufu 体系对接） | 2026-09-12 源码核实：Hub 权威回填 + `yufu_*` 查询面 + agent-daemon 闸门三条受支持接口**已存在**（§7.2.1），跨团队请求撤销。平台不做身份验证、不接入御符内部 API（Yuyi 插件自治）；改为**实例自验 + 证据上报**（§7.1 身份三态） |
 | 2 | Unknown | omp-stats 集成形态 | 二期评估；一期运行时层仅接 session/审计事件 |
 | 3 | Human Decision（已决） | 边界/承载/身份/治理面 | 主人 2026-09-12 四项拍板（本文档即据此设计） |
 
@@ -94,6 +97,16 @@ heartbeatIntervalSec: 60
 
 心跳 = 实例定期更新 lastSeenAt（重写本文件）。平台判定：`now - lastSeenAt > 3×interval` → offline（可发现降级，N-3 同哲学）。
 
+**身份语义（诚实分级，不夸大）**——`instanceId` 的取值来源分三态，平台如实标注来源，绝不以弱证据冒充强证据：
+
+| 态 | 含义 | 事件/字段 | 平台行为 |
+|---|---|---|---|
+| 自报 | 实例自己声明的 id（一期形态） | 注册文件 `instanceId` | 呈现，标注「自报」 |
+| 回填 | 跨实例消息中的**对端**身份由 Yuyi Hub 权威回填（客户端不可自报，§7.2.1） | `collab.message` 的 `peerAgentId/peerOwner/peerRole` | 呈现并标「Hub 回填」 |
+| 自验 | 实例用 `yufu_verify`（`POST /api/v1/auth/agent/verify`）验证自身 token 后上报验证证据 | `platform.identity.verified` | 呈现并标「已验证 / 失效」 |
+
+平台**不**接入御符内部 API、不持有御符管理凭证——验证在实例侧完成，平台只存档证据（与「Yuyi 身份插件自治，观测面不接管身份」一致）。
+
 ### 7.2 统一生命周期事件契约 v1（NDJSON，append-only）
 
 ```
@@ -112,22 +125,57 @@ obs/events/<instanceId>/<yyyy-mm-dd>.ndjson
 | runtime | tool.called / tool.denied | tool, authz(preauth/deny/…), reasonClass |
 | runtime | approval.requested / resolved | subject, decision |
 | knowledge | status.changed | entry, from, to |
-| collab | message.sent / received | peer, channel（御驿，二期结构化） |
+| collab | message.received / message.sent | direction, peerAgentId, peerOwner, peerRole, peerName, peerDevice, mode, taskId, replyTo（御驿消息结构化，见 §7.2.1） |
+| collab | gate-denied | subject, decision, reason（治理执行证据：终止/屏蔽在注入/回信侧生效） |
 | governance | confirmed / rejected | subject, by=主人, via=observatory |
 | platform | instance.online / offline / heartbeat.missed | instanceId |
 
 severity: `info | warning | critical`。**校验器**：`observatory/contracts/validate.mjs <ndjson>`（CI 与平台摄入共用）。
 
+#### 7.2.1 御驿消息结构化契约（二期；原阻断项 B1 已解除）
+
+**背景**：原状态为「依赖 Yuyi 身份接口交付（跨团队阻断 B1）」。2026-09-12 源码核实结论——**无需新接口，受支持接口已存在**，跨团队请求撤销；设计随之从「等接口」改为「按既有契约转写」。
+
+| 面 | 受支持接口（证据回源） |
+|---|---|
+| 对端身份 | Hub 权威回填 `YuyiSender.agentId / ownerUsername / role`：出站**剥离**客户端自报字段，投递时以 `authority.sender` 回填（`Yuyi/packages/protocol/protocol.ts`：`HubAuthorityStamp` 注「客户端不得自报」；`encodeWire` 剥离；投递 `from: { ...route.from, ...authority?.sender }`） |
+| 本方身份 | 实例本地持有 `bridge.agentId`（御符 id，`adapters/pi/yuyi-pi-extension.ts`）；查询面 `yufu_whoami`（含权限列表）/ `yufu_agent_get`（`packages/core/tools.ts`，权限守卫 `yufu:*`） |
+| 治理执行 | `@qianji/agent-daemon` 闸门 `evaluateGate`：终止/屏蔽 → 注入与回信**双侧拒绝**；闸门不可达且严格模式（`YUYI_AGENT_GATE_STRICT`）→ 保守拒绝（`Yuyi/packages/agent/src/gate.ts` + `client.ts`） |
+
+**转写规则（实例只转写，不判定、不补全身份）**：
+- `peerAgentId ← from.agentId`、`peerOwner ← from.ownerUsername`、`peerRole ← from.role`（avatar/worker/coder/未设置）
+- 老 Hub 不回填 → **身份三元组整体缺席**，不得用 peerName/peerDevice 冒充；平台如实显示「身份未验证」
+- 平台**不连 Hub、不查御符内部 API、不推测身份**——与「Yuyi 身份插件自治、观测面不接管身份」的指示一致
+
+**契约约束（`contracts/validate.mjs` 与 `POST /api/events` 摄入同源强制）**：`collab.message.*` 必带 `direction`(inbound|outbound)；`peerRole` 限枚举；`peerOwner` 在位而 `peerAgentId` 缺席 → FAIL（禁半可信身份）；`collab.gate-denied` 必带 `decision` 与 `reason`。
+
+**平台呈现**：「协作」视图——对端清单（御符 id / Owner / 角色 / 流向计数 / 身份来源标注）+ 闸门拒绝证据 + 最近消息事件。
+**参考实现**：`observatory/collab-demo/instance.mjs`（四类转写 + 闸门拒绝；主平台注入为契约活样例）。
+
 ### 7.3 平台服务（observatory/server.mjs，零 npm 依赖）
 
-- **数据面**：`fs.watch` obs/ 与各数据源（事件流/台账/评审队列/设计文档 status）；聚合内存模型 + `GET /api/snapshot` 全量快照、`GET /api/events?since=` 增量。
-- **治理面**：`POST /api/govern/confirm|reject|knowledge-promote` → 服务端**调用 task-ledger.mjs CLI**（`--confirmed-via observatory`）——四不变量由 ledger 强制，平台不旁路；治理动作自身发 `governance.*` 事件。
-- **前端**：`public/index.html` 单页（原生 JS，无构建）：团队总览 / 系统视图 / 实例视图 / 知识视图 / 治理操作（confirm 需二次确认）。绑定 `127.0.0.1:8787`。
-- **降级**：某实例事件缺失 → 实例视图标 stale（数据即状态，不虚构）。
+- **数据面**：`fs.watch` obs/ 递归监听 + **快照现读**（`/api/snapshot` 每次重新加载各数据源：事件流/台账/评审队列/设计文档 status/协作面），聚合为内存模型；`GET /api/snapshot` 全量快照、`GET /api/events?since=` 增量。
+- **治理面**：`POST /api/govern/task|knowledge|approval` → 服务端**调用 task-ledger.mjs CLI**（`--confirmed-via observatory`）——四不变量由 ledger 强制，平台不旁路；治理动作自身发 `governance.*` 事件。
+- **前端**：`public/index.html` 单页（原生 JS，无构建）：团队总览 / 系统视图 / 实例视图 / **协作** / 知识视图 / 治理操作 / 运行时 / 事件流。绑定 `127.0.0.1:8787`。
+- **启动参数**：`--root <总仓根>`（知识库/告警规则/缺省 tasks 与 agent.db）、`--data <数据根>`（instances/events/approvals/archive，缺省 `<root>/obs`）、`--port`、`--tasks <dir>`（可重复）、`--agentdb`、`--alert-cooldown-ms`。`--data` 独立于 `--root`，便于在临时数据根上做无副作用端到端验证。
+- **进程登记**：PID 写入 **`<数据根>/server.pid`**（非脚本目录）——多实例/临时数据根并存时互不覆盖；停启只按该登记精确操作（禁按进程名批量杀）。
+- **降级**：某实例事件缺失 → 实例视图标 stale（数据即状态，不虚构）；协作面身份未回填 → 显式「未验证」。
+- **回归资产**：`contracts/validate.mjs`（契约）、`contracts/render-smoke.mjs`（8 视图无浏览器渲染烟测 + 空态降级）、`approval-demo/`、`collab-demo/`（契约参考实现）。
 
 ### 7.4 治理操作面（贯穿主线）与分期
 
 **治理面原则**：平台是主人的操作界面——所有确认/审批的**决定权在主人**，平台负责把「待治理事项」呈现到面前、把主人的决定**安全地执行到对应机制**（不旁路：任务经 task-ledger CLI、文档经 status 字段修订、知识经 status 升级——各自的不变量由既有机制强制），并**全量发 governance.* 审计事件**。
+
+**治理操作可信性防线**（2026-09-12 完成加固；起因：本会话两次在负测中误对生产台账执行 confirm，均已回滚并留痕）：
+
+| 防线 | 规则 | 目的 |
+|---|---|---|
+| **操作者显式** | 治理端点（task/knowledge/approval）**必须**显式提供 `by`；平台**不代填「主人」**（服务端函数层纵深同样拒绝空 by） | confirm 只能由主人发起——平台不得替主人署名 |
+| **真实台账确认** | `root` 命中治理地址簿（`data-roots.yml`）即视为生产台账：脚本/自动化调用必须显式带 `confirmReal=true`；看板人工操作经二次确认后自动携带 | 阻断自动化与负测误写生产台账（本次事故直接成因） |
+| **负测隔离** | 治理类**合法写路径**的端到端测试一律指向 `observatory/test-fixtures/fake-ledger`；生产台账只允许测拒绝路径 | 测试不得有生产副作用 |
+| **回滚留痕** | 误操作以追加 `rollback` 事件更正，不抹除历史 | 审计链完整，错误可复盘 |
+
+> 残余风险（登记）：平台绑定 127.0.0.1 且**无认证**——防线防的是「自动化/负测误写」，不防本机恶意进程。真正的身份认证需引入本地令牌或复用御符身份，列为后续加固项。
 
 **治理对象全景（按域）**：
 
@@ -138,15 +186,15 @@ severity: `info | warning | critical`。**校验器**：`observatory/contracts/v
 | 知识 | 条目升级（待审核 → 已确认）、驳回 | 条目 status 字段 + review-queue 处理 |
 | 评审队列 | review-queue.yaml 条目的确认/处置 | review-queue 修订 |
 | 运行时审批 | omp/各实例会话的 pending approval（工具审批请求）上屏，主人批准/拒绝 | **文件请求/应答协议**（与事件契约同哲学）：实例发 approval.requested 事件 + 轮询应答文件；二期实现 |
-| 跨 Agent 权限 | 跨 Agent 写路径/权限开放的逐项确认（ops-pi §7.6 B1 交付后） | 权限清单文件修订（P3 形态预授权） |
+| 跨 Agent 权限 | 跨 Agent 写路径/权限开放的逐项确认 | 权限清单文件修订（P3 形态预授权）；身份由 Yuyi 插件自治，本平台不接管（§7.2.1） |
 
 **分期（治理操作作为主线贯穿三期）**：
 
 | 期 | 可观测性 | 治理操作 |
 |---|---|---|
 | **一期（本次）** | 契约 v1 + 校验器 + 实例注册/心跳 + 看板四视图 + omp 实例接入（心跳/任务事件） | **治理面基础**：任务 confirm/reject、**知识条目升级（待审核→已确认）**、**设计/方案文档落定确认**（自举：observatory 设计文档即首个对象）；治理操作全量发 governance.* 审计事件 |
-| **二期** | 运行时层摄取（agent.db/会话/成本）、告警规则、御驿消息结构化 | **治理面扩展**：**审批代办**（各实例 pending approval 上屏、主人在平台批准/拒绝——文件请求/应答协议）、评审队列确认面、跨 Agent 权限开放确认（B1 交付后）、ops_audit 治理视图 |
-| **三期** | **不可变审计归档（RR-2 闭环）✅ 已实现**（哈希链封印 + 校验 + 篡改检测实测）· HTTP 上报端点 ✅ · omp-stats 集成评估 ⏸ | **治理面完备**（部分）：御符强验证下的签名治理（Yufu 对接，⏸ 待接口）、跨实例统一治理（🟡 能力已在，待形式化 UI）、治理操作合规留档 ⏸ |
+| **二期** | 运行时层摄取（agent.db/会话/成本）✅、告警规则 ✅、**御驿消息结构化 ✅**（§7.2.1） | **治理面扩展**：**审批代办 ✅**（各实例 pending approval 上屏、主人在平台批准/拒绝——文件请求/应答协议）、评审队列确认面 ✅、跨 Agent 权限开放确认（身份归 Yuyi 插件，平台不接管）、ops_audit 治理视图 |
+| **三期** | **不可变审计归档（RR-2 闭环）✅ 已实现**（哈希链封印 + 校验 + 篡改检测实测）· HTTP 上报端点 ✅ · **看板渲染烟测 ✅** · omp-stats 集成评估 ⏸ | **治理面完备**：**御符强验证 ✅**（重界定为「实例自验 + 证据存档」，平台不接管身份）· **跨实例统一治理 ✅**（治理地址簿 + 实例选择器 + 批量逐个留痕）· **治理写操作防线 ✅**（操作者显式 + 真实台账确认）· 治理操作合规留档 ✅（哈希链封印 + 全量 governance 事件） |
 
 ### 7.5 实施状态（随进度更新）
 
@@ -154,7 +202,7 @@ severity: `info | warning | critical`。**校验器**：`observatory/contracts/v
 |---|---|---|---|
 | 事件契约 v1 + 校验器 | 一期 | ✅ 完成 | `contracts/validate.mjs` 实测 PASS |
 | 实例注册 + 心跳 | 一期 | ✅ 完成 | `omp-ops-pi-01` 容器心跳（30s）+ `dsh-architect-01`，看板双实例 online |
-| 看板（团队/系统/实例/知识/运行时/事件流/治理 七视图） | 一期+二期 | ✅ 完成 | 浏览器实测；`public/index.html` 零构建 |
+| 看板（团队/系统/实例/**协作**/知识/运行时/事件流/治理 八视图） | 一期+二期 | ✅ 完成 | 浏览器实测 + `render-smoke.mjs` 无浏览器回归；`public/index.html` 零构建 |
 | 任务台账直读（`--tasks`） | 一期 | ✅ 完成 | OPSP-P0~P5 + GOV-TEST 全量呈现，yaml 现值为权威 |
 | **任务治理 confirm/reject** | 一期 | ✅ 完成并端到端验证 | GOV-TEST：待确认 → 平台 confirm → 已落定；ledger 正确拒绝非法跳步与无来源确认（四不变量生效） |
 | **知识条目升级** | 一期 | ✅ 实现（端点就绪） | `POST /api/govern/knowledge`；主人经 review-queue 纪律升级 2 条后队列空 |
@@ -165,10 +213,12 @@ severity: `info | warning | critical`。**校验器**：`observatory/contracts/v
 | 健康端点 | 二期 | ✅ 完成 | `/api/health`：pid/uptime/五数据源全 ok/规则数 |
 | 知识视图 + 事件实时流 | 二期 | ✅ 完成 | 看板视图实现（评审队列明细/知识域事件/事件流筛选+10s 刷新） |
 | **审批代办（含参考实现）** | 二期 | ✅ 完成并端到端验证 | pending 写入 → 平台 approve → 决定文件 → 参考实例收到"allow by 主人" → pending 清理；超时自动 deny 已实现 |
-| 御驿消息结构化 | 二期 | ⏸ 待 B1 | 依赖 Yuyi 身份接口交付（跨团队阻断中） |
+| 御驿消息结构化 | 二期 | ✅ 完成并端到端验证 | 契约 §7.2.1：临时数据根 e2e 4 对端（3 已验证 / 1 未验证）+ 闸门拒绝 2；契约负测 4/4 命中；摄入**混批**修复实测 accepted=1/rejected=2（修复前会误收 3 条） |
 | **不可变审计归档（RR-2）** | 三期 | ✅ 完成并篡改检测实测 | `seal.mjs` 哈希链封印 + `--verify` 校验（闭日严格/当日检查点）；实测：篡改已封印文件 → FAIL 并定位；复原 → PASS；`/api/archive` 看板呈现 |
-| 御符强验证（Yufu 对接） | 三期 | ⏸ 未开始 | 待 Yufu 接口 |
-| 跨实例统一治理 | 三期 | 🟡 能力已在（按 `--root` 治理任一实例） | 待形式化（实例选择器/批量操作 UI） |
+| 御符强验证（Yufu 对接） | 三期 | ✅ 完成（重界定为「实例自验 + 证据存档」） | `platform.identity.verified` 契约 + 校验器 + 看板三态（已验证/失效/未申报）+ **身份漂移检出**；`identity-demo` 四态实测；平台不接御符内部 API（身份归 Yuyi 插件） |
+| 跨实例统一治理 | 三期 | ✅ 完成并端到端验证 | 治理地址簿 `data-roots.yml` + 实例选择器（自动填 root）+ 批量逐个留痕；隔离夹具实测放行、生产台账实测拦截 |
+| 治理写操作防线 | 三期 | ✅ 完成并实测 | 操作者显式（服务端拒绝空 by）+ 真实台账 `confirmReal` 拦截（实测 400）；2026-09-12 两次误操作已回滚并追加留痕 |
+| 看板渲染烟测 | 二期+ | ✅ 完成 | `contracts/render-smoke.mjs`：node:vm + 最小 DOM stub 真实执行 `render()`，8 视图 + 空态降级 PASS（无需浏览器） |
 
 ## 8. 决策门记录
 
@@ -176,5 +226,7 @@ severity: `info | warning | critical`。**校验器**：`observatory/contracts/v
 |---|---|---|
 | 边界 | 团队架构全面设计、实现分期 | 主人 2026-09-12 |
 | 事件承载 | 文件约定起步 + HTTP 预留 | 主人 2026-09-12 |
-| 实例身份 | 御符（一期字符串自报） | 主人 2026-09-12 |
+| 实例身份 | 御符；三态诚实分级：自报 / Hub 回填 / 实例自验（§7.1） | 主人 2026-09-12 |
 | 治理面 | 包含 confirm/审批操作（平台=主人操作界面） | 主人 2026-09-12 |
+| 身份归属 | Yuyi 身份插件自治：观测面不接管身份、不接御符内部 API（B1 跨团队请求撤销） | 主人 2026-09-12（工作指示） |
+| 治理可信性 | 操作者显式 + 真实台账确认 + 负测隔离（两次误操作后加固，§7.4） | 架构师会话自主加固，**待主人追认** |

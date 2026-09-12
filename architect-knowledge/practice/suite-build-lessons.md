@@ -5,9 +5,13 @@ source:
   origin: digital-architect/docs/HANDOFF.md + digital-twin/docs/suite-charter.md
   ref: HANDOFF §2.2/§2.3/§7；宪章 §5 违规登记册
 confirmed: 2026-09-09
+updated: 2026-09-12
 status: 已确认
 owner: 主人
 ---
+
+> 更新说明（2026-09-12）：追加「写操作连通性测试会改生产数据」「默认值 `|| '主人'` 是权限漏洞」两条工程兼容行（源自 observatory 治理端点两次误操作实测）。**新增行待主人复核**；既有行结论未改动。
+
 
 # 数字分身套件建设历程教训
 
@@ -35,6 +39,8 @@ owner: 主人
 | link: 安装的源仓，迁移/重克隆后必须重建构建产物 | lib/ dist/ 被 .gitignore 忽略，全新 clone 天然缺失；宿主启动 import 即 ERR_MODULE_NOT_FOUND（dsh-architect 迁仓实测 2026-09-11：迁移后未 build，重启加载失败） | link: 源仓在迁移/重克隆后跑一遍 `npm run build`；宿主日志见 `plugin tree failed to load` 优先查此因 |
 | 改包 JSON 禁用 PS ConvertTo-Json；发布资产必须结构校验 | ConvertTo-Json 对 exports 字典序列化出 `"0":{}` 伪键，子路径键与条件键混合即 ERR_INVALID_PACKAGE_CONFIG——且是**启动期致命**（服务提前退出，dsh-architect v0.3.0 首传资产实测 2026-09-11） | 改 package.json 一律用 Node 脚本（JSON.parse/stringify）；发布资产上传前跑结构校验（Node require 断言 exports 键形态）；profile 实况健康 ≠ release 资产健康，两者分别验证 |
 | 进程管理禁止按进程名批量杀 | `Get-Process node \| Stop-Process` 无差别杀掉系统所有 node 进程——含自身宿主进程树与无关工作（observatory 调试实测 2026-09-12，险些自杀） | 启动时把 pid 写入登记文件（如 server.pid），停止/重启只杀登记的 pid；批量操作前先枚举目标并核对 commandline |
+| 写操作的「连通性测试」会改生产数据 | 为验证治理端点可用，两次对**真实台账**发出 confirm，真的落定了任务状态（observatory 实测 2026-09-12，均已回滚留痕） | 测端点一律先分类：**拒绝路径**可在生产端点测（参数非法/无权限/任务不存在）；**任何可能成功的调用**只能指向隔离夹具（如 `test-fixtures/fake-ledger`）。发请求前先问「成功的话改到了什么」 |
+| 默认值 `\|\| '主人'` 是权限漏洞 | 服务端把缺省操作者代填为「主人」，前端硬编码 `by: '主人'`——任何本地进程都能以主人名义落定任务 | 身份字段**必填不代填**（路由层 + 函数层双防线）；本地无认证服务以「显式声明 + 真实台账二次声明」补偿；审计里记录谁发起，而不是记「应该由谁发起」 |
 
 ## 流程经验
 

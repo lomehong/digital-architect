@@ -13,22 +13,34 @@ Start-ScheduledTask -TaskName "ArchitectObservatory"
 # 访问看板
 start http://127.0.0.1:8787
 
-# 停止（精确，按 pid 文件）
+# 停止（精确，按数据根下的 pid 文件）
 Stop-ScheduledTask -TaskName "ArchitectObservatory"
-# 若需强杀：先读 observatory\server.pid 核对命令行含 server.mjs，再 Stop-Process -Id <pid>
+# 若需强杀：先读 obs\server.pid 核对命令行含 server.mjs，再 Stop-Process -Id <pid>
 ```
 
-## 六个视图
+## 八个视图
 
 | 视图 | 内容 |
 |---|---|
-| **团队总览** | 实例列表（御符/宿主/负责系统/心跳）· 告警区（含抑制状态）· 健康信息 · 审批挂单 · 治理留痕 |
+| **团队总览** | 实例列表（御符/宿主/负责系统/心跳/**身份自验**）· 身份自验总览 · 告警区（含抑制状态）· 健康信息 · 审批挂单 · 治理留痕 |
 | **系统视图** | 按「被负责系统」聚合：负责实例 + 任务四态看板 |
-| **实例视图** | 单实例事件流（最近 15 条）+ 心跳详情 |
+| **实例视图** | 单实例身份自验详情 + 事件流（最近 15 条）+ 心跳详情 |
+| **协作** | 御驿消息结构化：对端清单（御符 id / Owner / 角色 / 流向计数 / **身份来源**）· 闸门拒绝证据 · 最近消息事件 |
 | **知识视图** | 评审队列明细 · 知识域事件 · 知识治理留痕 |
 | **运行时** | omp agent.db 只读摄取：按模型的样本数 / 输出 tokens / 平均生成耗时 / 平均 TTFT |
 | **事件流** | 全实例事件实时流（最近 60 条，按实例筛选，10s 自动刷新） |
-| **治理操作** | 任务 confirm/reject · 知识条目升级 · （审批挂单在团队总览呈现） |
+| **治理操作** | **跨实例统一治理**：实例选择器（地址簿自动填 root）+ 任务 confirm/reject（支持批量，逐个留痕）· 知识条目升级 · 操作者必填 |
+
+## 身份语义（三态诚实分级，§7.1）
+
+| 态 | 来源 | 呈现 |
+|---|---|---|
+| **自报** | 实例注册文件 `instanceId` | 标注「自报」 |
+| **回填** | 跨实例消息对端身份由 Yuyi Hub 权威回填（客户端不可伪造） | 协作视图标「Hub 回填」 |
+| **自验** | 实例调 `yufu_verify` 验证自身 token 后上报 `platform.identity.verified` | 标「已验证 / 失效 / 未申报」+ **身份漂移检出** |
+
+**平台不接御符内部 API、不做身份验证**（Yuyi 身份插件自治）；验证在实例侧完成，平台只存档证据。
+参考实现：`identity-demo/instance.mjs`（四态：已验证/失效/未申报/漂移）。
 
 ## 三类治理操作（决定权在主人）
 
@@ -39,6 +51,23 @@ Stop-ScheduledTask -TaskName "ArchitectObservatory"
 | 审批代办 approve / deny | `POST /api/govern/approval` | 写决定文件 + 发 `approval.resolved` 事件 + 清理挂单 |
 
 **审计**：三类操作均发 `governance.*` 事件，落到 `obs/events/`。
+
+## 治理操作可信性防线（重要）
+
+| 防线 | 规则 |
+|---|---|
+| **操作者显式** | 治理端点**必须**带 `by`；平台**不代填「主人」**（服务端函数层纵深同样拒绝空 by） |
+| **真实台账确认** | `root` 命中治理地址簿（`data-roots.yml`）即视为生产台账：**脚本/自动化调用**必须显式带 `confirmReal=true`；看板人工操作经二次确认后自动携带 |
+| **负测隔离** | 治理类**合法写路径**测试一律指向 `observatory/test-fixtures/fake-ledger`；生产台账只允许测拒绝路径 |
+| **回滚留痕** | 误操作以追加 `rollback` 事件更正，不抹除历史 |
+
+> 起因：2026-09-12 本会话两次在负测中误对生产台账（ops-pi OPSP-P0）执行 confirm，均已回滚并留痕。
+> 残余风险（登记）：平台绑定 127.0.0.1 且**无认证**——上述防线防「自动化/负测误写」，不防本机恶意进程。
+
+## 治理地址簿（跨实例统一治理）
+
+`data-roots.yml` 登记「实例 → 台账根」，治理页实例选择器据此自动填 `root`。
+**`taskRoot` 必须是平台所在主机视角的路径**（容器内 `/workspace` ≠ 宿主路径）；仅支持本地路径，跨主机需远端执行面（未支持）。
 
 ## API
 
@@ -78,8 +107,12 @@ node observatory/seal.mjs --verify
 | 契约 | 文件 | 说明 |
 |---|---|---|
 | 事件契约 v1 | `contracts/validate.mjs` | NDJSON 信封：`ts/instanceId/hostType/system/domain/type/severity`；域枚举 8 类；校验器可独立跑：`node contracts/validate.mjs <file.ndjson>` |
+| 御驿消息结构化 | `contracts/validate.mjs`（域约定）+ 设计文档 §7.2.1 | `collab.message.*` 必带 `direction`；身份三元组（peerAgentId/peerOwner/peerRole）**整体来自 Hub 回填**或整体缺席；`peerOwner` 在位而 `peerAgentId` 缺席 → FAIL |
+| 身份自验证据 | `contracts/validate.mjs`（域约定） | `platform.identity.verified` 必带 `identityId`(非空) / `verified`(boolean) / `via`；`verified=false` 必带 `reason` |
 | 审批代办契约 v1 | `contracts/approval-request-v1.md` | 文件请求/应答协议（pending → decisions）+ 事件对 |
-| 参考实现 | `approval-demo/instance.mjs` | 一次性演示：写 pending → 等决定 → 收到后行动（ops-pi P3 模板） |
+| 渲染烟测 | `contracts/render-smoke.mjs` | node:vm + 最小 DOM stub 真实执行 `render()`：8 视图关键内容 + 无 `undefined`/`NaN` + 空态降级（无需浏览器），`node contracts/render-smoke.mjs` |
+| 参考实现 | `approval-demo/`、`collab-demo/`、`identity-demo/` | 契约活样例；**仅在隔离数据根注入**（不污染生产看板） |
+| 隔离夹具 | `test-fixtures/fake-ledger/` | 治理合法写路径的测试目标（不落盘），保证测试无生产副作用 |
 
 ## 实例接入
 
@@ -114,9 +147,11 @@ $trigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
 Register-ScheduledTask -TaskName "ArchitectObservatory" -Action $action -Trigger $trigger -RunLevel Limited -Force
 ```
 
-**启动参数**：`--port <n>`（默认 8787）· `--tasks <dir>`（可重复，台账目录）· `--agentdb <path>` · `--alert-cooldown-ms <n>`
+**启动参数**：`--port <n>`（默认 8787）· `--root <总仓根>`（知识库/告警规则/缺省 tasks 与 agent.db）· `--data <数据根>`（缺省 `<root>/obs`）· `--tasks <dir>`（可重复，台账目录）· `--agentdb <path>` · `--alert-cooldown-ms <n>`
 
-**进程管理纪律（重要）**：只按 `server.pid` 登记精确启停；**禁止** `Get-Process node | Stop-Process`（会杀掉宿主进程树，见 `architect-knowledge/practice/suite-build-lessons.md`）。
+**进程登记**：PID 写入 **`<数据根>/server.pid`**（`obs/server.pid`）——多实例/临时数据根并存互不覆盖。
+
+**进程管理纪律（重要）**：只按 `obs\server.pid` 登记精确启停；**禁止** `Get-Process node | Stop-Process`（会杀掉宿主进程树，见 `architect-knowledge/practice/suite-build-lessons.md`）。
 
 **排障**：`GET /api/health` 看数据源探测；服务起不来时核对 8787 占用者的命令行；`obs/` 为追加数据，删除即回退。
 
@@ -127,11 +162,15 @@ observatory/
 ├── server.mjs                 平台服务（零 npm 依赖，仅 node: 内置模块）
 ├── seal.mjs                   审计归档封印与校验（哈希链）
 ├── alert-rules.yml            告警规则 v1（5 条，支持抑制窗口）
-├── public/index.html          看板单页（原生 JS，无构建）
-├── contracts/                 事件契约校验器 + 审批代办契约
+├── data-roots.yml             治理地址簿（实例 → 台账根）
+├── public/index.html          看板单页（原生 JS，无构建，8 视图）
+├── contracts/                 事件契约校验器 + 渲染烟测 + 审批代办契约
 ├── approval-demo/             审批参考实现 + 说明
-└── server.pid                 运行中实例 PID（gitignore）
+├── collab-demo/               御驿消息结构化参考实现
+├── identity-demo/             身份自验证据参考实现（四态）
+└── test-fixtures/fake-ledger/ 隔离台账夹具（治理测试专用，不落盘）
 obs/                           运行时数据根（gitignore）
+├── server.pid                 运行中实例 PID（数据根归属，gitignore）
 ├── instances/                 实例注册与心跳
 ├── events/<instanceId>/       事件流 NDJSON（按实例分文件，无并发竞争）
 ├── events/http/               HTTP 上报落点
@@ -142,8 +181,7 @@ obs/                           运行时数据根（gitignore）
 
 ## 分期状态
 
-- **一期 ✅**：契约 v1 + 校验器 + 实例注册/心跳 + 看板四视图 + omp 实例接入 + 任务治理 confirm + 双实例冒烟
-- **二期 ✅（部分）**：运行时层（agent.db 只读摄取）· HTTP 上报端点 · 告警规则 + 抑制 + 历史 · 健康端点 · 知识视图增强 · 事件实时流 · **审批代办端到端**（含参考实现）
-- **二期剩余**：御驿消息结构化（依赖 Yuyi 身份接口 B1 交付）
-- **三期 ✅（部分）**：**不可变审计归档（哈希链封印 + 校验，RR-2 闭环）** 已完成并篡改检测实测
-- **三期剩余**：御符强验证（Yufu 对接）· 跨实例统一治理（现可按 `--root` 治理任一实例，待形式化）
+- **一期 ✅ 完成**：契约 v1 + 校验器 + 实例注册/心跳 + 看板 + omp 实例接入 + 任务治理 confirm + 双实例冒烟
+- **二期 ✅ 完成**：运行时层（agent.db 只读摄取）· HTTP 上报端点 · 告警规则 + 抑制 + 历史 · 健康端点 · 知识视图 + 事件实时流 · **审批代办端到端** · **御驿消息结构化**（§7.2.1，B1 已解除）
+- **三期 ✅ 完成**：**不可变审计归档**（哈希链封印 + 篡改检测）· **御符强验证**（重界定为实例自验 + 证据存档）· **跨实例统一治理**（地址簿 + 选择器 + 批量）· **治理写操作防线** · **看板渲染烟测**
+- **剩余（非阻断）**：omp-stats 集成评估（可选）· 平台身份认证（本地令牌，登记项）

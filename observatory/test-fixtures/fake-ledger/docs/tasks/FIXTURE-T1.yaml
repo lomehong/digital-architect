@@ -1,0 +1,12 @@
+id: 'FIXTURE-T1'
+title: '隔离测试夹具任务（非真实台账）'
+state: '待确认'
+level: 'L1'
+created: '2026-09-12T00:00:00.000Z'
+accept:
+  - '仅用于治理端点端到端测试；此目录不属于任何生产台账'
+events:
+  - ts: '2026-09-12T00:00:00.000Z'
+    op: 'create'
+    by: 'test-fixture'
+    note: '隔离夹具'

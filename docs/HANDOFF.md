@@ -176,6 +176,13 @@ E:\Development\Code\nodejs\digital-architect\
 
 ## 6. 下一步执行清单（新会话从这里开始）
 
+> **状态（2026-09-12 更新）**：阶段 1–4 **均已完成**——
+> 知识库 38 条全「已确认」+ 评审队列空；流程技能 4 个（`architect-prd-digest` / `architect-design` / `architect-review` / `archify` 集成）+
+> `knowledge-distill`；`templates/` 就位；dsh-architect 检查器插件已发 **v0.3.1**（`dsh-architect-latest.tgz` + `architect-core-latest.tgz` 双资产）；
+> **Architect Observatory 可观测性平面三期全部完成**（契约/看板八视图/治理操作面/审计归档/协作面/身份自验/跨实例治理/写操作防线），
+> 逐项实施状态见 `docs/design/observatory-architecture-design.md` §7.5，运行入口见 `observatory/README.md`。
+> 下节清单保留为**历史执行轨迹**（不回改）。
+
 ### 阶段 1 · 知识工程地基（纯文件，零代码）
 
 1. `git init` digital-architect（如尚未初始化）+ 基础 README；
@@ -215,6 +222,8 @@ E:\Development\Code\nodejs\digital-architect\
 | 会话压缩后 session id 变化 | 看板接管语义已处理（task_claim 接管+审计；task_report 接管上报） |
 | 微信反爬 | 服务端直抓会撞验证墙——公众号采集必须走浏览器桥（真实会话指纹） |
 | SKILL 机制版本 | 宿主 skill-filesystem/tool-skill 在 alpha.2 正常；SKILL.md 格式参考宿主 `@deepseek-ai/dsh-skill-filesystem` 的既有技能样例 |
+| **Observatory 无认证**（2026-09-12 登记） | 平台绑定 127.0.0.1 且无认证。已加两防线（操作者必填不代填 + 真实台账 `confirmReal`），防的是**自动化/负测误写**，不防本机恶意进程；彻底方案为本地令牌或复用御符身份，未实施 |
+| **跨主机实例治理** | 治理地址簿仅支持平台可访问的本地路径；跨主机实例需远端执行面，未支持（登记项） |
 
 ---
 
@@ -232,6 +241,11 @@ E:\Development\Code\nodejs\digital-architect\
 | 两篇文章知识条目 | dsh-memory（§3.1） |
 | 宿主 persona schema 教训 | config.text 已废弃→必须 prefix（对齐 standard 预设；PRESET_VERSION 10） |
 | 官方源码 checkout | `E:\Development\Code\nodejs\deepseek-harness`（tag dsh-v0.1.5-alpha.2——研究宿主 API 用，git grep 快） |
+| **Observatory 设计文档** | `docs\design\observatory-architecture-design.md`（v4.3 已落定，§7.5 实施状态表为权威） |
+| **Observatory 运行入口** | `observatory\README.md`；`observatory\server.mjs --data <数据根> --port 8787`；看板 `http://127.0.0.1:8787` |
+| **Observatory 治理地址簿** | `observatory\data-roots.yml`（实例 → 台账根，平台宿主视角路径） |
+| **Observatory 回归资产** | `observatory\contracts\validate.mjs`（契约）、`render-smoke.mjs`（8 视图渲染烟测）、`test-fixtures\fake-ledger`（隔离夹具） |
+| **ops-pi（兄弟仓，未 git 化）** | `E:\Development\Code\nodejs\ops-pi`；设计 v4.3、任务台账 `docs\tasks\OPSP-P0..P5.yaml`、决策简报 `docs\reports\` |
 
 ---
 
@@ -245,3 +259,12 @@ E:\Development\Code\nodejs\digital-architect\
 ---
 
 > **路径变更提示（2026-09-11 补记）**：本文档 §2.1/§8 中的套件根 E:\Development\Code\nodejs\digital-twin、家目录 C:\Users\lome\...、官方 checkout E:\Development\Code\nodejs\deepseek-harness 三处路径**已失效**（实测不存在）。现址见 rchitect-knowledge/reference/dsh-suite-architecture-map.md（2026-09-11 漂移回写，待主人确认）。本文档其余内容作为交接时点快照保留，不回改。
+
+---
+
+> **2026-09-12 补记（Observatory 三期完成 + 事故留痕）**
+>
+> 1. **B1 结案**：原「御驿消息结构化依赖 Yuyi 身份接口（跨团队阻断）」经源码核实**已解除**——受支持接口本就存在：Hub 权威回填 `from.agentId/ownerUsername/role`（客户端不可自报）、实例本地 `bridge.agentId` + `yufu_whoami`/`yufu_agent_get`、`@qianji/agent-daemon` 闸门（终止/屏蔽双侧拒绝）。跨团队请求撤销；观测面**不接管身份**。依据见设计文档 §7.2.1。
+> 2. **新增能力**：御驿消息结构化（协作视图）· 身份自验证据（三态 + 漂移检出）· 跨实例统一治理（地址簿 + 选择器 + 批量）· 看板渲染烟测（无浏览器回归）。
+> 3. **事故与加固（重要）**：本会话在负测中**两次**误对生产台账 `ops-pi/docs/tasks/OPSP-P0.yaml` 执行 confirm，均已回滚并追加 `rollback` 事件留痕；随后加固两条防线（操作者必填不代填 + 真实台账 `confirmReal` 拦截）与负测隔离夹具。教训已入 `architect-knowledge/practice/observatory-platform-bootstrap.md` 与 `suite-build-lessons.md`。
+> 4. **待主人处置**：① OPSP-P0 现为「待确认」（P0 报告称验收全部通过），等待主人裁决；② ops-pi R-1 审批通道决策（A/B/C）待主人选择，简报见 `ops-pi/docs/reports/`；③ observatory 写操作防线的定级待追认。

@@ -6,7 +6,9 @@
  * 治理面：POST /api/govern/* → 调 task-ledger.mjs CLI（不旁路四不变量）+ 发 governance.* 审计事件。
  * 看板：public/index.html（GET /），绑定 127.0.0.1:8787。
  *
- * 用法：node server.mjs [--root <总仓根>] [--port 8787]   # 缺省 root = 脚本上级目录
+ * 用法：node server.mjs [--root <总仓根>] [--data <数据根>] [--port 8787] [--tasks <dir>]... [--agentdb <path>]
+ *   --root 若省略 = 脚本上级目录；--data 若省略 = <root>/obs
+ *   --data 独立于 --root，便于在临时数据根上做无副作用端到端验证（总仓知识库/告警规则仍按 --root 读取）。
  */
 import http from 'node:http'
 import { watch, existsSync, readFileSync, readdirSync, mkdirSync, writeFileSync, appendFileSync, unlinkSync } from 'node:fs'
@@ -16,27 +18,32 @@ import { fileURLToPath } from 'node:url'
 import { DatabaseSync } from 'node:sqlite'
 import { createHash } from 'node:crypto'
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const PORT = Number(process.argv.includes('--port') ? process.argv[process.argv.indexOf('--port') + 1] : 8787)
-const OBS = join(ROOT, 'obs')
-const INSTANCES_DIR = join(OBS, 'instances')
-const EVENTS_DIR = join(OBS, 'events')
-const HEARTBEAT_FACTOR = 3
-
+const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url))
+// 总仓根（知识库/告警规则/缺省 tasks 与 agent.db）与数据根（instances/events/approvals/archive）
+let ROOT = resolve(SCRIPT_DIR, '..')
+let OBS = join(ROOT, 'obs')
+let PORT = 8787
 // 台账目录（可重复 --tasks <dir>）：yaml 现值为权威状态源，事件流提供历史轨迹
 const TASK_DIRS = []
 // 运行时库（omp agent.db，只读摄取；缺省 docker/omp/agent/agent.db）
-let AGENT_DB = join(ROOT, 'docker', 'omp', 'agent', 'agent.db')
+let AGENT_DB = null
 // 告警抑制窗口（同一规则 N ms 内不重复入库/通知；抑制状态仍呈现但标记 suppressed）
 let ALERT_COOLDOWN_MS = 10 * 60 * 1000
 {
   const argv = process.argv
   for (let i = 2; i < argv.length; i++) {
-    if (argv[i] === '--tasks') TASK_DIRS.push(argv[++i])
+    if (argv[i] === '--root') ROOT = resolve(argv[++i])
+    else if (argv[i] === '--data') OBS = resolve(argv[++i])
+    else if (argv[i] === '--port') PORT = Number(argv[++i])
+    else if (argv[i] === '--tasks') TASK_DIRS.push(argv[++i])
     else if (argv[i] === '--agentdb') AGENT_DB = argv[++i]
     else if (argv[i] === '--alert-cooldown-ms') ALERT_COOLDOWN_MS = Number(argv[++i])
   }
 }
+if (AGENT_DB === null) AGENT_DB = join(ROOT, 'docker', 'omp', 'agent', 'agent.db')
+const INSTANCES_DIR = join(OBS, 'instances')
+const EVENTS_DIR = join(OBS, 'events')
+const HEARTBEAT_FACTOR = 3
 // 告警状态（进程内：抑制窗口与触发计数；历史落 obs/alerts-history.ndjson）
 const alertState = {}
 
@@ -99,6 +106,97 @@ function loadLedgerTasks() {
   return out
 }
 
+/**
+ * 协作面汇总（§7.2.1 御驿消息结构化）：按对端身份聚合 collab.message 事件。
+ * 身份字段全部来自实例转写的 Yuyi Hub 权威回填值（peerAgentId/peerOwner/peerRole）；
+ * peerAgentId 缺席即「身份未验证」——平台如实呈现，不推测、不补全。
+ */
+function summarizeCollab(events) {
+  const peers = {}
+  let denied = 0
+  for (const e of events) {
+    const t = String(e.type)
+    if (t.startsWith('collab.gate-denied')) { denied++; continue }
+    if (!t.startsWith('collab.message')) continue
+    const verified = typeof e.peerAgentId === 'string' && e.peerAgentId !== ''
+    const key = verified ? e.peerAgentId : `未验证:${e.peerName || e.peerDevice || '未知'}`
+    const p = peers[key] || (peers[key] = {
+      peerKey: key, agentId: verified ? e.peerAgentId : '', owner: '', role: '',
+      device: e.peerDevice || '', name: e.peerName || '',
+      inbound: 0, outbound: 0, identityVerified: verified, systems: {}, lastTs: '', lastSubject: '',
+    })
+    if (e.direction === 'inbound') p.inbound++
+    else if (e.direction === 'outbound') p.outbound++
+    if (verified) p.identityVerified = true
+    p.systems[e.system] = (p.systems[e.system] || 0) + 1
+    if (!p.lastTs || String(e.ts) >= p.lastTs) {
+      p.lastTs = String(e.ts)
+      p.lastSubject = e.subject ?? ''
+      if (verified) p.agentId = e.peerAgentId
+      if (typeof e.peerOwner === 'string' && e.peerOwner) p.owner = e.peerOwner
+      if (typeof e.peerRole === 'string' && e.peerRole) p.role = e.peerRole
+      if (e.peerDevice) p.device = e.peerDevice
+      if (e.peerName) p.name = e.peerName
+    }
+  }
+  const list = Object.values(peers).sort((a, b) => (b.inbound + b.outbound) - (a.inbound + a.outbound))
+  return {
+    peers: list,
+    totals: {
+      peers: list.length,
+      verified: list.filter((p) => p.identityVerified).length,
+      unverified: list.filter((p) => !p.identityVerified).length,
+      inbound: list.reduce((n, p) => n + p.inbound, 0),
+      outbound: list.reduce((n, p) => n + p.outbound, 0),
+      gateDenied: denied,
+    },
+  }
+}
+
+/**
+ * 身份自验面（§7.1 身份三态之「自验」）：取每实例最新的 platform.identity.verified 证据。
+ * 平台只存档与呈现，不做验证、不持有御符凭证；验证由实例侧调 yufu_verify 完成后上报。
+ * drift：同一 instanceId 先后自验出**不同御符 id** → 身份漂移嫌疑，显式提示。
+ * （注册 id `<宿主>-<职责>-<序号>` 与御符 id `yf-*` 本就不同形，故不作跨形比较。）
+ */
+function summarizeIdentity(events, instances) {
+  const latest = {}
+  const seenIds = {}
+  for (const e of events) {
+    if (e.domain !== 'platform' || !String(e.type).startsWith('platform.identity.verified')) continue
+    const prev = latest[e.instanceId]
+    if (!prev || String(e.ts) >= String(prev.ts)) latest[e.instanceId] = e
+    if (typeof e.identityId === 'string' && e.identityId !== '') (seenIds[e.instanceId] || (seenIds[e.instanceId] = new Set())).add(e.identityId)
+  }
+  const rows = Object.values(instances).map((i) => {
+    const e = latest[i.instanceId]
+    const ids = [...(seenIds[i.instanceId] || [])]
+    const drift = ids.length > 1 ? `身份漂移：同一实例先后自验为 ${ids.join(' / ')}` : ''
+    if (!e) return { instanceId: i.instanceId, state: '未申报', identityId: '', owner: '', role: '', permissions: [], via: '', checkedAt: '', ageSec: null, reason: '', drift }
+    return {
+      instanceId: i.instanceId,
+      state: e.verified ? '已验证' : '失效',
+      identityId: typeof e.identityId === 'string' ? e.identityId : '',
+      owner: e.owner || '',
+      role: e.role || '',
+      permissions: Array.isArray(e.permissions) ? e.permissions : [],
+      via: e.via || '',
+      checkedAt: e.ts || '',
+      ageSec: Math.round((Date.now() - (Date.parse(e.ts) || 0)) / 1000),
+      reason: e.reason || '',
+      drift,
+    }
+  })
+  return {
+    rows,
+    totals: {
+      verified: rows.filter((r) => r.state === '已验证').length,
+      failed: rows.filter((r) => r.state === '失效').length,
+      unreported: rows.filter((r) => r.state === '未申报').length,
+    },
+  }
+}
+
 function snapshot() {
   const instances = loadInstances()
   const events = loadEvents()
@@ -122,25 +220,35 @@ function snapshot() {
       }
     } catch { /* 目录不可达 */ }
   }
-  return { generatedAt: new Date().toISOString(), instances: Object.values(instances), events: events.slice(-500), tasks, reviewQueue: rq, alerts: critical.slice(-50), governance: governance.slice(-50), lastError: state.lastError }
+  // 治理地址簿：登记项并入实例实时状态（offline 实例仍可治理其台账——状态只影响提示）
+  const roots = DATA_ROOTS.list.map((r) => ({
+    instanceId: r.instanceId,
+    taskRoot: r.taskRoot || '',
+    label: r.label || '',
+    status: instances[r.instanceId]?.status ?? 'unknown',
+    systems: instances[r.instanceId]?.systems ?? [],
+  }))
+  return { generatedAt: new Date().toISOString(), instances: Object.values(instances), events: events.slice(-500), tasks, reviewQueue: rq, alerts: critical.slice(-50), governance: governance.slice(-50), collab: summarizeCollab(events.filter((e) => e.domain === 'collab')), identity: summarizeIdentity(events, instances), roots, addressBookSource: DATA_ROOTS.source, lastError: state.lastError }
 }
 
 // ---- 治理操作（经 task-ledger CLI，不旁路四不变量）----
 function governTask(taskId, root, action, by) {
   const sub = action === 'confirm' ? 'confirm' : action === 'reject' ? 'reject' : null
   if (!sub) throw new Error(`未知治理动作：${action}`)
+  // 纵深防线：即使绕过路由层，函数层也拒绝无操作者的治理调用（不得代填「主人」）
+  if (typeof by !== 'string' || by.trim() === '') throw new Error('治理操作必须显式提供操作者标识 by（平台不代填「主人」）')
   // 台账脚本随目标项目走：<root>/scripts/task-ledger.mjs；confirm 须带来源（--confirmed-by/--confirmed-via）
   const args = [join(root, 'scripts', 'task-ledger.mjs'), sub, '--id', taskId, '--by', by, '--confirmed-by', by, '--confirmed-via', 'observatory', '--root', root]
   const out = execFileSync('node', args, { encoding: 'utf8' })
   appendEvent({ domain: 'governance', type: `governance.${action}`, severity: 'info', subject: taskId, payload: { by, via: 'observatory', out: out.slice(-200) } })
   return { ok: true, out: out.slice(-500) }
 }
-function promoteKnowledge(entry, to) {
+function promoteKnowledge(entry, to, by) {
   const file = join(ROOT, 'architect-knowledge', 'practice', `${entry}.md`)
   let c = readFileSync(file, 'utf8')
   c = c.replace(/status:\s*(待审核|已确认)/, `status: ${to}`)
   writeFileSync(file, c)
-  appendEvent({ domain: 'governance', type: 'governance.knowledge-promote', severity: 'info', subject: entry, payload: { to, via: 'observatory' } })
+  appendEvent({ domain: 'governance', type: 'governance.knowledge-promote', severity: 'info', subject: entry, payload: { to, by, via: 'observatory' } })
   return { ok: true }
 }
 function appendEvent(ev) {
@@ -155,9 +263,10 @@ function appendEvent(ev) {
 }
 
 // ---- 运行时层：omp agent.db 只读摄取（node:sqlite，零 npm 依赖）----
-// 零依赖的极简 YAML 解析（仅支持 alert-rules.yml 形态：顶层 `rules:` + `  - key: value` 列表）
-const YAML = { parse: (txt) => {
-  const out = { rules: [] }
+// 零依赖的极简 YAML 解析（顶层 `<key>:` + `  - k: v` 列表形态；key 缺省 rules，向后兼容 alert-rules.yml）
+const YAML = { parse: (txt, key = 'rules') => {
+  const out = { [key]: [] }
+  const headRe = new RegExp(`^${key}:\\s*$`)
   let cur = null
   const unquote = (v) => {
     const t = v.trim()
@@ -167,14 +276,27 @@ const YAML = { parse: (txt) => {
   for (const raw of txt.split(/\r?\n/)) {
     const line = raw.replace(/\s+$/, '')
     if (line.trim() === '' || /^\s*#/.test(line)) continue
-    if (/^rules:\s*$/.test(line.trim())) continue
+    if (headRe.test(line.trim())) continue
     const item = line.match(/^\s*-\s+([\w-]+):\s*(.*)$/)   // 列表项起始（- id: xxx）
-    if (item) { cur = {}; cur[item[1]] = unquote(item[2]); out.rules.push(cur); continue }
+    if (item) { cur = {}; cur[item[1]] = unquote(item[2]); out[key].push(cur); continue }
     const kv = line.match(/^\s+([\w-]+):\s*(.*)$/)         // 同级续行（when/severity/title/message）
     if (kv && cur) { cur[kv[1]] = unquote(kv[2]); continue }
   }
   return out
 } }
+// ---- 治理地址簿（data-roots.yml）：跨实例统一治理的选择器来源 ----
+// 实例在容器/会话内看到的路径 ≠ 平台宿主路径，故显式登记；缺失时治理页仍支持手输 root。
+const DATA_ROOTS = (() => {
+  const p = join(ROOT, 'observatory', 'data-roots.yml')
+  if (!existsSync(p)) return { list: [], source: null }
+  try { return { list: YAML.parse(readFileSync(p, 'utf8'), 'roots').roots || [], source: p } } catch (e) { return { list: [], source: p, error: e.message } }
+})()
+// 真实台账判定：root 命中治理地址簿即视为生产台账（自动化调用须显式 confirmReal=true）
+// 背景：2026-09-12 两次误操作（负测误对生产台账执行 confirm），此防线防止脚本/自动化重犯。
+function isRealLedger(root) {
+  const norm = (p) => String(p || '').replace(/[\\/]+$/, '').replace(/\//g, '\\').toLowerCase()
+  return DATA_ROOTS.list.some((r) => r.taskRoot && norm(r.taskRoot) === norm(root))
+}
 // ---- 告警规则（alert-rules.yml）加载与评估 ----
 const ALERT_RULES = (() => {
   const p = join(ROOT, 'observatory', 'alert-rules.yml')
@@ -317,11 +439,19 @@ function httpIngest(body) {
   const events = Array.isArray(body) ? body : [body]
   const problems = []
   const valid = []
-  for (const ev of events) {
+  for (let i = 0; i < events.length; i++) {
+    const ev = events[i]
+    // 逐事件局部判定：混批时不得因前序事件通过而放行后序坏事件（历史 bug 已修）
+    const local = []
     for (const k of ['ts', 'instanceId', 'hostType', 'system', 'domain', 'type', 'severity']) {
-      if (typeof ev[k] !== 'string' || ev[k] === '') { problems.push(`缺必填 ${k}`); break }
+      if (typeof ev[k] !== 'string' || ev[k] === '') local.push(`#${i} 缺必填 ${k}`)
     }
-    if (problems.length === 0 || problems.length === valid.length) valid.push(ev)
+    // 域约定（与 contracts/validate.mjs 同源）：collab.message 须带 direction
+    if (ev.domain === 'collab' && typeof ev.type === 'string' && ev.type.startsWith('collab.message') && ev.direction !== 'inbound' && ev.direction !== 'outbound') {
+      local.push(`#${i} collab.message 须带 direction(inbound|outbound)：${ev.direction}`)
+    }
+    if (local.length > 0) problems.push(...local)
+    else valid.push(ev)
   }
   if (valid.length > 0) {
     const dir = join(EVENTS_DIR, 'http')
@@ -383,9 +513,13 @@ const server = http.createServer((req, res) => {
       req.on('data', (c) => { body += c; if (body.length > 16384) req.destroy() })
       req.on('end', () => {
         try {
-          const { taskId, root, action, by } = JSON.parse(body || '{}')
+          const { taskId, root, action, by, confirmReal } = JSON.parse(body || '{}')
           if (!taskId || !root || !['confirm', 'reject'].includes(action)) throw new Error('参数不合法')
-          sendJson(res, 200, governTask(taskId, root, action, by || '主人'))
+          // 操作者必须显式提供：平台不得默认代填「主人」（confirm 只能由主人发起，见 2026-09-12 误操作事件）
+          if (typeof by !== 'string' || by.trim() === '') throw new Error('治理操作必须显式提供 by（操作者标识）；平台不代填「主人」')
+          // 生产台账防线：脚本/自动化路径必须显式声明，防止负测与自动化误写真实台账
+          if (isRealLedger(root) && confirmReal !== true) throw new Error(`拒绝：${root} 是治理地址簿登记的真实台账。脚本/自动化调用须显式带 confirmReal=true（经看板人工操作会自动携带）；此防线源于 2026-09-12 两次负测误写生产台账的教训`)
+          sendJson(res, 200, governTask(taskId, root, action, by.trim()))
         } catch (e) { sendJson(res, 400, { ok: false, error: e.message }) }
       })
       return
@@ -397,12 +531,14 @@ const server = http.createServer((req, res) => {
         try {
           const { requestId, decision, by, reason } = JSON.parse(body || '{}')
           if (!requestId || !['allow', 'deny'].includes(decision)) throw new Error('参数不合法（需 requestId 与 decision=allow|deny）')
+          if (typeof by !== 'string' || by.trim() === '') throw new Error('审批必须显式提供 by（操作者标识）；平台不代填「主人」')
+          const operator = by.trim()
           const ppath = join(APPROVALS_PENDING_DIR, `${requestId}.json`)
           if (!existsSync(ppath)) throw new Error('挂单不存在或已处理')
           const pending = JSON.parse(readFileSync(ppath, 'utf8'))
           mkdirSync(APPROVALS_DECISIONS_DIR, { recursive: true })
-          writeFileSync(join(APPROVALS_DECISIONS_DIR, `${requestId}.json`), JSON.stringify({ requestId, ts: new Date().toISOString(), decision, by: by || '主人', via: 'observatory', reason: reason || '' }, null, 2))
-          appendFileSync(join(EVENTS_DIR, pending.instanceId, new Date().toISOString().slice(0, 10) + '.ndjson'), JSON.stringify({ ts: new Date().toISOString(), instanceId: pending.instanceId, hostType: pending.hostType || 'dsh', system: pending.system || 'digital-architect', domain: 'runtime', type: 'approval.resolved', severity: decision === 'deny' ? 'warning' : 'info', subject: requestId, payload: { decision, by: by || '主人', via: 'observatory', reason: reason || '' } }) + '\n')
+          writeFileSync(join(APPROVALS_DECISIONS_DIR, `${requestId}.json`), JSON.stringify({ requestId, ts: new Date().toISOString(), decision, by: operator, via: 'observatory', reason: reason || '' }, null, 2))
+          appendFileSync(join(EVENTS_DIR, pending.instanceId, new Date().toISOString().slice(0, 10) + '.ndjson'), JSON.stringify({ ts: new Date().toISOString(), instanceId: pending.instanceId, hostType: pending.hostType || 'dsh', system: pending.system || 'digital-architect', domain: 'runtime', type: 'approval.resolved', severity: decision === 'deny' ? 'warning' : 'info', subject: requestId, payload: { decision, by: operator, via: 'observatory', reason: reason || '' } }) + '\n')
           try { unlinkSync(ppath) } catch { /* 保留供审计 */ }
           sendJson(res, 200, { ok: true, requestId, decision })
         } catch (e) { sendJson(res, 400, { ok: false, error: e.message }) }
@@ -414,9 +550,10 @@ const server = http.createServer((req, res) => {
       req.on('data', (c) => { body += c; if (body.length > 16384) req.destroy() })
       req.on('end', () => {
         try {
-          const { entry, to } = JSON.parse(body || '{}')
+          const { entry, to, by } = JSON.parse(body || '{}')
           if (!entry || to !== '已确认') throw new Error('参数不合法')
-          sendJson(res, 200, promoteKnowledge(entry, to))
+          if (typeof by !== 'string' || by.trim() === '') throw new Error('知识条目升级必须显式提供 by（操作者标识）；平台不代填「主人」')
+          sendJson(res, 200, promoteKnowledge(entry, to, by.trim()))
         } catch (e) { sendJson(res, 400, { ok: false, error: e.message }) }
       })
       return
@@ -453,9 +590,15 @@ try {
 
 mkdirSync(INSTANCES_DIR, { recursive: true })
 mkdirSync(EVENTS_DIR, { recursive: true })
-// PID 登记（精确管理面：按 server.pid 启停，禁按进程名批量杀）
-try { writeFileSync(join(dirname(fileURLToPath(import.meta.url)), 'server.pid'), String(process.pid)) } catch { /* 登记失败不阻断启动 */ }
-const cleanupPid = () => { try { unlinkSync(join(dirname(fileURLToPath(import.meta.url)), 'server.pid')) } catch { /* 已不存在或目录只读 */ } }
+// 运行期状态目录预建：新数据根开箱即健康（历史缺陷：缺 approvals/ 时健康端点报 ENOENT）
+mkdirSync(APPROVALS_PENDING_DIR, { recursive: true })
+mkdirSync(APPROVALS_DECISIONS_DIR, { recursive: true })
+mkdirSync(join(OBS, 'archive'), { recursive: true })
+// PID 登记（精确管理面：按 <数据根>/server.pid 启停，禁按进程名批量杀）
+// 归属数据根而非脚本目录：多实例/临时数据根并存时互不覆盖（历史缺陷：临时实例会覆盖主实例登记）。
+const PID_FILE = join(OBS, 'server.pid')
+try { writeFileSync(PID_FILE, String(process.pid)) } catch { /* 登记失败不阻断启动 */ }
+const cleanupPid = () => { try { unlinkSync(PID_FILE) } catch { /* 已不存在或目录只读 */ } }
 process.on('exit', cleanupPid)
 for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(sig, () => { cleanupPid(); process.exit(0) })
 server.listen(PORT, '127.0.0.1', () => {

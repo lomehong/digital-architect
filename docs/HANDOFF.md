@@ -276,4 +276,4 @@ E:\Development\Code\nodejs\digital-architect\
 > 1. 平台独立部署演进（Model B）进入实施：**C1 打包与配置解耦**完成（`baf41a8`：pack.mjs 独立 tarball + 配置寻址数据根优先，验收=无仓目录独立启动全功能）；**C2 大脑仓 git 镜像**已实施——`observatory/brain-mirror.mjs` + server 集成（`--brain`：fetch/ff-only 只读同步、知识升级=镜像内 commit+push、冲突 reset 回滚**拒写**并 critical 呈报、`OBS_BRAIN_TOKEN` 凭据只进进程环境）。验收回归 `observatory/contracts/brain-mirror-e2e.mjs` 16 断言全过（临时夹具远端，隔离无生产副作用）。
 > 2. 新增文档：评审结论 `docs/designs/2026-09-12-平台独立部署演进-评审结论.md`（六维度 54/60，通过待主人确认）、走查记录 `docs/designs/2026-09-12-平台独立部署演进-走查记录.md`。
 > 3. 顺带修复：知识升级 `promoteKnowledge` 原硬编码 `practice/` 目录——非 practice 条目经看板升级会写错路径；已改五类解析（e2e 有回归）。
-> 4. **待主人处置**：① C1/C2 结果确认；② 部署目标形态 NAS/云主机/常开 PC + 大脑仓 git 远端确认（C4 迁移手册前）；③ C3 governor 宿主清单（C3 启动决策门）。
+> 4. **主人已处置（2026-09-12 同场拍板）**：① C1/C2 结果**确认落定**；② 部署目标形态=**云主机**（C4 迁移手册输入，受保护模式+令牌为前置）；③ C3 governor 宿主清单=**先本机 dsh + omp 容器**（C3 启动门已放行，实施中）。

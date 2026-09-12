@@ -1,0 +1,20 @@
+# 智谱 GLM Coding Plan 自定义 provider（omp 官方 models.yml 形态，README §Custom providers）
+# 套餐端点走 coding 专用前缀；key 经 env 引用（.env 注入，不入库）
+providers:
+  zhipu-plan:
+    baseUrl: https://open.bigmodel.cn/api/coding/paas/v4
+    api: openai-completions
+    apiKey: $ZHIPU_API_KEY
+    models:
+      - id: glm-5.3-flash
+        name: GLM-5.3-Flash
+        contextWindow: 1000000
+        maxTokens: 131072
+      - id: glm-5.3
+        name: GLM-5.3
+        contextWindow: 1000000
+        maxTokens: 131072
+      - id: glm-5.2
+        name: GLM-5.2
+        contextWindow: 1000000
+        maxTokens: 131072

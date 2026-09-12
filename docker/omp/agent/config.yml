@@ -1,5 +1,9 @@
 modelRoles:
-  default: deepseek/deepseek-flash
+  default: zhipu-plan/glm-5.3-flash
+retry:
+  fallbackChains:
+    zhipu-coding-plan/glm-5.3-flash:
+      - deepseek/deepseek-chat
 symbolPreset: unicode
 composer:
   shape: band

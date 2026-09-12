@@ -149,6 +149,37 @@ function appendEvent(ev) {
 }
 
 // ---- 运行时层：omp agent.db 只读摄取（node:sqlite，零 npm 依赖）----
+// ---- 告警规则（alerts.yml）加载与评估 ----
+const ALERT_RULES = (() => {
+  const p = join(ROOT, 'observatory', 'alert-rules.yml')
+  if (!existsSync(p)) return { list: [], source: null };
+  try { const r = require('node:fs').readFileSync(p, 'utf8'); return { list: YAML.parse(r).rules || [], source: p } } catch (e) { return { list: [], source: p, error: e.message } }})()
+// 零依赖的极简 YAML 解析（仅支持 alerts.yml 形态：顶层 rules: [ { id, when, severity, title, message } ]）
+const YAML = { parse: (txt) => {
+  const lines = txt.split(/\r?\n/)
+  const out = { rules: [] }
+  let i = 0
+  const readScalar = (l) => l.replace(/^[\s#-]*/, '').trim()
+  while (i < lines.length) {
+    if (lines[i].match(/^rules:\s*$/)) { i++; continue }
+    if (lines[i].match(/^\s*-\s*$/)) { i++; const rule = {}; while (i < lines.length && lines[i].match(/^\s{2,}\w/)) { const m = lines[i].match(/^\s+(\w+):\s*(.*)$/); if (m) rule[m[1]] = m[2].trim(); i++ } out.rules.push(rule); continue }
+    i++
+  }
+  return out
+} }
+function evaluateAlerts(snap) {
+  if (ALERT_RULES.list.length === 0) return []
+  const ctx = { events: snap.events, instances: snap.instances, tasks: snap.tasks, Date, Date: { parse: (s) => new Date(s).getTime() }, now: Date.now() }
+  const out = []
+  for (const r of ALERT_RULES.list) {
+    try {
+      const fn = new Function(...Object.keys(ctx), `return (${r.when})`)
+      if (fn(...Object.values(ctx))) out.push({ id: r.id, severity: r.severity, title: r.title, message: r.message })
+    } catch { /* 单条规则失败不阻断其他 */ }
+  }
+  return out
+}
+
 function runtimeSnapshot() {
   if (!existsSync(AGENT_DB)) return { available: false, reason: `agent.db 不存在：${AGENT_DB}` }
   try {
@@ -205,7 +236,11 @@ const server = http.createServer((req, res) => {
       res.end(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'public', 'index.html')))
       return
     }
-    if (req.method === 'GET' && url.pathname === '/api/snapshot') return sendJson(res, 200, { ...snapshot(), runtime: runtimeSnapshot() })
+    if (req.method === 'GET' && url.pathname === '/api/snapshot') {
+      const snap = { ...snapshot(), runtime: runtimeSnapshot() }
+      snap.alerts = evaluateAlerts(snap)
+      return sendJson(res, 200, snap)
+    }
     if (req.method === 'GET' && url.pathname === '/api/runtime') return sendJson(res, 200, runtimeSnapshot())
     if (req.method === 'POST' && url.pathname === '/api/events') {
       let body = ''

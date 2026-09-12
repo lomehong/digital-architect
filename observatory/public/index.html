@@ -60,6 +60,8 @@ function render() {
     const alerts = SNAP.alerts.map((e) => `<tr><td class="crit">${esc(e.type)}</td><td>${esc(e.subject)}</td><td class="dim">${esc(e.ts)}</td></tr>`).join('')
     v.innerHTML = `<h2>实例</h2><table><tr><th>实例(御符)</th><th>宿主</th><th>负责系统</th><th>状态</th><th>心跳</th></tr>${inst || '<tr><td colspan=5 class=dim>暂无注册实例</td></tr>'}</table>
       <h2>最近 critical 事件</h2><table><tr><th>类型</th><th>主体</th><th>时间</th></tr>${alerts || '<tr><td colspan=3 class=dim>无</td></tr>'}</table>
+      <h2>告警</h2>
+      ${(SNAP.alerts||[]).length === 0 ? '<p class=ok>✅ 无告警</p>' : `<table><tr><th>级别</th><th>告警</th></tr>${SNAP.alerts.map((a) => `<tr><td class="${a.severity==='critical'?'crit':'warn'}">${esc(a.severity)}</td><td><b>${esc(a.title)}</b><br><span class=dim>${esc(a.message||'')}</span></td></tr>`).join('')}</table>`}
       <h2>治理留痕（最近）</h2><table><tr><th>动作</th><th>主体</th><th>经手</th><th>时间</th></tr>${SNAP.governance.map((e) => `<tr><td>${esc(e.type)}</td><td>${esc(e.subject)}</td><td>${esc((e.payload||{}).via)}</td><td class="dim">${esc(e.ts)}</td></tr>`).join('') || '<tr><td colspan=4 class=dim>无</td></tr>'}</table>`
   } else if (VIEW === 'systems') {
     const bySys = {}

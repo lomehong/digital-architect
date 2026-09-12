@@ -1,0 +1,33 @@
+# observatory/alert-rules.yml — Observatory alert rules v1
+# 服务启动加载并随每次快照评估；命中即并入 snapshot.alerts（看板告警区 + severity=critical 高亮）
+# 规则节点：id / when (js 表达式，注入 {events, instances, tasks, hour, minute, name}) / severity / title / message
+rules:
+  - id: repeated-denials-5min
+    when: events.filter(e => String(e.type).startsWith('tool.denied') && (Date.now() - Date.parse(e.ts)) < 5*60*1000).length >= 3
+    severity: warning
+    title: 5 分钟内 ≥3 次工具拒绝
+    message: "频繁拒绝——可能权限策略过紧或上游误配置"
+
+  - id: critical-spike
+    when: events.filter(e => e.severity === 'critical' && (Date.now() - Date.parse(e.ts)) < 60*60*1000).length >= 1
+    severity: critical
+    title: 1 小时内出现 critical 事件
+    message: "请立即查看团队总览 critical 列表定位来源"
+
+  - id: multi-instance-offline
+    when: instances.filter(i => i.status === 'offline').length >= 2
+    severity: critical
+    title: 2 个或以上实例失联
+    message: "可能是宿主/网络故障或实例自报停止，需立即排查"
+
+  - id: heartbeat-only-one-instance
+    when: instances.filter(i => i.status === 'online').length === 1 && (Date.now() - Date.parse(instances[0]?.lastSeenAt || 0)) > 5*60*1000
+    severity: warning
+    title: 唯一在线实例心跳滞后 > 5 分钟
+    message: "无第二实例冗余——单点风险"
+
+  - id: long-pending-confirm
+    when: Object.values(tasks || {}).filter(t => t.state === '待确认' && t.ts && (Date.now() - Date.parse(t.ts)) > 24*60*60*1000).length >= 1
+    severity: warning
+    title: 任务在「待确认」> 24 小时
+    message: "主人未及时 confirm——状态机被阻塞，请到治理页处理"

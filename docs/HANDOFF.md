@@ -285,4 +285,4 @@ E:\Development\Code\nodejs\digital-architect\
 > 1. **C3 governor 远端执行面已实施**：平台发「治理指令单」（管理员令牌门 + 单号幂等 + HMAC 签名，无 `GOV_SIGN_KEY` 拒绝发单）→ 实例宿主 `observatory/governor.mjs` 领单（御符 token 认证）→ 双侧白名单（task-ledger / 文档 status）+ 幂等去重 → 回执全量留痕（伪造签名拒绝=critical 呈报）。看板治理页新增跨宿主发单与指令单状态表。验收 `observatory/contracts/governor-e2e.mjs` 15 断言全过（含伪造指令单被拒负测）。
 > 2. **C4 云主机迁移手册已产出**：`docs/designs/2026-09-12-平台独立部署演进-C4-云主机迁移手册.md`（凭据清单 / 8 步部署 / 验证负测清单 / 镜像分叉收敛手册〔评审遗留闭环〕/ systemd 模板 / 回滚）。
 > 3. 顺带加固：`http` 回调改 async——修复「无体 GET 端点等 req 'end' 会悬挂」的潜在缺口（governor 领单端点触发发现）。
-> 4. **待主人处置**：① C3/C4 结果确认（C1/C2 已落定）；② 现役 observatory 平台进程（今日 16:55 启动，旧代码）重启时机——重启后获得 C2/C3 能力；③ 云主机资源与切换窗口（按手册 §8）。
+> 4. **主人已处置（2026-09-12）**：① C3/C4 结果**确认落定**——Model B 四期全部结案；② 现役平台已于 23:15 **重启换新代码**（实测：health ok、brain mode=repo、快照含 governorOrders、知识 38 条照常）；③ 云主机资源与切换窗口后续提供（按 C4 手册执行）。**注意**：现役平台启动环境未配 `GOV_SIGN_KEY`——跨宿主发单门将按设计拒绝（无签名不发单），需用指令单时在启动环境补配该密钥并与 governor 宿主共享。

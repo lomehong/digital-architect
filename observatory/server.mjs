@@ -17,6 +17,8 @@ import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { DatabaseSync } from 'node:sqlite'
 import { createHash } from 'node:crypto'
+import { readYuyiFace } from './yuyi-ingest.mjs'
+import { beatInstance } from './instance-beat.mjs'
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url))
 // 总仓根（知识库/告警规则/缺省 tasks 与 agent.db）与数据根（instances/events/approvals/archive）
@@ -25,6 +27,8 @@ let OBS = join(ROOT, 'obs')
 let PORT = 8787
 // 台账目录（可重复 --tasks <dir>）：yaml 现值为权威状态源，事件流提供历史轨迹
 const TASK_DIRS = []
+// 由平台进程维护心跳的本地实例（--heartbeat a,b）：心跳内建，**不需要**独立进程或计划任务
+const HEARTBEAT_INSTANCES = []
 // 运行时库（omp agent.db，只读摄取；缺省 docker/omp/agent/agent.db）
 let AGENT_DB = null
 // 告警抑制窗口（同一规则 N ms 内不重复入库/通知；抑制状态仍呈现但标记 suppressed）
@@ -36,6 +40,7 @@ let ALERT_COOLDOWN_MS = 10 * 60 * 1000
     else if (argv[i] === '--data') OBS = resolve(argv[++i])
     else if (argv[i] === '--port') PORT = Number(argv[++i])
     else if (argv[i] === '--tasks') TASK_DIRS.push(argv[++i])
+    else if (argv[i] === '--heartbeat') HEARTBEAT_INSTANCES.push(...String(argv[++i]).split(',').map((s) => s.trim()).filter(Boolean))
     else if (argv[i] === '--agentdb') AGENT_DB = argv[++i]
     else if (argv[i] === '--alert-cooldown-ms') ALERT_COOLDOWN_MS = Number(argv[++i])
   }
@@ -228,7 +233,7 @@ function snapshot() {
     status: instances[r.instanceId]?.status ?? 'unknown',
     systems: instances[r.instanceId]?.systems ?? [],
   }))
-  return { generatedAt: new Date().toISOString(), instances: Object.values(instances), events: events.slice(-500), tasks, reviewQueue: rq, alerts: critical.slice(-50), governance: governance.slice(-50), collab: summarizeCollab(events.filter((e) => e.domain === 'collab')), identity: summarizeIdentity(events, instances), roots, addressBookSource: DATA_ROOTS.source, lastError: state.lastError }
+  return { generatedAt: new Date().toISOString(), instances: Object.values(instances), events: events.slice(-500), tasks, reviewQueue: rq, alerts: critical.slice(-50), governance: governance.slice(-50), collab: summarizeCollab(events.filter((e) => e.domain === 'collab')), identity: summarizeIdentity(events, instances), yuyi: readYuyiFace(), roots, addressBookSource: DATA_ROOTS.source, lastError: state.lastError }
 }
 
 // ---- 治理操作（经 task-ledger CLI，不旁路四不变量）----
@@ -376,6 +381,8 @@ function healthSnapshot() {
       tasks: TASK_DIRS.length === 0 ? 'disabled' : probe(() => readdirSync(TASK_DIRS[0])),
       runtime: probe(() => { const db = new DatabaseSync(AGENT_DB, { readOnly: true }); db.prepare('SELECT 1').all(); db.close() }),
       approvals: probe(() => readdirSync(APPROVALS_PENDING_DIR)),
+      // 御驿协作面（只读摄取 ~/.yuyi）：接入则 ok，未接入则该机无此数据源（disabled 语义）
+      yuyi: (() => { try { const f = readYuyiFace(); return f.available ? 'ok' : 'disabled' } catch (e) { return `error: ${e.message}` } })(),
     },
     taskDirs: TASK_DIRS,
     agentDb: AGENT_DB,
@@ -578,6 +585,10 @@ function writeSelfHeartbeat() {
       'heartbeatIntervalSec: 30',
       '',
     ].join('\n'))
+    // 心跳内建：由本进程顺带刷新 --heartbeat 指定的本地实例（不再需要独立心跳进程/计划任务）
+    for (const id of HEARTBEAT_INSTANCES) {
+      try { beatInstance(join(INSTANCES_DIR, `${id}.yaml`), 30) } catch { /* 单实例失败不影响其余 */ }
+    }
   } catch { /* 心跳写入失败不影响服务 */ }
 }
 writeSelfHeartbeat()

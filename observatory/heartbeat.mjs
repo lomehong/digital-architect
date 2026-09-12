@@ -18,6 +18,7 @@
 import { readFileSync, writeFileSync, appendFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { beatInstance } from './instance-beat.mjs'
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url))
 
@@ -61,27 +62,18 @@ const log = (m) => { if (!QUIET) console.log(`[heartbeat] ${nowIso()} ${m}`) }
 /** 心跳写入：保留实例自身声明的字段，只刷新 status/lastSeenAt/heartbeatIntervalSec */
 function beat() {
   const ts = nowIso()
-  if (existsSync(YAML_PATH)) {
-    const raw = readFileSync(YAML_PATH, 'utf8')
-    let out = raw
-    const setLine = (re, line) => { out = re.test(out) ? out.replace(re, line) : out.replace(/\s*$/, `\n${line}\n`) }
-    setLine(/^lastSeenAt:.*$/m, `lastSeenAt: ${ts}`)
-    setLine(/^status:.*$/m, 'status: online')
-    setLine(/^heartbeatIntervalSec:.*$/m, `heartbeatIntervalSec: ${INTERVAL_SEC}`)
-    writeFileSync(YAML_PATH, out)
-  } else {
-    // 首次创建：需要实例自报身份要素（缺 systems 时如实留空，不编造）
-    writeFileSync(YAML_PATH, [
-      `instanceId: ${INSTANCE}`,
-      `hostType: ${HOST_TYPE}`,
-      `host: ${HOST || '（未声明）'}`,
-      `systems: [${SYSTEMS.join(', ')}]`,
-      'capabilities: []',
-      'status: online',
-      `lastSeenAt: ${ts}`,
-      `heartbeatIntervalSec: ${INTERVAL_SEC}`,
-    ].join('\n') + '\n')
-  }
+  if (beatInstance(YAML_PATH, INTERVAL_SEC, ts)) return ts
+  // 首次创建：需要实例自报身份要素（缺 systems 时如实留空，不编造）
+  writeFileSync(YAML_PATH, [
+    `instanceId: ${INSTANCE}`,
+    `hostType: ${HOST_TYPE}`,
+    `host: ${HOST || '（未声明）'}`,
+    `systems: [${SYSTEMS.join(', ')}]`,
+    'capabilities: []',
+    'status: online',
+    `lastSeenAt: ${ts}`,
+    `heartbeatIntervalSec: ${INTERVAL_SEC}`,
+  ].join('\n') + '\n')
   return ts
 }
 

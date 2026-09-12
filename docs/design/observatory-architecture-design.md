@@ -207,7 +207,7 @@ severity: `info | warning | critical`。**校验器**：`observatory/contracts/v
 |---|---|---|---|
 | 事件契约 v1 + 校验器 | 一期 | ✅ 完成 | `contracts/validate.mjs` 实测 PASS |
 | 实例注册 + 心跳 | 一期 | ✅ 完成 | `omp-ops-pi-01` 容器心跳（30s）+ `dsh-architect-01`，看板双实例 online |
-| 通用心跳工具 `heartbeat.mjs` | 一期+ | ✅ 完成并实测 | 三态实测：已有实例字段保留 / 首次创建 / 未配置御符时**不发**身份证据；`dsh-architect-01` 经计划任务保活后恢复 online（原为 offline） |
+| 通用心跳 + 心跳内建 | 一期+ | ✅ 完成并实测 | `heartbeat.mjs`（手动单次）+ `server --heartbeat <id>`（**平台进程内建**，无需独立进程/计划任务）；三态实测：已有实例字段保留 / 首次创建 / 未配置御符时**不发**身份证据。**原「计划任务保活」方案因杀软误判事故废止**（见 `observatory/README.md`「常驻方式与安全约束」） |
 | 看板（团队/系统/实例/**协作**/知识/运行时/事件流/治理 八视图） | 一期+二期 | ✅ 完成 | 浏览器实测 + `render-smoke.mjs` 无浏览器回归；`public/index.html` 零构建 |
 | 任务台账直读（`--tasks`） | 一期 | ✅ 完成 | OPSP-P0~P5 + GOV-TEST 全量呈现，yaml 现值为权威 |
 | **任务治理 confirm/reject** | 一期 | ✅ 完成并端到端验证 | GOV-TEST：待确认 → 平台 confirm → 已落定；ledger 正确拒绝非法跳步与无来源确认（四不变量生效） |

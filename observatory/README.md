@@ -7,16 +7,18 @@
 ## 快速开始
 
 ```powershell
-# 启动（计划任务，登录自启；首次注册见「部署」）
-Start-ScheduledTask -TaskName "ArchitectObservatory"
+# 启动：在【可见终端】里手动启动（前台，Ctrl+C 停止）
+node observatory/server.mjs --tasks "E:\Development\Code\nodejs\ops-pi\docs\tasks"
 
 # 访问看板
 start http://127.0.0.1:8787
 
 # 停止（精确，按数据根下的 pid 文件）
-Stop-ScheduledTask -TaskName "ArchitectObservatory"
-# 若需强杀：先读 obs\server.pid 核对命令行含 server.mjs，再 Stop-Process -Id <pid>
+# 先读 obs\server.pid 核对命令行含 server.mjs，再 Stop-Process -Id <pid>
 ```
+
+> ⛔ **禁止**把本平台（或任何本仓脚本）注册为**登录自启计划任务**，**禁止**用 `Start-Process -WindowStyle Hidden` 隐藏窗口启动。
+> 二者在这台装有行为检测杀软的机器上会被判定为木马（详见「常驻方式与安全约束」）。
 
 ## 八个视图
 
@@ -137,36 +139,43 @@ heartbeatIntervalSec: 30
 
 **omp 容器**：`entrypoint.sh` 已内置心跳循环（`OBS_ROOT` 挂载即可，见 `docker/docker-compose.yml` 的 `../obs:/opt/architect/obs:rw`）。
 
-**通用心跳工具**（dsh 及其它宿主）：
+**通用心跳 / 身份自验工具**（dsh 及其它宿主）：
 
 ```powershell
-# 常驻（建议注册计划任务，登录自启）
-node observatory/heartbeat.mjs --instance dsh-architect-01 --interval 60
-
 # 单次（验证/CI）；首次创建需声明实例身份要素
 node observatory/heartbeat.mjs --instance my-instance --systems a,b --host "描述" --host-type dsh --once
+
+# 常驻实例心跳由平台进程自身维护（server --heartbeat <实例id>，无需独立进程）
 ```
 
 **语义**：只刷新心跳字段（`status` / `lastSeenAt` / `heartbeatIntervalSec`），**保留实例自身声明的** `systems` / `capabilities` / `host`——心跳工具不覆盖身份声明。
 
 **身份自验（可选，不配置则不发证据）**：加 `--yufu-url http://127.0.0.1:<port>` 与环境变量 `YUFU_CREDENTIAL=<御符 token>` → 调 `POST /api/v1/auth/agent/verify`，把结论作为 `platform.identity.verified` 上报。**未配置时不发事件**——平台不做身份验证，也不接受凭空证据。
 
-## 部署与运维
+> ⛔ 本工具**只用于手动单次调用或随平台进程运行**；**禁止**注册为计划任务（2026-09-12 事故，见下节）。
+
+## 常驻方式与安全约束（2026-09-12 事故后定稿）
+
+**⛔ 硬性禁止**（违反会触发杀软把 dsh-desktop 本体判为木马并杀掉进程树）：
+
+| 禁止 | 原因 |
+|---|---|
+| 把本平台/本仓脚本注册为**登录自启计划任务** | Defender 判定 `Trojan:Win32/Bearfoos.A!ml`——「AppData 下可执行 + 快捷方式 + 卸载项 + **持久化**」是广告/安装器行为链，检测落在 `dsh-desktop.exe` 及其快捷方式上 |
+| `Start-Process -WindowStyle Hidden`（隐藏窗口启动） | Defender 判定 `Trojan:Win32/PowhidSubExec.B`（PowerShell 隐藏子进程执行） |
+
+**正确做法**：
 
 ```powershell
-# 计划任务注册（登录自启）
-$node = (Get-Command node).Source
-$srv  = "E:\Development\Code\nodejs\digital-architect\observatory\server.mjs"
-$action  = New-ScheduledTaskAction -Execute $node -Argument "`"$srv`" --tasks `"E:\Development\Code\nodejs\ops-pi\docs\tasks`""
-$trigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
-Register-ScheduledTask -TaskName "ArchitectObservatory" -Action $action -Trigger $trigger -RunLevel Limited -Force
+# 需要时在可见终端手动启动（前台；Ctrl+C 停止）
+node observatory/server.mjs --tasks "E:\Development\Code\nodejs\ops-pi\docs\tasks" --heartbeat dsh-architect-01
 
-# 实例心跳任务（登录自启；dsh 侧实例保活，避免看板长期 offline）
-$hb   = "E:\Development\Code\nodejs\digital-architect\observatory\heartbeat.mjs"
-$obs  = "E:\Development\Code\nodejs\digital-architect\obs"
-$hbAction = New-ScheduledTaskAction -Execute $node -Argument "`"$hb`" --instance dsh-architect-01 --interval 60 --data `"$obs`""
-Register-ScheduledTask -TaskName "ArchitectInstanceHeartbeat" -Action $hbAction -Trigger $trigger -RunLevel Limited -Force
+# 或后台启动但窗口可见（不做隐藏）
+Start-Process -FilePath node -ArgumentList "observatory/server.mjs" -WorkingDirectory "E:\Development\Code\nodejs\digital-architect"
 ```
+
+**常驻能力已内建**：平台进程每 30s 刷新自身心跳；`--heartbeat <实例id>[,<id>...]` 时同时刷新这些本地实例的心跳——**不再需要任何独立心跳进程或计划任务**。
+
+**升级触发条件**：若将来确实需要开机自启，应先在杀软中为本仓与 DSH-Desktop 配置**排除项**（变更安全姿态，需主人同意），而不是直接注册任务。
 
 **启动参数**：`--port <n>`（默认 8787）· `--root <总仓根>`（知识库/告警规则/缺省 tasks 与 agent.db）· `--data <数据根>`（缺省 `<root>/obs`）· `--tasks <dir>`（可重复，台账目录）· `--agentdb <path>` · `--alert-cooldown-ms <n>`
 

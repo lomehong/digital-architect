@@ -136,7 +136,24 @@ function render() {
       .map((e) => `<tr><td class="dim">${esc(e.ts)}</td><td>${esc(e.subject ?? '')}</td><td class="warn">${esc(e.decision)}</td><td class="dim">${esc(e.reason || '')}</td></tr>`).join('')
     const msgs = (SNAP.events || []).filter((e) => String(e.type).startsWith('collab.message')).slice(-25).reverse()
       .map((e) => `<tr><td class="dim">${esc(String(e.ts).slice(11, 19))}</td><td>${esc(e.instanceId)}</td><td>${e.direction === 'inbound' ? '↓ 入' : '↑ 出'}</td><td>${e.peerAgentId ? esc(e.peerAgentId) : '<span class="warn">未验证</span>'}<br><span class="dim">${esc(e.peerName || e.peerDevice || '')}</span></td><td class="${e.severity === 'critical' ? 'crit' : e.severity === 'warning' ? 'warn' : 'dim'}">${esc(e.severity)}</td><td>${esc(e.subject ?? '')}</td></tr>`).join('')
-    v.innerHTML = `<h2>协作总览（御驿消息结构化）</h2>
+    const y = SNAP.yuyi || { available: false }
+    const yuyiBlock = !y.available
+      ? `<h2>御驿协作面（Hub 只读摄取）</h2><p class="warn">不可用：${esc(y.reason || '未知原因')}</p>`
+      : `<h2>御驿协作面（Hub 只读摄取） <span class="pill ok">只读</span></h2>
+      <p>数据源 <span class="dim">${esc(y.stateDir)}</span> · 对端 <b>${y.recipients.length}</b> · 消息 <b>${y.messages.length}</b> · 投递 ${Object.entries(y.delivery.byStatus || {}).map(([k, v]) => esc(k) + ':' + v).join(' / ') || '—'} · 闸门终止 <b class="${y.gate.terminated > 0 ? 'crit' : 'dim'}">${y.gate.terminated}</b> / 屏蔽 <b class="${y.gate.blocked > 0 ? 'crit' : 'dim'}">${y.gate.blocked}</b> · 本机御符身份 <b>${y.identity.agents.length}</b></p>
+      <p class="dim">边界（不可放宽）：只读打开 · <b>不摄取消息正文</b> · <b>不读凭据</b> · 不接管身份（§7.2.1）。</p>
+      <h3>对端清单（${y.recipients.length}，按最近活跃${y.recipients.length > 25 ? '，显示前 25' : ''}）</h3>
+      <table><tr><th>御符 agentId</th><th>device / name</th><th>类型</th><th>唤醒能力</th><th>最近活跃</th></tr>${y.recipients.slice(0, 25).map((r) => `<tr><td class="dim">${esc(r.agentId)}</td><td>${esc(r.device)}<br><span class="dim">${esc(r.name)}</span></td><td>${esc(r.agentKind)}</td><td>${esc(r.wake || '—')}</td><td class="dim">${esc(r.lastSeen)}</td></tr>`).join('') || '<tr><td colspan=5 class=dim>无对端记录</td></tr>'}</table>
+      <h3>投递失败（${y.delivery.failures.length}）</h3>
+      <table><tr><th>消息</th><th>原因</th><th>时间</th></tr>${y.delivery.failures.slice(0, 10).map((f) => `<tr><td class="dim">${esc(f.msgId)}</td><td class="warn">${esc(f.detail)}</td><td class="dim">${esc(f.at)}</td></tr>`).join('') || '<tr><td colspan=3 class="ok">无投递失败</td></tr>'}</table>
+      <h3>治理执行事件（闸门，最近 10）</h3>
+      <table><tr><th>时间</th><th>动作</th><th>目标</th><th>发起</th><th>依据</th></tr>${y.gate.events.slice(-10).reverse().map((e) => `<tr><td class="dim">${esc(e.at)}</td><td class="${e.kind === 'terminated' ? 'crit' : 'dim'}">${esc(e.kind)}</td><td>${esc(e.targetAgentId || e.targetName)}</td><td>${esc(e.by)}</td><td class="dim">${esc(e.reason)}</td></tr>`).join('') || '<tr><td colspan=5 class=dim>无治理执行事件</td></tr>'}</table>
+      <h3>本机御符身份（${y.identity.agents.length}；token 不读）</h3>
+      <table><tr><th>宿主</th><th>御符 agentId</th><th>御符服务</th><th>默认</th></tr>${y.identity.agents.map((a) => `<tr><td>${esc(a.key)}</td><td class="dim">${esc(a.agentId)}</td><td class="dim">${esc(a.yufuUrl)}</td><td>${a.isDefault ? '<span class="ok">默认</span>' : ''}</td></tr>`).join('') || '<tr><td colspan=4 class=dim>无本机身份记录</td></tr>'}</table>
+      <h3>消息元数据（${y.messages.length}；正文不摄取）</h3>
+      <table><tr><th>#</th><th>模式</th><th>来自</th><th>目标</th><th>字节</th><th>对端身份</th><th>接收时间</th></tr>${y.messages.slice(0, 15).map((m) => `<tr><td class="dim">${m.seq}</td><td>${esc(m.mode)}</td><td>${esc(m.fromDevice)}</td><td>${esc(m.toTarget || m.recipientId)}</td><td>${m.byteSize}</td><td>${m.peerAgentId ? '<span class="ok">' + esc(m.peerAgentId) + '</span>' : '<span class="dim">未回填</span>'}</td><td class="dim">${esc(m.receivedAt)}</td></tr>`).join('') || '<tr><td colspan=7 class=dim>无消息记录</td></tr>'}</table>
+      <h2>实例上报的协作事件（契约面）</h2>`
+    v.innerHTML = `${yuyiBlock}<h2>协作总览（御驿消息结构化）</h2>
       <p>对端 <b>${t.peers ?? 0}</b> · 身份已验证 <b class="ok">${t.verified ?? 0}</b> · 未验证 <b class="${(t.unverified ?? 0) > 0 ? 'warn' : 'dim'}">${t.unverified ?? 0}</b> · 入向 ${t.inbound ?? 0} / 出向 ${t.outbound ?? 0} · 闸门拒绝 <b class="${(t.gateDenied ?? 0) > 0 ? 'warn' : 'dim'}">${t.gateDenied ?? 0}</b></p>
       <p class="dim">身份字段由实例转写 Yuyi Hub 权威回填值（peerAgentId/peerOwner/peerRole）；平台不连 Hub、不查御符内部接口、不推测身份。peerAgentId 缺席即「未验证」（老 Hub 不回填），如实呈现。</p>
       <table><tr><th>对端（御符）</th><th>Owner / 角色</th><th>流量</th><th>系统</th><th>最近</th><th>身份来源</th></tr>${rows || '<tr><td colspan=6 class=dim>暂无协作消息事件（实例未上报或本期无跨 Agent 通信）</td></tr>'}</table>

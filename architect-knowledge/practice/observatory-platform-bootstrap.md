@@ -25,7 +25,7 @@ owner: 主人
 | **事件流按实例分文件** | `obs/events/<instanceId>/<date>.ndjson` | 多实例并发写无竞争；NDJSON 容忍尾残行；追加即审计 |
 | **文件承载请求/应答**（审批代办） | `approvals/pending/<id>.json` → `decisions/<id>.json` | 跨进程/跨用户可传递；实例崩溃不丢请求；超时自动 deny 可持久 |
 | **治理不旁路** | 任务治理调 `task-ledger.mjs` CLI；知识升级只改 status 字段 | 既有不变量（状态机/来源必填/留痕）继续强制，平台只是界面 |
-| **计划任务常驻 + pid 登记** | `Register-ScheduledTask` + `server.pid`（启动写、信号/退出删） | 脱离开发会话生命周期；精确启停面 |
+| ~~**计划任务常驻 + pid 登记**~~ **（已废止）** | ~~`Register-ScheduledTask` 登录自启~~ → 改为**可见终端手动启动** + 平台进程内建心跳（`server --heartbeat <id>`）；`server.pid` 仍用于精确启停 | 2026-09-12 事故：登录自启任务 + `%LOCALAPPDATA%` 内的 node.exe 被判 `Trojan:Win32/Bearfoos.A!ml`（AppData 可执行+快捷方式+卸载项+**持久化**=广告/安装器行为链），检测落到 **`dsh-desktop.exe`** 本体并杀掉进程树。**禁止**计划任务与 `-WindowStyle Hidden` |
 | **告警抑制窗口** | 进程内 `alertState[id].lastFiredAt` + cooldown（默认 10 分钟） | 同一问题不刷屏；抑制状态仍呈现（可观测不隐藏） |
 
 ## 踩过的坑（均已修复并验证）
@@ -37,7 +37,8 @@ owner: 主人
 | **对象字面量重复键** | `{ Date, Date: {parse} }` 后者覆盖前者 → `Date.now()` undefined → 规则全部静默失败 | 重复键在 JS 合法但语义是覆盖；**教训**：注入求值上下文时逐键核对 |
 | **规则求值静默失败** | 告警不触发且无任何提示 | 修复为 fail-loud：求值异常以 warning 告警呈现（`ruleError: true`），不隐藏 |
 | **极简 YAML 解析边界** | `  - id: xxx`（列表项与首键同行）不被识别 | 解析器需同时支持 `- ` 裸起始与 `- key: value` 同行起始 |
-| **计划任务启动即退（0xC000013A）** | 任务 State=Ready，端口无监听 | 多为旧实例仍占端口（EADDRINUSE）+ 任务实例被杀残留；处置：按 `server.pid` 精确清理 → `Start-ScheduledTask` |
+| **计划任务启动即退（0xC000013A）** | 任务 State=Ready，端口无监听 | 多为旧实例仍占端口（EADDRINUSE）+ 任务实例被杀残留；处置：按 `server.pid` 精确清理占用者。**注**：计划任务机制本身已于 2026-09-12 废止（见下条），改手动可见启动 |
+| **计划任务/隐藏窗口触发杀软**（严重·本机） | dsh-desktop 被 Defender 判为 `Trojan:Win32/Bearfoos.A!ml` 并杀进程树；更早一次判 `Trojan:Win32/PowhidSubExec.B` | 根因：Agent 的「持久化」被实现成——登录自启计划任务 + `%LOCALAPPDATA%` 下 node.exe 周期写文件 + `Start-Process -WindowStyle Hidden`。这三样合起来正是木马特征。<br>**修复**：①删除全部相关计划任务；②心跳内建进平台进程（`--heartbeat`）；③文档写入硬性禁止；④需要自启时必须先与主人确认并配置杀软排除项 |
 | **按进程名批量杀** | 险些杀掉自身宿主进程树 | 见 `practice/suite-build-lessons.md`：禁止 `Get-Process node \| Stop-Process`，只按 pid 登记处理 |
 | **负测误写生产数据**（严重） | 治理端点负测中对**真实台账**执行 confirm，**两次**改变了生产任务状态（均已回滚并追加留痕） | 根因：测试只关心「端点通不通」，没区分「拒绝路径」与「写路径」。修复：①合法写路径测试一律指向 `test-fixtures/fake-ledger`（不落盘夹具）；②服务端对地址簿登记的真实台账要求显式 `confirmReal=true`，脚本/自动化默认被拦（实测 400） |
 | **平台代填操作者**（严重） | 服务端 `by \|\| '主人'`、前端硬编码 `by: '主人'`——任何本地调用都能以主人名义落定任务 | 根因：把「界面是给主人用的」等同于「操作者就是主人」。修复：`by` 必填且**不代填**（服务端路由层 + 函数层双防线），前端显式声明「以谁的名义」，审批亦先问操作者 |

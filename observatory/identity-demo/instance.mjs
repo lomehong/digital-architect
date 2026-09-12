@@ -15,21 +15,14 @@
  *   设置 YUFU_URL + YUFU_CREDENTIAL 时走真实验证；否则用演示数据（打印标注）。
  */
 import { appendFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs'
-import { join, dirname } from 'node:path'
+import { join, resolve, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-function findObs(start) {
-  let p = start
-  for (let i = 0; i < 6; i++) {
-    if (existsSync(join(p, 'obs', 'instances'))) return join(p, 'obs')
-    if (existsSync(join(p, 'instances'))) return p
-    const up = dirname(p)
-    if (up === p) return null
-    p = up
-  }
-  return null
-}
-const OBS = process.argv[2] || findObs(process.cwd())
-if (!OBS) { console.error('[identity-demo] 找不到 obs/ 根'); process.exit(1) }
+// 安全护栏：演示数据只允许写入显式指定的隔离数据根，禁止自动发现/写入生产 obs/
+const MAIN_OBS = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'obs')
+const OBS = process.argv[2]
+if (!OBS) { console.error('[identity-demo] 必须显式指定数据根：node identity-demo/instance.mjs <OBS_ROOT>（禁止自动写入生产 obs/）'); process.exit(2) }
+if (resolve(OBS) === MAIN_OBS) { console.error('[identity-demo] 拒绝：目标是生产数据根。模拟身份证据只能写入临时/隔离数据根'); process.exit(2) }
 
 const YUFU_URL = process.env.YUFU_URL
 const CRED = process.env.YUFU_CREDENTIAL || ''

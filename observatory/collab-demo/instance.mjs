@@ -12,25 +12,17 @@
  * 本脚本用一个内联假桥（fake bridge）演示四类转写，实际实例把 `readFromYuyi()`
  * 换成真实 Yuyi 桥的 onDeliver/bridge.agentId 即可（Yuyi 侧参考：adapters/pi/yuyi-pi-extension.ts）。
  *
- * 用法：node collab-demo/instance.mjs [OBS_ROOT]
+ * 用法：node collab-demo/instance.mjs <OBS_ROOT>   （必须显式指定隔离数据根，拒绝写入生产 obs/）
  */
-import { appendFileSync, existsSync, mkdirSync } from 'node:fs'
-import { join, dirname } from 'node:path'
+import { appendFileSync, mkdirSync } from 'node:fs'
+import { join, resolve, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-// 找 obs 根（含 obs/instances 的目录的父目录）
-function findObs(start) {
-  let p = start
-  for (let i = 0; i < 6; i++) {
-    if (existsSync(join(p, 'obs', 'instances'))) return join(p, 'obs')
-    if (existsSync(join(p, 'instances'))) return p
-    const up = dirname(p)
-    if (up === p) return null
-    p = up
-  }
-  return null
-}
-const OBS = process.argv[2] || findObs(process.cwd())
-if (!OBS) { console.error('[collab-demo] 找不到 obs/ 根'); process.exit(1) }
+// 安全护栏：演示数据只允许写入显式指定的隔离数据根，禁止自动发现/写入生产 obs/
+const MAIN_OBS = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'obs')
+const OBS = process.argv[2]
+if (!OBS) { console.error('[collab-demo] 必须显式指定数据根：node collab-demo/instance.mjs <OBS_ROOT>（禁止自动写入生产 obs/）'); process.exit(2) }
+if (resolve(OBS) === MAIN_OBS) { console.error('[collab-demo] 拒绝：目标是生产数据根。演示数据只能写入临时/隔离数据根'); process.exit(2) }
 
 const INST_ID = 'collab-demo-01'
 mkdirSync(join(OBS, 'events', INST_ID), { recursive: true })

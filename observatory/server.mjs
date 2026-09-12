@@ -57,6 +57,17 @@ let REQUIRE_TOKEN = false
   }
 }
 const isLoopbackHost = (h) => h === 'localhost' || h === '::1' || /^127\./.test(h)
+
+// —— 配置寻址（Model B / C1 配置解耦）——
+// 独立部署时配置放 <数据根>/config/；随仓部署回退 observatory/。寻址顺序：数据根 → 包内 → 仓内
+const SCRIPT_DIR0 = dirname(fileURLToPath(import.meta.url))
+const configPath = (name) => {
+  const inData = join(OBS, 'config', name)
+  if (existsSync(inData)) return inData
+  const inPkg = join(SCRIPT_DIR0, 'config', name)
+  if (existsSync(inPkg)) return inPkg
+  return join(ROOT, 'observatory', name)
+}
 const SECURED = REQUIRE_TOKEN || !isLoopbackHost(HOST)
 // 受保护模式 fail-fast：缺配置直接拒绝启动（不得半暴露）
 if (SECURED && !isLoopbackHost(HOST) && !ADMIN_TOKEN) {
@@ -384,7 +395,7 @@ const YAML = { parse: (txt, key = 'rules') => {
 // ---- 治理地址簿（data-roots.yml）：跨实例统一治理的选择器来源 ----
 // 实例在容器/会话内看到的路径 ≠ 平台宿主路径，故显式登记；缺失时治理页仍支持手输 root。
 const DATA_ROOTS = (() => {
-  const p = join(ROOT, 'observatory', 'data-roots.yml')
+  const p = configPath('data-roots.yml')
   if (!existsSync(p)) return { list: [], source: null }
   try { return { list: YAML.parse(readFileSync(p, 'utf8'), 'roots').roots || [], source: p } } catch (e) { return { list: [], source: p, error: e.message } }
 })()
@@ -396,7 +407,7 @@ function isRealLedger(root) {
 }
 // ---- 告警规则（alert-rules.yml）加载与评估 ----
 const ALERT_RULES = (() => {
-  const p = join(ROOT, 'observatory', 'alert-rules.yml')
+  const p = configPath('alert-rules.yml')
   if (!existsSync(p)) return { list: [], source: null }
   try {
     return { list: YAML.parse(readFileSync(p, 'utf8')).rules || [], source: p }

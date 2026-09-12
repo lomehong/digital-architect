@@ -66,6 +66,24 @@ fi
 # 幂等配置 pi 用户的 git credential helper（gh 读 GH_TOKEN env，token 不落盘）
 gosu "${USER_NAME}" git config --global credential.helper '!/usr/local/bin/gh auth git-credential' 2>/dev/null || true
 
+# ── 御驿 Yuyi 通信平面（yuyi-pi-extension 从 env 生成 ~/.yuyi/agent.json）──
+# pi 扩展从配置文件读 Hub 凭据（env 不直达）；容器文件系统随重建丢失，故每次启动由 env 再生。
+# YUYI_TOKEN 缺失仅 WARN 降级（扩展自禁用，不阻断容器）；占位符同 FATAL 判定。
+if [ -z "${YUYI_TOKEN:-}" ]; then
+  echo "[supervisor] Note: YUYI_TOKEN 未配置——御驿通信平面自禁用（按需增强，不阻断启动）"
+else
+  case "${YUYI_TOKEN}" in
+    [Pp][Ll][Aa][Cc][Ee][Hh][Oo][Ll][Dd][Ee][Rr]*)
+      echo "[supervisor][FATAL] YUYI_TOKEN 仍是占位符——拒绝启动（请在 docker/.env 填入真实 token）。" >&2
+      exit 1
+      ;;
+  esac
+  mkdir -p /home/pi/.yuyi
+  printf '{"token": "%s", "name": "%s"}\n' "${YUYI_TOKEN}" "${YUYI_ALIAS:-omp-docker}" > /home/pi/.yuyi/agent.json
+  chown -R "${PUID}:${PGID}" /home/pi/.yuyi
+  echo "[supervisor] Yuyi config: OK（/home/pi/.yuyi/agent.json 已生成，token 未回显）"
+fi
+
 # ── Architect Observatory 实例上报（心跳；OBS_ROOT 存在才启用，按需增强）──
 OBS_DIR="${OBS_ROOT:-/opt/architect/obs}"
 INSTANCE_ID="${INSTANCE_ID:-omp-ops-pi-01}"

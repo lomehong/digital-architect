@@ -36,6 +36,14 @@ services:
       # GitHub 凭证（gh CLI 原生识别 GH_TOKEN；git 私有仓经 entrypoint 配的 credential helper 免密）
       # 建议细粒度 PAT：仅授权目标仓库的 contents 读写
       - GH_TOKEN=${GH_TOKEN:-}
+      # ── 御驿 Yuyi 通信平面（yuyi-pi-extension 自动加载自 /home/pi/.omp/agent/extensions/）──
+      # agent 身份 = 宿主 ~/.yuyi/agent.json 的 omp 条目（.env 注入；扩展自行调御符验证）
+      - YUYI_TOKEN=${YUYI_AGENT_TOKEN:-}
+      - YUYI_AGENT_ID=${YUYI_AGENT_ID:-}
+      - YUYI_YUFU_URL=${YUYI_YUFU_URL:-}
+      - YUYI_HUB=${YUYI_HUB:-}
+      - YUYI_DEVICE=${YUYI_DEVICE:-oh-my-pi}
+      - YUYI_ALIAS=${YUYI_ALIAS:-omp-docker}
     volumes:
       # ── v3.2 白名单挂载（2026-09-11 主人否决整仓挂载，D11 同批）──
       # workspace = 架构师当前服务的目标项目（参数化，随任务切换）：

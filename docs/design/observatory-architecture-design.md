@@ -3,13 +3,13 @@
 ```yaml
 ---
 title: Architect Observatory — 架构师 Agent 团队可观测性平面
-status: 待确认          # 待主人确认后实施一期（治理面贯穿三期，见 §7.4）
+status: 已落定          # 主人 2026-09-12 确认（治理面自举：本确认即平台首个治理对象）
 requirement: 主人 2026-09-12 口述需求 + 四项拍板（边界/承载/身份/治理面）
 author: 架构师会话（dsh 侧）
 created: 2026-09-12
 review:
-  score: 0
-  conclusion: 待评审
+
+  conclusion: 通过（主人 2026-09-12 确认；治理面自举对象）
 ---
 ```
 

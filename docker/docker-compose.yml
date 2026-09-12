@@ -52,6 +52,8 @@ services:
       - ../packages:/opt/architect/packages:ro
       - ../dsh-architect:/opt/architect/dsh-architect:ro
       - ../omp-architect:/opt/architect/omp-architect:ro
+      # ── Architect Observatory：实例上报通道（rw；观测平面数据根）──
+      - ../obs:/opt/architect/obs:rw
       # 系统级能力：SKILL 挂 agent 级技能根；检查器以「插件」身份经 omp plugin link
       # 注册（docker/omp/plugins 持久化 link 状态），工具源在 /opt/architect/omp-architect
       # （2026-09-11 起 agent-tools 转发退役，插件为唯一承载）

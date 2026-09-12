@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Architect Observatory — 架构师团队可观测性平面</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { --bg:#0d1117; --panel:#161b22; --fg:#e6edf3; --dim:#8b949e; --ok:#3fb950; --warn:#d29922; --crit:#f85149; --line:#30363d; --acc:#58a6ff }
+  * { box-sizing:border-box; font-family:Consolas,'Cascadia Mono',monospace }
+  body { margin:0; background:var(--bg); color:var(--fg) }
+  header { padding:14px 20px; border-bottom:1px solid var(--line); display:flex; gap:24px; align-items:baseline }
+  header h1 { font-size:16px; margin:0 }
+  header .sub { color:var(--dim); font-size:12px }
+  nav { display:flex; gap:4px; margin-left:auto }
+  nav button { background:none; border:1px solid var(--line); color:var(--dim); padding:5px 12px; cursor:pointer; font-size:12px }
+  nav button.active { color:var(--acc); border-color:var(--acc) }
+  main { padding:16px 20px }
+  h2 { font-size:13px; color:var(--acc); margin:18px 0 8px }
+  table { border-collapse:collapse; width:100%; font-size:12px }
+  th, td { border:1px solid var(--line); padding:5px 9px; text-align:left }
+  th { color:var(--dim); font-weight:normal }
+  .ok { color:var(--ok) } .warn { color:var(--warn) } .crit { color:var(--crit) } .dim { color:var(--dim) }
+  .pill { display:inline-block; padding:1px 8px; border:1px solid var(--line); border-radius:9px; font-size:11px }
+  .btn { background:#21262d; color:var(--fg); border:1px solid var(--line); padding:3px 10px; cursor:pointer; font-size:11px; margin-right:4px }
+  .btn:hover { border-color:var(--acc) }
+  #err { color:var(--crit); font-size:12px; padding:0 20px }
+</style>
+</head>
+<body>
+<header>
+  <h1>◉ Architect Observatory</h1>
+  <span class="sub">架构师团队可观测性平面 · <span id="gen"></span></span>
+  <nav>
+    <button data-v="team" class="active">团队总览</button>
+    <button data-v="systems">系统视图</button>
+    <button data-v="instances">实例视图</button>
+    <button data-v="knowledge">知识视图</button>
+    <button data-v="govern">治理操作</button>
+  </nav>
+</header>
+<div id="err"></div>
+<main id="view"></main>
+<script>
+const $ = (s) => document.querySelector(s)
+let SNAP = null, VIEW = 'team'
+const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[c]))
+async function refresh() {
+  try {
+    const r = await fetch('/api/snapshot'); SNAP = await r.json()
+    $('#err').textContent = SNAP.lastError ? '数据面告警: ' + SNAP.lastError : ''
+    $('#gen').textContent = SNAP.generatedAt
+    render()
+  } catch (e) { $('#err').textContent = '快照获取失败: ' + e.message }
+}
+function render() {
+  const v = $('#view'); if (!SNAP) { v.innerHTML = '<p class="dim">加载中…</p>'; return }
+  if (VIEW === 'team') {
+    const inst = SNAP.instances.map((i) => `<tr><td>${esc(i.instanceId)}</td><td>${esc(i.hostType)}</td><td>${esc(i.systems.join(', '))}</td><td class="${i.status === 'online' ? 'ok' : 'warn'}">${i.status}</td><td class="dim">${esc(i.lastSeenAt)}</td></tr>`).join('')
+    const alerts = SNAP.alerts.map((e) => `<tr><td class="crit">${esc(e.type)}</td><td>${esc(e.subject)}</td><td class="dim">${esc(e.ts)}</td></tr>`).join('')
+    v.innerHTML = `<h2>实例</h2><table><tr><th>实例(御符)</th><th>宿主</th><th>负责系统</th><th>状态</th><th>心跳</th></tr>${inst || '<tr><td colspan=5 class=dim>暂无注册实例</td></tr>'}</table>
+      <h2>最近 critical 事件</h2><table><tr><th>类型</th><th>主体</th><th>时间</th></tr>${alerts || '<tr><td colspan=3 class=dim>无</td></tr>'}</table>
+      <h2>治理留痕（最近）</h2><table><tr><th>动作</th><th>主体</th><th>经手</th><th>时间</th></tr>${SNAP.governance.map((e) => `<tr><td>${esc(e.type)}</td><td>${esc(e.subject)}</td><td>${esc((e.payload||{}).via)}</td><td class="dim">${esc(e.ts)}</td></tr>`).join('') || '<tr><td colspan=4 class=dim>无</td></tr>'}</table>`
+  } else if (VIEW === 'systems') {
+    const bySys = {}
+    for (const i of SNAP.instances) for (const s of i.systems) (bySys[s] = bySys[s] || { instances: [], tasks: {} })
+    for (const [id, t] of Object.entries(SNAP.tasks || {})) { (bySys[t.system] = bySys[t.system] || { instances: [], tasks: {} }).tasks[id] = t }
+    v.innerHTML = Object.keys(bySys).map((s) => {
+      const g = bySys[s]
+      const tasks = Object.entries(g.tasks).map(([id, t]) => `<tr><td>${esc(id)}</td><td>${esc(t.state)}</td><td class="dim">${esc(t.by)}</td></tr>`).join('') || '<tr><td colspan=3 class=dim>无任务事件</td></tr>'
+      return `<h2>系统：${esc(s)}</h2><p class="dim">负责实例：${esc(g.instances.join(', ') || '（未登记实例归属）')}</p><table><tr><th>任务</th><th>状态</th><th>经手</th></tr>${tasks}</table>`
+    }).join('') || '<p class="dim">尚无系统数据</p>'
+  } else if (VIEW === 'instances') {
+    v.innerHTML = SNAP.instances.map((i) => {
+      const evs = SNAP.events.filter((e) => e.instanceId === i.instanceId).slice(-15).reverse()
+        .map((e) => `<tr><td class="dim">${esc(e.ts)}</td><td>${esc(e.domain)}/${esc(e.type)}</td><td>${esc(e.severity)}</td><td>${esc(e.subject ?? '')}</td></tr>`).join('')
+      return `<h2>${esc(i.instanceId)} <span class="pill ${i.status === 'online' ? 'ok' : 'warn'}">${i.status}</span></h2>
+        <p class="dim">宿主 ${esc(i.hostType)} · 负责 ${esc(i.systems.join(', '))} · 心跳间隔 ${i.heartbeatIntervalSec}s</p>
+        <table><tr><th>时间</th><th>事件</th><th>级别</th><th>主体</th></tr>${evs || '<tr><td colspan=4 class=dim>无事件</td></tr>'}</table>`
+    }).join('') || '<p class="dim">暂无实例</p>'
+  } else if (VIEW === 'knowledge') {
+    v.innerHTML = `<h2>评审队列</h2><p class="dim">review-queue 条目数：${SNAP.reviewQueue.entries}</p><h2>说明</h2><p class="dim">知识条目升级走「治理操作」页（待审核 → 已确认），操作将修订条目 status 并发治理审计事件。</p>`
+  } else if (VIEW === 'govern') {
+    const taskIds = Object.keys(SNAP.tasks || {})
+    v.innerHTML = `<h2>任务 confirm / reject</h2>
+      <p class="dim">仅对「待确认」状态的任务有效；四不变量由 task-ledger 强制，平台不旁路。</p>
+      <p>任务号：<input id="g-task" placeholder="OPSP-xxx" size="12">
+         root：<input id="g-root" value="/workspace" size="24">
+         <button class="btn" onclick="govern('confirm')">confirm</button>
+         <button class="btn" onclick="govern('reject')">reject</button></p>
+      <p class="dim">已知任务：${taskIds.map(esc).join(', ') || '（暂无任务事件）'}</p>
+      <h2>知识条目升级（待审核 → 已确认）</h2>
+      <p>条目名：<input id="k-entry" placeholder="omp-extension-contract-pitfalls" size="36">
+         <button class="btn" onclick="kPromote()">升级为已确认</button></p>
+      <pre id="g-out" class="dim"></pre>`
+  }
+}
+async function govern(action) {
+  const taskId = $('#g-task').value.trim(), root = $('#g-root').value.trim()
+  if (!confirm(`确认对任务 ${taskId} 执行 ${action.toUpperCase()}？（主人操作，将留治理审计）`)) return
+  const r = await fetch('/api/govern/task', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ taskId, root, action, by: '主人' }) })
+  const j = await r.json(); $('#g-out').textContent = j.out ?? j.error ?? JSON.stringify(j); refresh()
+}
+async function kPromote() {
+  const entry = $('#k-entry').value.trim(); if (!entry) return
+  if (!confirm(`确认将 ${entry} 升级为「已确认」？（主人操作，将留治理审计）`)) return
+  const r = await fetch('/api/govern/knowledge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entry, to: '已确认' }) })
+  const j = await r.json(); $('#g-out').textContent = j.ok ? `已升级：${entry}` : (j.error ?? '失败'); refresh()
+}
+document.querySelectorAll('nav button').forEach((b) => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach((x) => x.classList.remove('active')); b.classList.add('active')
+  VIEW = b.dataset.v; render()
+})
+refresh(); setInterval(refresh, 10000)
+</script>
+</body>
+</html>

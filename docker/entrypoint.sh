@@ -66,5 +66,21 @@ fi
 # 幂等配置 pi 用户的 git credential helper（gh 读 GH_TOKEN env，token 不落盘）
 gosu "${USER_NAME}" git config --global credential.helper '!/usr/local/bin/gh auth git-credential' 2>/dev/null || true
 
+# ── Architect Observatory 实例上报（心跳；OBS_ROOT 存在才启用，按需增强）──
+OBS_DIR="${OBS_ROOT:-/opt/architect/obs}"
+INSTANCE_ID="${INSTANCE_ID:-omp-ops-pi-01}"
+if [ -d "$OBS_DIR" ]; then
+  (
+    while true; do
+      ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+      mkdir -p "$OBS_DIR/instances"
+      printf 'instanceId: %s\nhostType: omp\nhost: oh-my-pi 容器\nsystems: [ops-pi]\ncapabilities: [prd-digest, design, review, implement, knowledge-distill]\nstatus: online\nlastSeenAt: %s\nheartbeatIntervalSec: 30\n' \
+        "$INSTANCE_ID" "$ts" > "$OBS_DIR/instances/$INSTANCE_ID.yaml" 2>/dev/null || true
+      sleep 30
+    done
+  ) &
+  echo "[supervisor] observatory heartbeat 已启动（$INSTANCE_ID → $OBS_DIR）"
+fi
+
 echo "[supervisor] Starting: gosu pi $*"
 exec gosu "${USER_NAME}" "$@"

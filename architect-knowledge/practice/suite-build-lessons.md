@@ -40,3 +40,4 @@ owner: 主人
 - **验收语义**：自报 ≠ 完成——task_report 后进「待确认」，主人确认才落定；self-confirm 防线（无人执行会话不能确认自己的自报）。
 - **六角色团队评审**（安全/并发/架构/测试/SRE/主人体验）一批修出 18 项——机制建设后应做多角色评审再上线。
 - **「看板是大脑，twin 只是报告者」**：活动聚合不做在 twin，看板 tick 维护活动视图缓存（同步读、零网络等待）。
+- **发布走 tag 触发 CI，不走手工打包**（dsh-architect v0.3.1 实测 2026-09-11）：`git tag v*` → CI 构建+测试+结构门禁（exports 键形态/无本地路径依赖/入口存在性）+ 双 tarball 挂 Release（`releases/latest/download/<name>-latest.tgz?release=<tag>` 稳定 URL = 更新路径）。手工打包的三个坑全部由门禁固化拦截：exports 伪键、file: 依赖入包、exports 死条目（外壳化迁移残留）。file: 依赖跨仓：CI 用 BRAIN_PAT secret clone 大脑总仓到兄弟路径 + npm ci 后物化产物进 node_modules（npm 11 的 ci 对 file: 快照不可靠、不跑 prepare）。

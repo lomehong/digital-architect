@@ -2,34 +2,115 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>Architect Observatory — 架构师团队可观测性平面</title>
+<title>观测台 — 架构师团队</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  :root { --bg:#0d1117; --panel:#161b22; --fg:#e6edf3; --dim:#8b949e; --ok:#3fb950; --warn:#d29922; --crit:#f85149; --line:#30363d; --acc:#58a6ff }
-  * { box-sizing:border-box; font-family:Consolas,'Cascadia Mono',monospace }
-  body { margin:0; background:var(--bg); color:var(--fg) }
-  header { padding:14px 20px; border-bottom:1px solid var(--line); display:flex; gap:24px; align-items:baseline }
-  header h1 { font-size:16px; margin:0 }
-  header .sub { color:var(--dim); font-size:12px }
-  nav { display:flex; gap:4px; margin-left:auto }
-  nav button { background:none; border:1px solid var(--line); color:var(--dim); padding:5px 12px; cursor:pointer; font-size:12px }
-  nav button.active { color:var(--acc); border-color:var(--acc) }
-  main { padding:16px 20px }
-  h2 { font-size:13px; color:var(--acc); margin:18px 0 8px }
-  table { border-collapse:collapse; width:100%; font-size:12px }
-  th, td { border:1px solid var(--line); padding:5px 9px; text-align:left }
-  th { color:var(--dim); font-weight:normal }
-  .ok { color:var(--ok) } .warn { color:var(--warn) } .crit { color:var(--crit) } .dim { color:var(--dim) }
-  .pill { display:inline-block; padding:1px 8px; border:1px solid var(--line); border-radius:9px; font-size:11px }
-  .btn { background:#21262d; color:var(--fg); border:1px solid var(--line); padding:3px 10px; cursor:pointer; font-size:11px; margin-right:4px }
-  .btn:hover { border-color:var(--acc) }
-  #err { color:var(--crit); font-size:12px; padding:0 20px }
+  /* —— 设计令牌：漆墨观测台 · 朱批 —— */
+  :root {
+    --ink: #12161F; --ink2: #1A2130; --line: #2A3344;
+    --paper: #E8E4DA; --dim: #8B96AC;
+    --teal: #56A8A0; --amber: #D9A441; --verm: #E0512F; --verm-deep: #B23A20;
+    --sans: "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+    --mono: "Cascadia Mono", Consolas, "Courier New", monospace;
+    --kai: KaiTi, "楷体", STKaiti, serif;
+  }
+  * { box-sizing: border-box }
+  html, body { margin: 0; background: var(--ink); color: var(--paper); font-family: var(--sans); font-size: 13px; line-height: 1.55 }
+  ::selection { background: var(--verm); color: var(--paper) }
+
+  /* —— 仪表头 —— */
+  header { display: flex; align-items: center; gap: 20px; padding: 0 22px; height: 56px; border-bottom: 1px solid var(--line); background: var(--ink2); position: sticky; top: 0; z-index: 5 }
+  .brand { display: flex; align-items: center; gap: 10px; white-space: nowrap }
+  .seal { width: 9px; height: 9px; border-radius: 50%; background: var(--teal); animation: breathe 2.4s ease-in-out infinite }
+  @keyframes breathe { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
+  .brand b { font-size: 15px; font-weight: 600; letter-spacing: .06em }
+  .brand small { color: var(--dim); font-size: 11px }
+  nav { display: flex; gap: 2px; margin-left: 8px; overflow-x: auto }
+  nav button { appearance: none; background: none; border: none; border-bottom: 2px solid transparent; color: var(--dim); font: inherit; font-size: 13px; padding: 17px 13px 15px; cursor: pointer; white-space: nowrap }
+  nav button:hover { color: var(--paper) }
+  nav button.active { color: var(--paper); border-bottom-color: var(--paper) }
+  .hright { margin-left: auto; display: flex; align-items: center; gap: 14px; font-family: var(--mono); font-size: 11.5px; color: var(--dim); white-space: nowrap }
+
+  /* —— 仪表读数条 —— */
+  #strip { display: flex; flex-wrap: wrap; align-items: center; gap: 0; padding: 0 22px; border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: 12px; color: var(--dim); min-height: 34px }
+  #strip .si { display: inline-flex; align-items: center; gap: 7px; padding: 7px 16px 7px 0; margin-right: 16px; border-right: 1px solid var(--line) }
+  #strip .si:last-child { border-right: none }
+  #strip b { color: var(--paper); font-weight: 600 }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--dim) }
+  .dot.on { background: var(--teal) } .dot.warn { background: var(--amber) } .dot.crit { background: var(--verm) }
+
+  #err { color: var(--verm); font-size: 12.5px; padding: 8px 22px 0; font-family: var(--mono) }
+  main { padding: 18px 22px 60px; max-width: 1280px }
+
+  /* —— 分区：题签（左竖线承载分区语义）—— */
+  h2 { font-size: 15px; font-weight: 600; margin: 30px 0 4px; padding-left: 11px; border-left: 3px solid var(--teal); line-height: 1.3 }
+  h2 .sub, .note { color: var(--dim); font-size: 12px; margin: 2px 0 10px 14px }
+  .note { margin: 0 0 10px 14px }
+  section.blk { margin-top: 8px }
+  h3 { font-size: 13px; color: var(--dim); font-weight: 600; margin: 22px 0 6px 14px }
+
+  /* —— 表格：行线仪表，非 Excel —— */
+  .tw { overflow-x: auto; margin-left: 14px }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px }
+  th { text-align: left; font-weight: normal; color: var(--dim); font-size: 11.5px; padding: 4px 12px 6px 0; border-bottom: 1px solid var(--line); white-space: nowrap }
+  td { padding: 6px 12px 6px 0; border-bottom: 1px solid #1F2735; vertical-align: top }
+  tbody tr:hover td { background: rgba(91, 175, 166, .05) }
+  td.num, th.num { text-align: right; font-family: var(--mono) }
+  .mono { font-family: var(--mono); font-size: 11.5px }
+  .id { font-family: var(--mono); font-size: 11px; color: var(--dim); word-break: break-all }
+
+  /* —— 语义色（青=正常 缃=注意 朱=危急/治理）—— */
+  .ok, .teal { color: var(--teal) } .warn, .amber { color: var(--amber) } .crit, .verm { color: var(--verm) }
+  .dim { color: var(--dim) }
+  .bdg { display: inline-block; border: 1px solid var(--line); border-radius: 3px; padding: 0 7px; font-size: 11px; font-family: var(--mono); color: var(--dim) }
+  .bdg.ok { color: var(--teal); border-color: rgba(86,168,160,.45) }
+  .bdg.warn { color: var(--amber); border-color: rgba(217,164,65,.45) }
+  .bdg.crit { color: var(--verm); border-color: rgba(224,81,47,.5) }
+  code { font-family: var(--mono); font-size: 11.5px; color: var(--teal); background: var(--ink2); padding: 0 5px; border-radius: 3px }
+
+  /* —— 表单与按钮 —— */
+  input, select { background: var(--ink2); color: var(--paper); border: 1px solid var(--line); border-radius: 3px; font: inherit; font-size: 12.5px; padding: 5px 9px }
+  input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--teal); outline-offset: 1px }
+  .btn { appearance: none; background: var(--ink2); color: var(--paper); border: 1px solid var(--line); border-radius: 3px; padding: 5px 14px; cursor: pointer; font: inherit; font-size: 12.5px }
+  .btn:hover { border-color: var(--teal) }
+  .btn.verm { background: var(--verm); border-color: var(--verm); color: #16090A; font-weight: 600 }
+  .btn.verm:hover { background: var(--verm-deep); border-color: var(--verm-deep) }
+  .btn.ghost-verm { color: var(--verm); border-color: rgba(224,81,47,.5); background: none }
+  .btn.ghost-verm:hover { border-color: var(--verm) }
+  a { color: var(--teal); text-decoration: none }
+  a:hover { text-decoration: underline }
+  pre#out { font-family: var(--mono); font-size: 11.5px; white-space: pre-wrap; color: var(--dim); background: var(--ink2); border: 1px solid var(--line); border-radius: 3px; padding: 10px 12px; margin: 8px 0 0 14px }
+
+  /* —— 朱批台：全页唯一的大胆处 —— */
+  .zhupi { background: var(--paper); color: #20242E; border-radius: 3px; padding: 22px 26px 24px; margin: 10px 0 6px 14px }
+  .zhupi h1 { font-family: var(--kai); font-size: 26px; font-weight: normal; margin: 0 0 2px; letter-spacing: .12em }
+  .zhupi h1 em { font-style: normal; color: var(--verm-deep) }
+  .zhupi .zh-note { color: #5A6272; font-size: 12px; margin: 0 0 16px }
+  .zhupi label { display: inline-block; font-size: 12px; color: #5A6272; margin: 10px 6px 3px 0 }
+  .zhupi input, .zhupi select { background: #FBFAF6; color: #20242E; border-color: #C9C4B6 }
+  .zhupi input:focus-visible, .zhupi select:focus-visible { outline-color: var(--verm-deep) }
+  .zhupi .row { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: flex-end }
+  .zhupi .fld { display: flex; flex-direction: column }
+  .zhupi .fld input, .zhupi .fld select { min-width: 0 }
+  .zhupi a { color: #8C2B15 }
+  .zhupi .note2 { color: #5A6272; font-size: 11.5px; margin: 14px 0 0 }
+  .zhupi pre { font-family: var(--mono); font-size: 11.5px; white-space: pre-wrap; background: #F2EFE7; border: 1px solid #D8D3C4; border-radius: 3px; padding: 10px 12px; color: #4A4135; max-height: 260px; overflow: auto }
+
+  .loading { color: var(--dim); padding: 30px 22px }
+
+  @media (max-width: 960px) {
+    header { height: auto; flex-wrap: wrap; padding: 8px 14px }
+    nav { order: 3; width: 100%; margin: 0 }
+    nav button { padding: 10px 12px 8px }
+    #strip { padding: 0 14px } main { padding: 14px }
+    .zhupi { margin-left: 0; padding: 16px }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important } }
 </style>
 </head>
 <body>
 <header>
-  <h1>◉ Architect Observatory</h1>
-  <span class="sub">架构师团队可观测性平面 · <span id="gen"></span></span>
+  <div class="brand"><span class="seal"></span><b>观测台</b><small>架构师团队</small></div>
   <nav>
     <button data-v="team" class="active">团队总览</button>
     <button data-v="systems">系统视图</button>
@@ -40,162 +121,192 @@
     <button data-v="runtime">运行时</button>
     <button data-v="events">事件流</button>
   </nav>
+  <div class="hright"><span id="clock"></span><span id="gen"></span></div>
 </header>
+<div id="strip"></div>
 <div id="err"></div>
 <main id="view"></main>
 <script>
 const $ = (s) => document.querySelector(s)
 let SNAP = null, VIEW = 'team'
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[c]))
+const tickClock = () => { const c = $('#clock'); if (c) c.textContent = new Date().toLocaleTimeString('zh-CN', { hour12: false }) }
+setInterval(tickClock, 1000); tickClock()
+
 async function refresh() {
   try {
     const r = await fetch('/api/snapshot'); SNAP = await r.json()
     $('#err').textContent = SNAP.lastError ? '数据面告警: ' + SNAP.lastError : ''
-    $('#gen').textContent = SNAP.generatedAt
+    $('#gen').textContent = (SNAP.generatedAt || '').slice(11, 19)
     render()
     // 健康信息（独立端点，失败静默）
     fetch('/api/health').then((x) => x.json()).then((h) => {
       const el = document.getElementById('health')
-      if (el) el.textContent = `pid ${h.pid} · 运行 ${h.uptimeSec}s · 告警规则 ${h.alertRules} 条 · 数据源 ${Object.entries(h.sources).map(([k, v]) => k + ':' + (v === 'ok' ? '✅' : v === 'disabled' ? '—' : '❌')).join(' ')}`
+      if (el) el.innerHTML = `pid <b>${h.pid}</b>　运行 ${h.uptimeSec}s　告警规则 ${h.alertRules} 条<br>数据源 ${Object.entries(h.sources).map(([k, v]) => `<span class="${v === 'ok' ? 'teal' : v === 'disabled' ? 'dim' : 'crit'}">${k} ${v === 'ok' ? '✅' : v === 'disabled' ? '—' : '❌'}</span>`).join('　')}`
     }).catch(() => {})
     // 审计归档状态
     fetch('/api/archive').then((x) => x.json()).then((a) => {
       const el = document.getElementById('archive')
       if (!el) return
-      el.textContent = a.seals === 0 ? (a.note || '尚无封印') : `封印 ${a.seals} 条 · 链完整性 ${a.chainOk ? '✅ 完好' : '❌ 断裂'} · 最近 ${a.last.day}${a.last.closed ? '（闭日·严格）' : '（当日·检查点）'} ${a.last.files} 文件 / ${a.last.bytes} 字节 · ${a.note || ''}`
+      el.innerHTML = a.seals === 0 ? (a.note || '尚无封印') : `封印 <b>${a.seals}</b> 条　链完整性 <span class="${a.chainOk ? 'teal' : 'crit'}">${a.chainOk ? '✅ 完好' : '❌ 断裂'}</span><br>最近 ${a.last.day}${a.last.closed ? '（闭日·严格）' : '（当日·检查点）'}　${a.last.files} 文件 / ${a.last.bytes} 字节${a.note ? '　' + a.note : ''}`
     }).catch(() => {})
   } catch (e) { $('#err').textContent = '快照获取失败: ' + e.message }
 }
+
+/* 仪表读数条：一眼判断团队是否安好 */
+function renderStrip() {
+  const el = $('#strip'); if (!SNAP || !el) return
+  const on = SNAP.instances.filter((i) => i.status === 'online').length
+  const alerts = (SNAP.alerts || []).length
+  const pend = (SNAP.pendingApprovals || []).length
+  const open = Object.values(SNAP.tasks || {}).filter((t) => t.state !== '已落定').length
+  const item = (dot, label, val, cls) => `<span class="si"><span class="dot ${dot}"></span>${label} <b class="${cls || ''}">${val}</b></span>`
+  el.innerHTML =
+    item(on === SNAP.instances.length ? 'on' : 'warn', '实例在线', `${on}/${SNAP.instances.length}`) +
+    item(alerts ? 'crit' : 'on', '告警', alerts, alerts ? 'crit' : '') +
+    item(pend ? 'warn' : 'on', '待审批', pend, pend ? 'amber' : '') +
+    item('on', '未落定任务', open) +
+    `<span class="si">快照 <b>${esc((SNAP.generatedAt || '').slice(11, 19))}</b></span>`
+}
+
+/* 统一分区包装：题签 + 说明 + 表格 */
+const blk = (title, note, body) => `<section class="blk"><h2>${title}</h2>${note ? `<p class="note">${note}</p>` : ''}${body}</section>`
+const tw = (head, rows, emptyCols, emptyText) => `<div class="tw"><table><thead><tr>${head}</tr></thead><tbody>${rows || `<tr><td colspan="${emptyCols}" class="dim">${emptyText}</td></tr>`}</tbody></table></div>`
+
 function render() {
-  const v = $('#view'); if (!SNAP) { v.innerHTML = '<p class="dim">加载中…</p>'; return }
+  const v = $('#view'); if (!SNAP) { v.innerHTML = '<p class="loading">正在读取团队快照…</p>'; return }
+  renderStrip()
   // 身份自验证据索引（团队/实例视图共用）
   const idRows = {}
   for (const r of ((SNAP.identity || {}).rows || [])) idRows[r.instanceId] = r
   const idText = (r) => (!r || r.state === '未申报')
-    ? '身份未申报（实例未上报自验证据；平台不做身份验证）'
-    : `御符 ${r.identityId} · Owner ${r.owner || '—'} · 角色 ${r.role || '未设置'} · 权限 ${r.permissions.length} 项 · 经 ${r.via} 验证于 ${r.checkedAt}${typeof r.ageSec === 'number' ? `（${r.ageSec}s 前）` : ''}${r.reason ? ' · ' + r.reason : ''}`
+    ? '身份未申报——实例尚未上报自验证据；平台不做身份验证'
+    : `御符 ${r.identityId}　Owner ${r.owner || '—'}　角色 ${r.role || '未设置'}　权限 ${r.permissions.length} 项　经 ${r.via} 验证于 ${r.checkedAt}${typeof r.ageSec === 'number' ? `（${r.ageSec}s 前）` : ''}${r.reason ? '　' + r.reason : ''}`
   if (VIEW === 'team') {
     const idBadge = (r) => !r || r.state === '未申报' ? '<span class="dim">未申报</span>'
       : r.state === '已验证' ? '<span class="ok">✅ 已验证</span>' : '<span class="crit">❌ 失效</span>'
     const inst = SNAP.instances.map((i) => {
       const r = idRows[i.instanceId]
-      return `<tr><td>${esc(i.instanceId)}</td><td>${esc(i.hostType)}</td><td>${esc(i.systems.join(', '))}</td><td class="${i.status === 'online' ? 'ok' : 'warn'}">${i.status}</td><td>${idBadge(r)}${r && r.drift ? `<br><span class="crit">${esc(r.drift)}</span>` : ''}${r && r.identityId ? `<br><span class="dim">${esc(r.identityId)}</span>` : ''}</td><td class="dim">${esc(i.lastSeenAt)}</td></tr>`
+      return `<tr><td class="mono">${esc(i.instanceId)}</td><td>${esc(i.hostType)}</td><td class="dim">${esc(i.systems.join(', '))}</td><td><span class="dot ${i.status === 'online' ? 'on' : 'warn'}"></span> ${esc(i.status)}</td><td>${idBadge(r)}${r && r.drift ? `<br><span class="crit">${esc(r.drift)}</span>` : ''}${r && r.identityId ? `<br><span class="id">${esc(r.identityId)}</span>` : ''}</td><td class="dim mono">${esc(i.lastSeenAt)}</td></tr>`
     }).join('')
     const idt = (SNAP.identity || {}).totals || {}
-    const alerts = SNAP.alerts.map((e) => `<tr><td class="crit">${esc(e.type)}</td><td>${esc(e.subject)}</td><td class="dim">${esc(e.ts)}</td></tr>`).join('')
-    v.innerHTML = `<h2>实例</h2>
-      <p class="dim">身份自验（§7.1 三态之「自验」）：已验证 <b class="ok">${idt.verified ?? 0}</b> · 失效 <b class="${(idt.failed ?? 0) > 0 ? 'crit' : 'dim'}">${idt.failed ?? 0}</b> · 未申报 <b class="dim">${idt.unreported ?? 0}</b> —— 平台不做身份验证，仅存档实例侧 <code>yufu_verify</code> 证据。</p>
-      <table><tr><th>实例(御符)</th><th>宿主</th><th>负责系统</th><th>状态</th><th>身份（自验）</th><th>心跳</th></tr>${inst || '<tr><td colspan=6 class=dim>暂无注册实例</td></tr>'}</table>
-      <h2>最近 critical 事件</h2><table><tr><th>类型</th><th>主体</th><th>时间</th></tr>${alerts || '<tr><td colspan=3 class=dim>无</td></tr>'}</table>
-      <h2>告警</h2>
-      ${(SNAP.alerts||[]).length === 0 ? '<p class=ok>✅ 无告警</p>' : `<table><tr><th>级别</th><th>告警</th><th>状态</th></tr>${SNAP.alerts.map((a) => `<tr><td class="${a.severity==='critical'?'crit':'warn'}">${esc(a.severity)}</td><td><b>${esc(a.title)}</b><br><span class=dim>${esc(a.message||'')}</span></td><td>${a.suppressed?'<span class=dim>抑制中</span>':('<span class=warn>新触发</span>'+(a.firedCount>1?` <span class=dim>×${a.firedCount}</span>`:''))}</td></tr>`).join('')}</table>`}
-      <h2>审计归档（哈希链封印）</h2>
-      <p class=dim id=archive>加载中…</p>
-      <h2>健康</h2>
-      <p class=dim id=health>加载中…</p>
-      <h2>审批代办（pending）</h2>
-      ${(SNAP.pendingApprovals||[]).length === 0 ? '<p class=dim>无挂单</p>' : `<table><tr><th>实例</th><th>工具</th><th>原因</th><th>截止</th><th>批准 / 拒绝</th></tr>${SNAP.pendingApprovals.map((p) => `<tr><td>${esc(p.instanceId)}<br><span class=dim>${esc(p.requestId)}</span></td><td>${esc(p.tool||'-')}</td><td>${esc(p.reason||'-')}</td><td class=${Date.parse(p.requiredBy)<Date.now()?'crit':'dim'}>${esc(p.requiredBy)}</td><td><button class=btn onclick="approv('${esc(p.requestId)}','allow')">批准</button><button class=btn onclick="approv('${esc(p.requestId)}','deny')">拒绝</button></td></tr>`).join('')}</table>`}
-      <h2>治理留痕（最近）</h2><table><tr><th>动作</th><th>主体</th><th>经手</th><th>时间</th></tr>${SNAP.governance.map((e) => `<tr><td>${esc(e.type)}</td><td>${esc(e.subject)}</td><td>${esc((e.payload||{}).via)}</td><td class="dim">${esc(e.ts)}</td></tr>`).join('') || '<tr><td colspan=4 class=dim>无</td></tr>'}</table>`
+    const alerts = SNAP.alerts.map((e) => `<tr><td class="crit mono">${esc(e.type)}</td><td>${esc(e.subject)}</td><td class="dim mono">${esc(e.ts)}</td></tr>`).join('')
+    const pend = SNAP.pendingApprovals || []
+    v.innerHTML =
+      blk('实例', `身份自验三态：已验证 <b class="teal">${idt.verified ?? 0}</b>　失效 <b class="${(idt.failed ?? 0) > 0 ? 'crit' : 'dim'}">${idt.failed ?? 0}</b>　未申报 <b class="dim">${idt.unreported ?? 0}</b>　——平台不做身份验证，仅存档实例侧 <code>yufu_verify</code> 证据`,
+        tw('<th>实例（御符）</th><th>宿主</th><th>负责系统</th><th>状态</th><th>身份（自验）</th><th>心跳</th>', inst, 6, '暂无注册实例')) +
+      blk('审批代办', pend.length ? '以下操作等待你批准，超时将自动拒绝' : '', pend.length === 0 ? '<p class="note dim" style="margin-left:14px">无挂单</p>' :
+        tw('<th>实例</th><th>工具</th><th>原因</th><th>截止</th><th>决定</th>',
+          pend.map((p) => `<tr><td class="mono">${esc(p.instanceId)}<br><span class="id">${esc(p.requestId)}</span></td><td class="mono">${esc(p.tool || '-')}</td><td>${esc(p.reason || '-')}</td><td class="mono ${Date.parse(p.requiredBy) < Date.now() ? 'crit' : 'dim'}">${esc(p.requiredBy)}</td><td><button class="btn ghost-verm" onclick="approv('${esc(p.requestId)}','allow')">批准</button> <button class="btn" onclick="approv('${esc(p.requestId)}','deny')">拒绝</button></td></tr>`).join(''), 5, '无挂单')) +
+      blk('告警', '', (SNAP.alerts || []).length === 0 ? '<p class="note teal" style="margin-left:14px">✅ 无告警</p>' :
+        tw('<th>级别</th><th>告警</th><th>状态</th>', SNAP.alerts.map((a) => `<tr><td class="${a.severity === 'critical' ? 'crit' : 'amber'} mono">${esc(a.severity)}</td><td><b>${esc(a.title)}</b><br><span class="dim">${esc(a.message || '')}</span></td><td>${a.suppressed ? '<span class="dim">抑制中</span>' : `<span class="amber">新触发</span>${a.firedCount > 1 ? ` <span class="dim">×${a.firedCount}</span>` : ''}`}</td></tr>`).join(''), 3, '无')) +
+      blk('审计归档（哈希链封印）', '', '<p class="note dim mono" id="archive" style="margin-left:14px">加载中…</p>') +
+      blk('健康', '', '<p class="note dim mono" id="health" style="margin-left:14px">加载中…</p>') +
+      blk('治理留痕（最近）', '', tw('<th>动作</th><th>主体</th><th>经手</th><th>时间</th>', SNAP.governance.map((e) => `<tr><td class="mono">${esc(e.type)}</td><td>${esc(e.subject)}</td><td class="dim">${esc((e.payload || {}).via)}</td><td class="dim mono">${esc(e.ts)}</td></tr>`).join(''), 4, '无'))
   } else if (VIEW === 'systems') {
     const bySys = {}
     for (const i of SNAP.instances) for (const s of i.systems) (bySys[s] = bySys[s] || { instances: [], tasks: {} })
     for (const [id, t] of Object.entries(SNAP.tasks || {})) { (bySys[t.system] = bySys[t.system] || { instances: [], tasks: {} }).tasks[id] = t }
     v.innerHTML = Object.keys(bySys).map((s) => {
       const g = bySys[s]
-      const tasks = Object.entries(g.tasks).map(([id, t]) => `<tr><td>${esc(id)}</td><td>${esc(t.state)}</td><td class="dim">${esc(t.by)}</td></tr>`).join('') || '<tr><td colspan=3 class=dim>无任务事件</td></tr>'
-      return `<h2>系统：${esc(s)}</h2><p class="dim">负责实例：${esc(g.instances.join(', ') || '（未登记实例归属）')}</p><table><tr><th>任务</th><th>状态</th><th>经手</th></tr>${tasks}</table>`
-    }).join('') || '<p class="dim">尚无系统数据</p>'
+      const tasks = Object.entries(g.tasks).map(([id, t]) => `<tr><td class="mono">${esc(id)}</td><td>${esc(t.state)}</td><td class="dim">${esc(t.by)}</td></tr>`).join('')
+      return blk(`系统：${esc(s)}`, `负责实例：${esc(g.instances.join(', ') || '（未登记实例归属）')}`, tw('<th>任务</th><th>状态</th><th>经手</th>', tasks, 3, '无任务事件'))
+    }).join('') || '<p class="loading">尚无系统数据</p>'
   } else if (VIEW === 'instances') {
     v.innerHTML = SNAP.instances.map((i) => {
       const evs = SNAP.events.filter((e) => e.instanceId === i.instanceId).slice(-15).reverse()
-        .map((e) => `<tr><td class="dim">${esc(e.ts)}</td><td>${esc(e.domain)}/${esc(e.type)}</td><td>${esc(e.severity)}</td><td>${esc(e.subject ?? '')}</td></tr>`).join('')
+        .map((e) => `<tr><td class="dim mono">${esc(e.ts)}</td><td class="mono">${esc(e.domain)}/${esc(e.type)}</td><td class="${e.severity === 'critical' ? 'crit' : e.severity === 'warning' ? 'amber' : 'dim'}">${esc(e.severity)}</td><td>${esc(e.subject ?? '')}</td></tr>`).join('')
       const idr = idRows[i.instanceId]
-      return `<h2>${esc(i.instanceId)} <span class="pill ${i.status === 'online' ? 'ok' : 'warn'}">${i.status}</span></h2>
-        <p class="dim">宿主 ${esc(i.hostType)} · 负责 ${esc(i.systems.join(', '))} · 心跳间隔 ${i.heartbeatIntervalSec}s</p>
-        <p class="${idr && idr.state === '已验证' ? 'ok' : (idr && idr.state === '失效' ? 'crit' : 'dim')}">${esc(idText(idr))}${idr && idr.drift ? ` — <span class="crit">${esc(idr.drift)}</span>` : ''}</p>
-        <table><tr><th>时间</th><th>事件</th><th>级别</th><th>主体</th></tr>${evs || '<tr><td colspan=4 class=dim>无事件</td></tr>'}</table>`
-    }).join('') || '<p class="dim">暂无实例</p>'
-  } else if (VIEW === 'events') {
-    const items = (SNAP.events || []).slice(-60).reverse()
-    v.innerHTML = `<h2>事件实时流（最近 60 条，10s 自动刷新）</h2>
-      <p class="dim">实例 <select id="ev-filter" onchange="render()"><option value="">全部</option>${SNAP.instances.map((i) => `<option ${window._evFilter === i.instanceId ? 'selected' : ''} value="${esc(i.instanceId)}">${esc(i.instanceId)}</option>`).join('')}</select></p>
-      <table><tr><th>时间</th><th>实例</th><th>域/类型</th><th>级别</th><th>主体</th></tr>${items.filter((e) => !window._evFilter || e.instanceId === window._evFilter).map((e) => `<tr><td class=dim>${esc(String(e.ts).slice(11, 19))}</td><td>${esc(e.instanceId)}</td><td>${esc(e.domain)}/${esc(e.type)}</td><td class="${e.severity === 'critical' ? 'crit' : e.severity === 'warning' ? 'warn' : 'dim'}">${esc(e.severity)}</td><td>${esc(e.subject ?? '')}</td></tr>`).join('') || '<tr><td colspan=5 class=dim>无事件</td></tr>'}</table>`
+      const idCls = idr && idr.state === '已验证' ? 'teal' : (idr && idr.state === '失效' ? 'crit' : 'dim')
+      return blk(`${esc(i.instanceId)}　<span class="bdg ${i.status === 'online' ? 'ok' : 'warn'}">${i.status}</span>`,
+        `宿主 ${esc(i.hostType)}　负责 ${esc(i.systems.join(', '))}　心跳间隔 ${i.heartbeatIntervalSec}s<br><span class="${idCls}">${esc(idText(idr))}${idr && idr.drift ? ` — <span class="crit">${esc(idr.drift)}</span>` : ''}</span>`,
+        tw('<th>时间</th><th>事件</th><th>级别</th><th>主体</th>', evs, 4, '无事件'))
+    }).join('') || '<p class="loading">暂无实例</p>'
   } else if (VIEW === 'collab') {
     const c = SNAP.collab || { peers: [], totals: {} }
     const t = c.totals || {}
     const roleLabel = (r) => r === 'avatar' ? 'avatar（主人数字分身）' : (r || '未设置')
     const rows = (c.peers || []).map((p) => `<tr>
-      <td>${p.identityVerified ? esc(p.agentId) : '<span class="warn">未验证</span>'}
+      <td>${p.identityVerified ? esc(p.agentId) : '<span class="amber">未验证</span>'}
         <br><span class="dim">${esc(p.name || '')}${p.device ? ' @ ' + esc(p.device) : ''}</span></td>
       <td>${esc(p.owner || '—')}<br><span class="dim">${esc(roleLabel(p.role))}</span></td>
-      <td>↓${p.inbound} / ↑${p.outbound}</td>
+      <td class="num">↓${p.inbound}　↑${p.outbound}</td>
       <td class="dim">${esc(Object.keys(p.systems || {}).join(', '))}</td>
-      <td class="dim">${esc(p.lastTs)}<br>${esc(p.lastSubject || '')}</td>
-      <td>${p.identityVerified ? '<span class="ok">✅ Hub 回填</span>' : '<span class="warn">⚠️ 身份未验证</span>'}</td></tr>`).join('')
+      <td class="dim mono">${esc(p.lastTs)}${p.lastSubject ? '<br>' + esc(p.lastSubject) : ''}</td>
+      <td>${p.identityVerified ? '<span class="teal">✅ Hub 回填</span>' : '<span class="amber">⚠️ 身份未验证</span>'}</td></tr>`).join('')
     const denied = (SNAP.events || []).filter((e) => String(e.type).startsWith('collab.gate-denied')).slice(-20).reverse()
-      .map((e) => `<tr><td class="dim">${esc(e.ts)}</td><td>${esc(e.subject ?? '')}</td><td class="warn">${esc(e.decision)}</td><td class="dim">${esc(e.reason || '')}</td></tr>`).join('')
+      .map((e) => `<tr><td class="dim mono">${esc(e.ts)}</td><td>${esc(e.subject ?? '')}</td><td class="amber mono">${esc(e.decision)}</td><td class="dim">${esc(e.reason || '')}</td></tr>`).join('')
     const msgs = (SNAP.events || []).filter((e) => String(e.type).startsWith('collab.message')).slice(-25).reverse()
-      .map((e) => `<tr><td class="dim">${esc(String(e.ts).slice(11, 19))}</td><td>${esc(e.instanceId)}</td><td>${e.direction === 'inbound' ? '↓ 入' : '↑ 出'}</td><td>${e.peerAgentId ? esc(e.peerAgentId) : '<span class="warn">未验证</span>'}<br><span class="dim">${esc(e.peerName || e.peerDevice || '')}</span></td><td class="${e.severity === 'critical' ? 'crit' : e.severity === 'warning' ? 'warn' : 'dim'}">${esc(e.severity)}</td><td>${esc(e.subject ?? '')}</td></tr>`).join('')
+      .map((e) => `<tr><td class="dim mono">${esc(String(e.ts).slice(11, 19))}</td><td class="mono">${esc(e.instanceId)}</td><td>${e.direction === 'inbound' ? '↓ 入' : '↑ 出'}</td><td>${e.peerAgentId ? esc(e.peerAgentId) : '<span class="amber">未验证</span>'}<br><span class="dim">${esc(e.peerName || e.peerDevice || '')}</span></td><td class="${e.severity === 'critical' ? 'crit' : e.severity === 'warning' ? 'amber' : 'dim'}">${esc(e.severity)}</td><td>${esc(e.subject ?? '')}</td></tr>`).join('')
     const y = SNAP.yuyi || { available: false }
     const yuyiBlock = !y.available
-      ? `<h2>御驿协作面（Hub 只读摄取）</h2><p class="warn">不可用：${esc(y.reason || '未知原因')}</p>`
-      : `<h2>御驿协作面（Hub 只读摄取） <span class="pill ok">只读</span></h2>
-      <p>数据源 <span class="dim">${esc(y.stateDir)}</span> · 对端 <b>${y.recipients.length}</b> · 消息 <b>${y.messages.length}</b> · 投递 ${Object.entries(y.delivery.byStatus || {}).map(([k, v]) => esc(k) + ':' + v).join(' / ') || '—'} · 闸门终止 <b class="${y.gate.terminated > 0 ? 'crit' : 'dim'}">${y.gate.terminated}</b> / 屏蔽 <b class="${y.gate.blocked > 0 ? 'crit' : 'dim'}">${y.gate.blocked}</b> · 本机御符身份 <b>${y.identity.agents.length}</b></p>
-      <p class="dim">边界（不可放宽）：只读打开 · <b>不摄取消息正文</b> · <b>不读凭据</b> · 不接管身份（§7.2.1）。</p>
-      <h3>对端清单（${y.recipients.length}，按最近活跃${y.recipients.length > 25 ? '，显示前 25' : ''}）</h3>
-      <table><tr><th>御符 agentId</th><th>device / name</th><th>类型</th><th>唤醒能力</th><th>最近活跃</th></tr>${y.recipients.slice(0, 25).map((r) => `<tr><td class="dim">${esc(r.agentId)}</td><td>${esc(r.device)}<br><span class="dim">${esc(r.name)}</span></td><td>${esc(r.agentKind)}</td><td>${esc(r.wake || '—')}</td><td class="dim">${esc(r.lastSeen)}</td></tr>`).join('') || '<tr><td colspan=5 class=dim>无对端记录</td></tr>'}</table>
-      <h3>投递失败（${y.delivery.failures.length}）</h3>
-      <table><tr><th>消息</th><th>原因</th><th>时间</th></tr>${y.delivery.failures.slice(0, 10).map((f) => `<tr><td class="dim">${esc(f.msgId)}</td><td class="warn">${esc(f.detail)}</td><td class="dim">${esc(f.at)}</td></tr>`).join('') || '<tr><td colspan=3 class="ok">无投递失败</td></tr>'}</table>
-      <h3>治理执行事件（闸门，最近 10）</h3>
-      <table><tr><th>时间</th><th>动作</th><th>目标</th><th>发起</th><th>依据</th></tr>${y.gate.events.slice(-10).reverse().map((e) => `<tr><td class="dim">${esc(e.at)}</td><td class="${e.kind === 'terminated' ? 'crit' : 'dim'}">${esc(e.kind)}</td><td>${esc(e.targetAgentId || e.targetName)}</td><td>${esc(e.by)}</td><td class="dim">${esc(e.reason)}</td></tr>`).join('') || '<tr><td colspan=5 class=dim>无治理执行事件</td></tr>'}</table>
-      <h3>本机御符身份（${y.identity.agents.length}；token 不读）</h3>
-      <table><tr><th>宿主</th><th>御符 agentId</th><th>御符服务</th><th>默认</th></tr>${y.identity.agents.map((a) => `<tr><td>${esc(a.key)}</td><td class="dim">${esc(a.agentId)}</td><td class="dim">${esc(a.yufuUrl)}</td><td>${a.isDefault ? '<span class="ok">默认</span>' : ''}</td></tr>`).join('') || '<tr><td colspan=4 class=dim>无本机身份记录</td></tr>'}</table>
-      <h3>消息元数据（${y.messages.length}；正文不摄取）</h3>
-      <table><tr><th>#</th><th>模式</th><th>来自</th><th>目标</th><th>字节</th><th>对端身份</th><th>接收时间</th></tr>${y.messages.slice(0, 15).map((m) => `<tr><td class="dim">${m.seq}</td><td>${esc(m.mode)}</td><td>${esc(m.fromDevice)}</td><td>${esc(m.toTarget || m.recipientId)}</td><td>${m.byteSize}</td><td>${m.peerAgentId ? '<span class="ok">' + esc(m.peerAgentId) + '</span>' : '<span class="dim">未回填</span>'}</td><td class="dim">${esc(m.receivedAt)}</td></tr>`).join('') || '<tr><td colspan=7 class=dim>无消息记录</td></tr>'}</table>
-      <h2>实例上报的协作事件（契约面）</h2>`
-    v.innerHTML = `${yuyiBlock}<h2>协作总览（御驿消息结构化）</h2>
-      <p>对端 <b>${t.peers ?? 0}</b> · 身份已验证 <b class="ok">${t.verified ?? 0}</b> · 未验证 <b class="${(t.unverified ?? 0) > 0 ? 'warn' : 'dim'}">${t.unverified ?? 0}</b> · 入向 ${t.inbound ?? 0} / 出向 ${t.outbound ?? 0} · 闸门拒绝 <b class="${(t.gateDenied ?? 0) > 0 ? 'warn' : 'dim'}">${t.gateDenied ?? 0}</b></p>
-      <p class="dim">身份字段由实例转写 Yuyi Hub 权威回填值（peerAgentId/peerOwner/peerRole）；平台不连 Hub、不查御符内部接口、不推测身份。peerAgentId 缺席即「未验证」（老 Hub 不回填），如实呈现。</p>
-      <table><tr><th>对端（御符）</th><th>Owner / 角色</th><th>流量</th><th>系统</th><th>最近</th><th>身份来源</th></tr>${rows || '<tr><td colspan=6 class=dim>暂无协作消息事件（实例未上报或本期无跨 Agent 通信）</td></tr>'}</table>
-      <h2>闸门拒绝证据（治理执行，最近 20）</h2>
-      <table><tr><th>时间</th><th>主体</th><th>闸门结论</th><th>依据</th></tr>${denied || '<tr><td colspan=4 class=dim>无拒绝记录</td></tr>'}</table>
-      <h2>消息事件（最近 25）</h2>
-      <table><tr><th>时间</th><th>实例</th><th>向</th><th>对端</th><th>级别</th><th>主体</th></tr>${msgs || '<tr><td colspan=6 class=dim>无消息事件</td></tr>'}</table>`
+      ? blk('御驿协作面（Hub 只读摄取）', '', `<p class="note amber" style="margin-left:14px">不可用：${esc(y.reason || '未知原因')}</p>`)
+      : blk('御驿协作面（Hub 只读摄取）　<span class="bdg ok">只读</span>',
+          `数据源 <span class="mono">${esc(y.stateDir)}</span>　对端 <b>${y.recipients.length}</b>　消息 <b>${y.messages.length}</b>　投递 ${Object.entries(y.delivery.byStatus || {}).map(([k, v]) => esc(k) + ':' + v).join(' / ') || '—'}　闸门终止 <b class="${y.gate.terminated > 0 ? 'crit' : ''}">${y.gate.terminated}</b> / 屏蔽 <b class="${y.gate.blocked > 0 ? 'crit' : ''}">${y.gate.blocked}</b>　本机御符身份 <b>${y.identity.agents.length}</b><br>边界（不可放宽）：只读打开　<b>不摄取消息正文</b>　<b>不读凭据</b>　不接管身份（§7.2.1）`,
+          `<h3>对端清单（${y.recipients.length}，按最近活跃${y.recipients.length > 25 ? '，显示前 25' : ''}）</h3>` +
+          tw('<th>御符 agentId</th><th>device / name</th><th>类型</th><th>唤醒能力</th><th>最近活跃</th>',
+            y.recipients.slice(0, 25).map((r) => `<tr><td class="id">${esc(r.agentId)}</td><td>${esc(r.device)}<br><span class="dim">${esc(r.name)}</span></td><td>${esc(r.agentKind)}</td><td class="mono">${esc(r.wake || '—')}</td><td class="dim mono">${esc(r.lastSeen)}</td></tr>`).join(''), 5, '无对端记录') +
+          `<h3>投递失败（${y.delivery.failures.length}）</h3>` +
+          tw('<th>消息</th><th>原因</th><th>时间</th>',
+            y.delivery.failures.slice(0, 10).map((f) => `<tr><td class="id">${esc(f.msgId)}</td><td class="amber">${esc(f.detail)}</td><td class="dim mono">${esc(f.at)}</td></tr>`).join(''), 3, '<span class="teal">无投递失败</span>') +
+          `<h3>治理执行事件（闸门，最近 10）</h3>` +
+          tw('<th>时间</th><th>动作</th><th>目标</th><th>发起</th><th>依据</th>',
+            y.gate.events.slice(-10).reverse().map((e) => `<tr><td class="dim mono">${esc(e.at)}</td><td class="${e.kind === 'terminated' ? 'crit' : 'dim'} mono">${esc(e.kind)}</td><td class="mono">${esc(e.targetAgentId || e.targetName)}</td><td>${esc(e.by)}</td><td class="dim">${esc(e.reason)}</td></tr>`).join(''), 5, '无治理执行事件') +
+          `<h3>本机御符身份（${y.identity.agents.length}；token 不读）</h3>` +
+          tw('<th>宿主</th><th>御符 agentId</th><th>御符服务</th><th>默认</th>',
+            y.identity.agents.map((a) => `<tr><td>${esc(a.key)}${a.isDefault ? ' <span class="bdg ok">默认</span>' : ''}</td><td class="id">${esc(a.agentId)}</td><td class="dim mono">${esc(a.yufuUrl)}</td><td></td></tr>`).join(''), 4, '无本机身份记录') +
+          `<h3>消息元数据（${y.messages.length}；正文不摄取）</h3>` +
+          tw('<th>#</th><th>模式</th><th>来自</th><th>目标</th><th class="num">字节</th><th>对端身份</th><th>接收时间</th>',
+            y.messages.slice(0, 15).map((m) => `<tr><td class="dim num">${m.seq}</td><td>${esc(m.mode)}</td><td>${esc(m.fromDevice)}</td><td>${esc(m.toTarget || m.recipientId)}</td><td class="num">${m.byteSize}</td><td>${m.peerAgentId ? '<span class="teal mono">' + esc(m.peerAgentId) + '</span>' : '<span class="dim">未回填</span>'}</td><td class="dim mono">${esc(m.receivedAt)}</td></tr>`).join(''), 7, '无消息记录'))
+    v.innerHTML = yuyiBlock +
+      blk('协作总览（御驿消息结构化）',
+        `对端 <b>${t.peers ?? 0}</b>　身份已验证 <b class="teal">${t.verified ?? 0}</b>　未验证 <b class="${(t.unverified ?? 0) > 0 ? 'amber' : 'dim'}">${t.unverified ?? 0}</b>　入向 ${t.inbound ?? 0} / 出向 ${t.outbound ?? 0}　闸门拒绝 <b class="${(t.gateDenied ?? 0) > 0 ? 'amber' : 'dim'}">${t.gateDenied ?? 0}</b><br>身份字段由实例转写 Yuyi Hub 权威回填值（peerAgentId/peerOwner/peerRole）；平台不连 Hub、不查御符内部接口、不推测身份。peerAgentId 缺席即「未验证」，如实呈现。`,
+        tw('<th>对端（御符）</th><th>Owner / 角色</th><th class="num">流量</th><th>系统</th><th>最近</th><th>身份来源</th>', rows, 6, '暂无协作消息事件（实例未上报或本期无跨 Agent 通信）')) +
+      blk('闸门拒绝证据（治理执行，最近 20）', '', tw('<th>时间</th><th>主体</th><th>闸门结论</th><th>依据</th>', denied, 4, '无拒绝记录')) +
+      blk('消息事件（最近 25）', '', tw('<th>时间</th><th>实例</th><th>向</th><th>对端</th><th>级别</th><th>主体</th>', msgs, 6, '无消息事件'))
   } else if (VIEW === 'knowledge') {
     const rq = SNAP.reviewQueue || { entries: 0, raw: '' }
     const lines = (rq.raw || '').split(/\r?\n/).filter((l) => l.trim().startsWith('- ') || /^\s+\w+:/.test(l))
-    v.innerHTML = `<h2>评审队列（review-queue.yaml）</h2>
-      <p>队列条目数：<b>${rq.entries}</b>${rq.entries === 0 ? ' <span class="ok">（空队列 = 无待审核项）</span>' : ' <span class="warn">（有待审核项，请到治理操作页升级）</span>'}</p>
-      ${lines.length ? `<table><tr><th>队列明细</th></tr>${lines.map((l) => `<tr><td class=dim>${esc(l.trim())}</td></tr>`).join('')}</table>` : ''}
-      <h2>知识域事件（最近 20）</h2>
-      <table><tr><th>时间</th><th>类型</th><th>主体</th></tr>${(SNAP.events || []).filter((e) => e.domain === 'knowledge').slice(-20).reverse().map((e) => `<tr><td class=dim>${esc(e.ts)}</td><td>${esc(e.type)}</td><td>${esc(e.subject ?? '')}</td></tr>`).join('') || '<tr><td colspan=3 class=dim>无知识域事件</td></tr>'}</table>
-      <h2>治理留痕（知识相关）</h2>
-      <table><tr><th>时间</th><th>动作</th><th>主体</th></tr>${(SNAP.governance || []).filter((e) => String(e.type).includes('knowledge')).slice(-20).reverse().map((e) => `<tr><td class=dim>${esc(e.ts)}</td><td>${esc(e.type)}</td><td>${esc(e.subject ?? '')}</td></tr>`).join('') || '<tr><td colspan=3 class=dim>无知识治理留痕</td></tr>'}</table>
-      <h2>说明</h2><p class="dim">升级操作走「治理操作」页（待审核 → 已确认）；操作修订条目 status 并发 governance 审计事件，不旁路 review-queue 纪律。</p>`
+    v.innerHTML =
+      blk('评审队列（review-queue.yaml）', `队列条目数：<b>${rq.entries}</b>${rq.entries === 0 ? '　<span class="teal">空队列 = 无待审核项</span>' : '　<span class="amber">有待审核项，请到治理操作页升级</span>'}`,
+        lines.length ? tw('<th>队列明细</th>', lines.map((l) => `<tr><td class="mono dim">${esc(l.trim())}</td></tr>`).join(''), 1, '') : '') +
+      blk('知识域事件（最近 20）', '', tw('<th>时间</th><th>类型</th><th>主体</th>', (SNAP.events || []).filter((e) => e.domain === 'knowledge').slice(-20).reverse().map((e) => `<tr><td class="dim mono">${esc(e.ts)}</td><td class="mono">${esc(e.type)}</td><td>${esc(e.subject ?? '')}</td></tr>`).join(''), 3, '无知识域事件')) +
+      blk('治理留痕（知识相关）', '', tw('<th>时间</th><th>动作</th><th>主体</th>', (SNAP.governance || []).filter((e) => String(e.type).includes('knowledge')).slice(-20).reverse().map((e) => `<tr><td class="dim mono">${esc(e.ts)}</td><td class="mono">${esc(e.type)}</td><td>${esc(e.subject ?? '')}</td></tr>`).join(''), 3, '无知识治理留痕')) +
+      blk('说明', '', '<p class="note" style="margin-left:14px">升级操作在「治理操作」页完成（待审核 → 已确认）；操作修订条目 status 并发 governance 审计事件，不旁路 review-queue 纪律。</p>')
   } else if (VIEW === 'runtime') {
-  const rt = SNAP.runtime ?? { available: false }
-  v.innerHTML = !rt.available ? '<p class="warn">运行时数据不可用：' + esc(rt.reason) + '</p>' :
-    '<h2>模型性能（omp agent.db 只读摄取）</h2><table><tr><th>模型</th><th>样本</th><th>输出 tokens</th><th>平均生成 ms</th><th>平均 TTFT ms</th></tr>' +
-    rt.models.map((m) => '<tr><td>' + esc(m.model) + '</td><td>' + m.samples + '</td><td>' + m.outputTokens + '</td><td>' + m.avgGenMs + '</td><td>' + m.avgTtftMs + '</td></tr>').join('') + '</table>'
-} else if (VIEW === 'govern') {
+    const rt = SNAP.runtime ?? { available: false }
+    v.innerHTML = !rt.available ? `<p class="amber" style="margin-left:14px">运行时数据不可用：${esc(rt.reason)}</p>` :
+      blk('模型性能（omp agent.db 只读摄取）', '', tw('<th>模型</th><th class="num">样本</th><th class="num">输出 tokens</th><th class="num">平均生成 ms</th><th class="num">平均 TTFT ms</th>',
+        rt.models.map((m) => `<tr><td class="mono">${esc(m.model)}</td><td class="num">${m.samples}</td><td class="num">${m.outputTokens}</td><td class="num">${m.avgGenMs}</td><td class="num">${m.avgTtftMs}</td></tr>`).join(''), 5, '无模型数据'))
+  } else if (VIEW === 'govern') {
     const tasks = SNAP.tasks || {}
     const taskIds = Object.keys(tasks)
     const roots = SNAP.roots || []
-    const opts = roots.map((r) => `<option value="${esc(r.instanceId)}" data-root="${esc(r.taskRoot)}">${esc(r.instanceId)} · ${esc(r.label || '')} [${esc(r.status)}]</option>`).join('')
-    v.innerHTML = `<h2>跨实例统一治理 · 任务 confirm / reject</h2>
-      <p class="dim">仅对「待确认」状态的任务有效；四不变量由 task-ledger 强制，平台不旁路。批量按逐个调用，各自留痕（部分失败逐条报告）。</p>
-      <p><b>操作者</b>：<input id="g-by" placeholder="主人（confirm 只能由主人发起）" size="24"> <span class="dim">必填——平台不代填「主人」，以谁的名义落定就记谁</span></p>
-      <p>实例：<select id="g-inst" onchange="pickRoot()"><option value="">— 选择实例（自动填 root）—</option>${opts}</select></p>
-      <p>任务号：<input id="g-task" placeholder="OPSP-P0, OPSP-P1（逗号/空格分隔 = 批量）" size="34">
-         root：<input id="g-root" value="${esc(roots[0] ? roots[0].taskRoot : '/workspace')}" size="34">
-         <button class="btn" onclick="govern('confirm')">confirm</button>
-         <button class="btn" onclick="govern('reject')">reject</button></p>
-      <p class="dim">地址簿来源：${esc(SNAP.addressBookSource || '（未配置 data-roots.yml）')} · 任务（点击填入）：${
-        taskIds.map((id) => `<a href="#" onclick="fillTask('${esc(id)}');return false" class="${tasks[id].state === '已落定' ? 'dim' : ''}">${esc(id)}<span class="dim">(${esc(tasks[id].state)})</span></a>`).join(' ') || '（暂无任务事件）'}</p>
-      <h2>知识条目升级（待审核 → 已确认）</h2>
-      <p>条目名：<input id="k-entry" placeholder="omp-extension-contract-pitfalls" size="36">
-         <button class="btn" onclick="kPromote()">升级为已确认</button></p>
-      <h2>治理结果</h2><pre id="g-out" class="dim">${esc(window._govResult || '')}</pre>`
+    const opts = roots.map((r) => `<option value="${esc(r.instanceId)}">${esc(r.instanceId)}　${esc(r.label || '')}［${esc(r.status)}］</option>`).join('')
+    const zhupi = `<div class="zhupi">
+      <h1>朱批 <em>·</em> 跨实例统一治理</h1>
+      <p class="zh-note">confirm 只能由主人发起——以谁的名义落定，台账就记谁；四不变量由 task-ledger 强制，本台不旁路。批量按逐个调用，各自留痕，部分失败逐条报告。</p>
+      <div class="row">
+        <div class="fld"><label>操作者（必填，平台不代填「主人」）</label><input id="g-by" placeholder="主人" size="22"></div>
+        <div class="fld"><label>实例（选择后自动填 root）</label><select id="g-inst" onchange="pickRoot()"><option value="">— 选择实例 —</option>${opts}</select></div>
+      </div>
+      <div class="row">
+        <div class="fld"><label>任务号（逗号或空格分隔 = 批量）</label><input id="g-task" placeholder="OPSP-P0, OPSP-P1" size="34"></div>
+        <div class="fld"><label>台账根</label><input id="g-root" value="${esc(roots[0] ? roots[0].taskRoot : '/workspace')}" size="34"></div>
+        <button class="btn verm" onclick="govern('confirm')">confirm 落定</button>
+        <button class="btn" onclick="govern('reject')">reject 退回</button>
+      </div>
+      <p class="note2">地址簿来源：${esc(SNAP.addressBookSource || '（未配置 data-roots.yml）')}<br>待处理任务（点击填入）：${taskIds.map((id) => `<a href="#" onclick="fillTask('${esc(id)}');return false" class="${tasks[id].state === '已落定' ? 'dim' : ''}">${esc(id)}<span class="dim">（${esc(tasks[id].state)}）</span></a>`).join('　') || '（暂无任务事件）'}</p>
+    </div>`
+    v.innerHTML = zhupi +
+      blk('知识条目升级（待审核 → 已确认）', '操作者沿用上方「操作者」', `<div class="tw"><p><input id="k-entry" placeholder="omp-extension-contract-pitfalls" size="36"> <button class="btn" onclick="kPromote()">升级为已确认</button></p></div>`) +
+      blk('治理结果', '', `<pre id="g-out">${esc(window._govResult || '')}</pre>`)
+  } else if (VIEW === 'events') {
+    const items = (SNAP.events || []).slice(-60).reverse()
+    v.innerHTML = blk('事件实时流', '最近 60 条　每 10s 自动刷新　' +
+      `<select id="ev-filter" onchange="render()"><option value="">全部实例</option>${SNAP.instances.map((i) => `<option ${window._evFilter === i.instanceId ? 'selected' : ''} value="${esc(i.instanceId)}">${esc(i.instanceId)}</option>`).join('')}</select>`,
+      tw('<th>时间</th><th>实例</th><th>域 / 类型</th><th>级别</th><th>主体</th>',
+        items.filter((e) => !window._evFilter || e.instanceId === window._evFilter).map((e) => `<tr><td class="dim mono">${esc(String(e.ts).slice(11, 19))}</td><td class="mono">${esc(e.instanceId)}</td><td class="mono">${esc(e.domain)}/${esc(e.type)}</td><td class="${e.severity === 'critical' ? 'crit' : e.severity === 'warning' ? 'amber' : 'dim'}">${esc(e.severity)}</td><td>${esc(e.subject ?? '')}</td></tr>`).join(''), 5, '无事件'))
   }
 }
 function pickRoot() {
@@ -243,10 +354,16 @@ async function approv(requestId, decision) {
   const r = await fetch('/api/govern/approval', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId, decision, by, reason }) })
   const j = await r.json(); window._govResult = j.ok ? `✅ 已${decision === 'allow' ? '批准' : '拒绝'}：${requestId}` : `❌ ${j.error ?? '失败'}`; $('#g-out').textContent = window._govResult; refresh()
 }
-document.querySelectorAll('nav button').forEach((b) => b.onclick = () => {
-  document.querySelectorAll('nav button').forEach((x) => x.classList.remove('active')); b.classList.add('active')
-  VIEW = b.dataset.v; render()
-})
+/* 视图切换：hash 深链——刷新 / 前进后退均保持当前视图（#govern 可直达朱批台） */
+const VIEWS = ['team', 'systems', 'instances', 'collab', 'knowledge', 'govern', 'runtime', 'events']
+function setView(v) {
+  VIEW = VIEWS.includes(v) ? v : 'team'
+  document.querySelectorAll('nav button').forEach((x) => x.classList.toggle('active', x.dataset.v === VIEW))
+  render()
+}
+document.querySelectorAll('nav button').forEach((b) => b.onclick = () => { location.hash = b.dataset.v })
+window.addEventListener && window.addEventListener('hashchange', () => setView((location.hash || '').slice(1)))
+setView((location.hash || '').slice(1))
 document.addEventListener('change', (e) => { if (e.target && e.target.id === 'ev-filter') { window._evFilter = e.target.value; render() } })
 refresh(); setInterval(refresh, 10000)
 </script>

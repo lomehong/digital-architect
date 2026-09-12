@@ -26,6 +26,7 @@ const node = (sel) => nodes[sel] || (nodes[sel] = { sel, innerHTML: '', textCont
 const ctx = {
   document: { querySelector: (s) => node(s), querySelectorAll: () => [], addEventListener: () => {}, getElementById: (id) => node('#' + id) },
   window: {},
+  location: { hash: '' },
   fetch: async () => ({ json: async () => ({}) }),
   // 定时器 stub：脚本末尾的自动刷新不得在烟测中真正排程（返回 0 句柄）
   setInterval: () => 0,

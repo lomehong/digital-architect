@@ -45,6 +45,8 @@ whenToUse: 需求准入（architect-prd-digest）通过后，主人要求「出�
 
 需求覆盖（Do/Don't/To Confirm）、系统覆盖（Services/Repos/Dependencies）、证据覆盖（Business/Architecture/Code/Config）、风险覆盖（Compatibility/Exception/Cache/MQ/State）、验证覆盖（Unit/Contract/Regression/Monitoring/Rollback）、不确定性治理（Unknown/Conflict/Human Decision）。
 
+**可选工件：系统地图（archify，按需）**——方案涉及架构表达（组件边界/调用时序/数据流/状态机）且主人需要可视化时，用 **archify** 技能产出交互式系统地图（typed JSON IR → 自包含 HTML，grounded：只画 authored 事实，不发明拓扑；架构组件/边界/主路径 + 可选 SRC 源码证据）。产物落盘 `docs/designs/assets/<slug>.<type>.html` 并在方案「系统覆盖」区引用。不是每个方案都需要图——不适用时跳过，无需声明。用法见 `skills/archify/SKILL.md`（CLI：`node skills/archify/bin/archify.mjs`）。
+
 ### 第五步：人工决策门
 
 

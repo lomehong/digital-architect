@@ -39,6 +39,8 @@ whenToUse: 有一份技术方案（architect-design 产出或其他来源）需�
 
 评分 ≥ 50/60 且无维度 ≤ 5 **且五问全答（5/5，严格口径，主人 2026-09-11 拍板）** → 具备通过条件；任一关键维度缺失 → 驳回。
 
+**可选工件：变更图对比（archify Architecture Delta，按需）**——变更类方案的评审，若设计侧产出了前后两份已验证快照（typed JSON IR），用 archify compare 生成 Before/Delta/After 对比图（精确 added/removed/changed/moved/rerouted）作为评审附件；archify 只列 authored 事实、**不推断影响面与风险**——影响与风险结论仍由本评审的证据回源产生。
+
 ### 第三步：证据回源与知识漂移核查
 
 

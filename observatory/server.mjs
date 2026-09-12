@@ -180,6 +180,34 @@ function evaluateAlerts(snap) {
   return out
 }
 
+// ---- 审批代办（pending 扫描 + 决定写入 + 事件发射）----
+const APPROVALS_PENDING_DIR = join(OBS, 'approvals', 'pending')
+const APPROVALS_DECISIONS_DIR = join(OBS, 'approvals', 'decisions')
+function scanPending() {
+  const out = []
+  try {
+    for (const f of readdirSync(APPROVALS_PENDING_DIR).filter((f) => f.endsWith('.json'))) {
+      try {
+        const raw = readFileSync(join(APPROVALS_PENDING_DIR, f), 'utf8')
+        const p = JSON.parse(raw)
+        const expired = p.requiredBy && Date.parse(p.requiredBy) < Date.now()
+        if (expired) { writeAutoDecision(p, 'deny', 'system-timeout', '审批超时自动拒绝（主人未在 requiredBy 前决断）'); continue }
+        out.push({ requestId: p.requestId, ts: p.ts, instanceId: p.instanceId, tool: p.subject?.tool, reason: p.reason, requiredBy: p.requiredBy, subject: p.subject })
+      } catch { /* 单条损坏不阻断 */ }
+    }
+  } catch { /* 目录不存在：跳过 */ }
+  return out
+}
+function writeAutoDecision(pending, decision, by, reason) {
+  try {
+    mkdirSync(APPROVALS_DECISIONS_DIR, { recursive: true })
+    const id = pending.requestId
+    writeFileSync(join(APPROVALS_DECISIONS_DIR, `${id}.json`), JSON.stringify({ requestId: id, ts: new Date().toISOString(), decision, by, via: 'observatory-auto', reason }, null, 2))
+    appendFileSync(join(EVENTS_DIR, pending.instanceId, new Date().toISOString().slice(0, 10) + '.ndjson'), JSON.stringify({ ts: new Date().toISOString(), instanceId: pending.instanceId, hostType: pending.hostType || 'dsh', system: pending.system || 'digital-architect', domain: 'runtime', type: 'approval.resolved', severity: decision === 'deny' ? 'warning' : 'info', subject: id, payload: { decision, by, reason, via: 'observatory-auto' } }) + '\n')
+    try { unlinkSync(join(APPROVALS_PENDING_DIR, `${id}.json`)) } catch { /* 保留供事后审计 */ }
+  } catch (e) { console.error('[observatory] auto-decision 失败:', e.message) }
+}
+
 function runtimeSnapshot() {
   if (!existsSync(AGENT_DB)) return { available: false, reason: `agent.db 不存在：${AGENT_DB}` }
   try {
@@ -239,6 +267,7 @@ const server = http.createServer((req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/snapshot') {
       const snap = { ...snapshot(), runtime: runtimeSnapshot() }
       snap.alerts = evaluateAlerts(snap)
+      snap.pendingApprovals = scanPending()
       return sendJson(res, 200, snap)
     }
     if (req.method === 'GET' && url.pathname === '/api/runtime') return sendJson(res, 200, runtimeSnapshot())
@@ -262,6 +291,25 @@ const server = http.createServer((req, res) => {
           const { taskId, root, action, by } = JSON.parse(body || '{}')
           if (!taskId || !root || !['confirm', 'reject'].includes(action)) throw new Error('参数不合法')
           sendJson(res, 200, governTask(taskId, root, action, by || '主人'))
+        } catch (e) { sendJson(res, 400, { ok: false, error: e.message }) }
+      })
+      return
+    }
+    if (req.method === 'POST' && url.pathname === '/api/govern/approval') {
+      let body = ''
+      req.on('data', (c) => { body += c; if (body.length > 16384) req.destroy() })
+      req.on('end', () => {
+        try {
+          const { requestId, decision, by, reason } = JSON.parse(body || '{}')
+          if (!requestId || !['allow', 'deny'].includes(decision)) throw new Error('参数不合法（需 requestId 与 decision=allow|deny）')
+          const ppath = join(APPROVALS_PENDING_DIR, `${requestId}.json`)
+          if (!existsSync(ppath)) throw new Error('挂单不存在或已处理')
+          const pending = JSON.parse(readFileSync(ppath, 'utf8'))
+          mkdirSync(APPROVALS_DECISIONS_DIR, { recursive: true })
+          writeFileSync(join(APPROVALS_DECISIONS_DIR, `${requestId}.json`), JSON.stringify({ requestId, ts: new Date().toISOString(), decision, by: by || '主人', via: 'observatory', reason: reason || '' }, null, 2))
+          appendFileSync(join(EVENTS_DIR, pending.instanceId, new Date().toISOString().slice(0, 10) + '.ndjson'), JSON.stringify({ ts: new Date().toISOString(), instanceId: pending.instanceId, hostType: pending.hostType || 'dsh', system: pending.system || 'digital-architect', domain: 'runtime', type: 'approval.resolved', severity: decision === 'deny' ? 'warning' : 'info', subject: requestId, payload: { decision, by: by || '主人', via: 'observatory', reason: reason || '' } }) + '\n')
+          try { unlinkSync(ppath) } catch { /* 保留供审计 */ }
+          sendJson(res, 200, { ok: true, requestId, decision })
         } catch (e) { sendJson(res, 400, { ok: false, error: e.message }) }
       })
       return

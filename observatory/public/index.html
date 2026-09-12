@@ -62,6 +62,8 @@ function render() {
       <h2>最近 critical 事件</h2><table><tr><th>类型</th><th>主体</th><th>时间</th></tr>${alerts || '<tr><td colspan=3 class=dim>无</td></tr>'}</table>
       <h2>告警</h2>
       ${(SNAP.alerts||[]).length === 0 ? '<p class=ok>✅ 无告警</p>' : `<table><tr><th>级别</th><th>告警</th></tr>${SNAP.alerts.map((a) => `<tr><td class="${a.severity==='critical'?'crit':'warn'}">${esc(a.severity)}</td><td><b>${esc(a.title)}</b><br><span class=dim>${esc(a.message||'')}</span></td></tr>`).join('')}</table>`}
+      <h2>审批代办（pending）</h2>
+      ${(SNAP.pendingApprovals||[]).length === 0 ? '<p class=dim>无挂单</p>' : `<table><tr><th>实例</th><th>工具</th><th>原因</th><th>截止</th><th>批准 / 拒绝</th></tr>${SNAP.pendingApprovals.map((p) => `<tr><td>${esc(p.instanceId)}<br><span class=dim>${esc(p.requestId)}</span></td><td>${esc(p.tool||'-')}</td><td>${esc(p.reason||'-')}</td><td class=${Date.parse(p.requiredBy)<Date.now()?'crit':'dim'}>${esc(p.requiredBy)}</td><td><button class=btn onclick="approv('${esc(p.requestId)}','allow')">批准</button><button class=btn onclick="approv('${esc(p.requestId)}','deny')">拒绝</button></td></tr>`).join('')}</table>`}
       <h2>治理留痕（最近）</h2><table><tr><th>动作</th><th>主体</th><th>经手</th><th>时间</th></tr>${SNAP.governance.map((e) => `<tr><td>${esc(e.type)}</td><td>${esc(e.subject)}</td><td>${esc((e.payload||{}).via)}</td><td class="dim">${esc(e.ts)}</td></tr>`).join('') || '<tr><td colspan=4 class=dim>无</td></tr>'}</table>`
   } else if (VIEW === 'systems') {
     const bySys = {}
@@ -113,6 +115,12 @@ async function kPromote() {
   if (!confirm(`确认将 ${entry} 升级为「已确认」？（主人操作，将留治理审计）`)) return
   const r = await fetch('/api/govern/knowledge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entry, to: '已确认' }) })
   const j = await r.json(); $('#g-out').textContent = j.ok ? `已升级：${entry}` : (j.error ?? '失败'); refresh()
+}
+async function approv(requestId, decision) {
+  const reason = prompt(`${decision === 'allow' ? '批准' : '拒绝'}理由（可空）：`) || ''
+  if (!confirm(`确认对 ${requestId} 执行 ${decision.toUpperCase()}？（主人操作，将留治理审计）`)) return
+  const r = await fetch('/api/govern/approval', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId, decision, by: '主人', reason }) })
+  const j = await r.json(); $('#g-out').textContent = j.ok ? `已${decision === 'allow' ? '批准' : '拒绝'}：${requestId}` : (j.error ?? '失败'); refresh()
 }
 document.querySelectorAll('nav button').forEach((b) => b.onclick = () => {
   document.querySelectorAll('nav button').forEach((x) => x.classList.remove('active')); b.classList.add('active')

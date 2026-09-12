@@ -136,7 +136,20 @@ heartbeatIntervalSec: 30
 - **HTTP**：`POST /api/events`（单条或 `{events: [...]}`）
 
 **omp 容器**：`entrypoint.sh` 已内置心跳循环（`OBS_ROOT` 挂载即可，见 `docker/docker-compose.yml` 的 `../obs:/opt/architect/obs:rw`）。
-**dsh 侧**：直接写宿主 `obs/`。
+
+**通用心跳工具**（dsh 及其它宿主）：
+
+```powershell
+# 常驻（建议注册计划任务，登录自启）
+node observatory/heartbeat.mjs --instance dsh-architect-01 --interval 60
+
+# 单次（验证/CI）；首次创建需声明实例身份要素
+node observatory/heartbeat.mjs --instance my-instance --systems a,b --host "描述" --host-type dsh --once
+```
+
+**语义**：只刷新心跳字段（`status` / `lastSeenAt` / `heartbeatIntervalSec`），**保留实例自身声明的** `systems` / `capabilities` / `host`——心跳工具不覆盖身份声明。
+
+**身份自验（可选，不配置则不发证据）**：加 `--yufu-url http://127.0.0.1:<port>` 与环境变量 `YUFU_CREDENTIAL=<御符 token>` → 调 `POST /api/v1/auth/agent/verify`，把结论作为 `platform.identity.verified` 上报。**未配置时不发事件**——平台不做身份验证，也不接受凭空证据。
 
 ## 部署与运维
 
@@ -147,6 +160,12 @@ $srv  = "E:\Development\Code\nodejs\digital-architect\observatory\server.mjs"
 $action  = New-ScheduledTaskAction -Execute $node -Argument "`"$srv`" --tasks `"E:\Development\Code\nodejs\ops-pi\docs\tasks`""
 $trigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
 Register-ScheduledTask -TaskName "ArchitectObservatory" -Action $action -Trigger $trigger -RunLevel Limited -Force
+
+# 实例心跳任务（登录自启；dsh 侧实例保活，避免看板长期 offline）
+$hb   = "E:\Development\Code\nodejs\digital-architect\observatory\heartbeat.mjs"
+$obs  = "E:\Development\Code\nodejs\digital-architect\obs"
+$hbAction = New-ScheduledTaskAction -Execute $node -Argument "`"$hb`" --instance dsh-architect-01 --interval 60 --data `"$obs`""
+Register-ScheduledTask -TaskName "ArchitectInstanceHeartbeat" -Action $hbAction -Trigger $trigger -RunLevel Limited -Force
 ```
 
 **启动参数**：`--port <n>`（默认 8787）· `--root <总仓根>`（知识库/告警规则/缺省 tasks 与 agent.db）· `--data <数据根>`（缺省 `<root>/obs`）· `--tasks <dir>`（可重复，台账目录）· `--agentdb <path>` · `--alert-cooldown-ms <n>`
@@ -163,6 +182,7 @@ Register-ScheduledTask -TaskName "ArchitectObservatory" -Action $action -Trigger
 observatory/
 ├── server.mjs                 平台服务（零 npm 依赖，仅 node: 内置模块）
 ├── seal.mjs                   审计归档封印与校验（哈希链）
+├── heartbeat.mjs              通用实例心跳工具（+ 可选身份自验上报）
 ├── alert-rules.yml            告警规则 v1（5 条，支持抑制窗口）
 ├── data-roots.yml             治理地址簿（实例 → 台账根）
 ├── public/index.html          看板单页（原生 JS，无构建，8 视图）

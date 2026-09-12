@@ -267,12 +267,20 @@ function render() {
   } else if (VIEW === 'knowledge') {
     const rq = SNAP.reviewQueue || { entries: 0, raw: '' }
     const lines = (rq.raw || '').split(/\r?\n/).filter((l) => l.trim().startsWith('- ') || /^\s+\w+:/.test(l))
+    const kb = SNAP.knowledgeBase || { total: 0, byCategory: {}, byStatus: {}, recent: [], entries: [] }
+    const catLine = Object.entries(kb.byCategory || {}).map(([k, v]) => `${esc(k)} ${v}`).join('　')
+    const stLine = Object.entries(kb.byStatus || {}).map(([k, v]) => `<span class="${k === '已确认' ? 'teal' : 'amber'}">${esc(k)} ${v}</span>`).join('　')
     v.innerHTML =
+      blk('知识库（architect-knowledge 只读摄取）', `共 <b>${kb.total}</b> 条　${catLine}${stLine ? '　状态：' + stLine : ''}`,
+        tw('<th>类别</th><th>条目</th><th>状态</th><th>领域</th><th>确认</th><th>更新</th>',
+          (kb.entries || []).map((e) => `<tr><td>${esc(e.category)}</td><td>${esc(e.title)}<br><span class="id">${esc(e.file)}</span></td><td>${e.status === '已确认' ? '<span class="teal">已确认</span>' : `<span class="amber">${esc(e.status)}</span>`}</td><td class="dim">${esc(e.domain)}</td><td class="dim mono">${esc(e.confirmed)}</td><td class="dim mono">${esc(e.updated)}</td></tr>`).join(''), 6, '未摄取到知识条目')) +
+      blk('最近更新', '', tw('<th>条目</th><th>类别</th><th>最近变更</th>',
+        (kb.recent || []).map((e) => `<tr><td>${esc(e.title)}</td><td>${esc(e.category)}</td><td class="dim mono">${esc(e.updated || e.confirmed || e.mtime)}</td></tr>`).join(''), 3, '无')) +
       blk('评审队列（review-queue.yaml）', `队列条目数：<b>${rq.entries}</b>${rq.entries === 0 ? '　<span class="teal">空队列 = 无待审核项</span>' : '　<span class="amber">有待审核项，请到治理操作页升级</span>'}`,
         lines.length ? tw('<th>队列明细</th>', lines.map((l) => `<tr><td class="mono dim">${esc(l.trim())}</td></tr>`).join(''), 1, '') : '') +
       blk('知识域事件（最近 20）', '', tw('<th>时间</th><th>类型</th><th>主体</th>', (SNAP.events || []).filter((e) => e.domain === 'knowledge').slice(-20).reverse().map((e) => `<tr><td class="dim mono">${esc(e.ts)}</td><td class="mono">${esc(e.type)}</td><td>${esc(e.subject ?? '')}</td></tr>`).join(''), 3, '无知识域事件')) +
       blk('治理留痕（知识相关）', '', tw('<th>时间</th><th>动作</th><th>主体</th>', (SNAP.governance || []).filter((e) => String(e.type).includes('knowledge')).slice(-20).reverse().map((e) => `<tr><td class="dim mono">${esc(e.ts)}</td><td class="mono">${esc(e.type)}</td><td>${esc(e.subject ?? '')}</td></tr>`).join(''), 3, '无知识治理留痕')) +
-      blk('说明', '', '<p class="note" style="margin-left:14px">升级操作在「治理操作」页完成（待审核 → 已确认）；操作修订条目 status 并发 governance 审计事件，不旁路 review-queue 纪律。</p>')
+      blk('说明', '', '<p class="note" style="margin-left:14px">知识库条目由平台只读摄取（frontmatter：title/status/domain/confirmed/updated）；升级操作在「治理操作」页完成（待审核 → 已确认），不旁路 review-queue 纪律。</p>')
   } else if (VIEW === 'runtime') {
     const rt = SNAP.runtime ?? { available: false }
     v.innerHTML = !rt.available ? `<p class="amber" style="margin-left:14px">运行时数据不可用：${esc(rt.reason)}</p>` :

@@ -11,7 +11,7 @@
  *   --data 独立于 --root，便于在临时数据根上做无副作用端到端验证（总仓知识库/告警规则仍按 --root 读取）。
  */
 import http from 'node:http'
-import { watch, existsSync, readFileSync, readdirSync, mkdirSync, writeFileSync, appendFileSync, unlinkSync } from 'node:fs'
+import { watch, existsSync, readFileSync, readdirSync, mkdirSync, writeFileSync, appendFileSync, unlinkSync, statSync } from 'node:fs'
 import { join, resolve, dirname } from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
@@ -92,6 +92,46 @@ function loadReviewQueue() {
     const raw = readFileSync(join(ROOT, 'architect-knowledge', 'review-queue.yaml'), 'utf8')
     return { raw, entries: (raw.match(/- /g) ?? []).length }
   } catch { return { raw: '', entries: 0 } }
+}
+// ---- 知识库只读摄取（architect-knowledge 五类目录，frontmatter 轻解析，零依赖）----
+function loadKnowledgeBase() {
+  const base = join(ROOT, 'architect-knowledge')
+  const entries = []
+  for (const cat of ['meta', 'principle', 'scenario', 'practice', 'reference']) {
+    let files = []
+    try { files = readdirSync(join(base, cat)).filter((f) => f.endsWith('.md') && f !== 'index.md') } catch { continue }
+    for (const f of files) {
+      let raw = ''
+      let mtime = ''
+      try {
+        raw = readFileSync(join(base, cat, f), 'utf8')
+        mtime = statSync(join(base, cat, f)).mtime.toISOString()
+      } catch { continue }
+      const fm = {}
+      const m = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/)
+      if (m) for (const line of m[1].split(/\r?\n/)) {
+        const kv = line.match(/^([A-Za-z]\w*):\s*(.+)$/)
+        if (kv) fm[kv[1]] = kv[2].trim()
+      }
+      entries.push({
+        category: cat, file: `${cat}/${f}`,
+        title: fm.title || f.replace(/\.md$/, ''),
+        status: fm.status || '未知',
+        domain: fm.domain || '',
+        confirmed: fm.confirmed || '', updated: fm.updated || '',
+        mtime,
+      })
+    }
+  }
+  const byCategory = {}, byStatus = {}
+  for (const e of entries) {
+    byCategory[e.category] = (byCategory[e.category] || 0) + 1
+    byStatus[e.status] = (byStatus[e.status] || 0) + 1
+  }
+  const recentKey = (e) => e.updated || e.confirmed || e.mtime
+  const recent = [...entries].sort((a, b) => recentKey(b).localeCompare(recentKey(a))).slice(0, 8)
+  const list = [...entries].sort((a, b) => a.category.localeCompare(b.category) || a.file.localeCompare(b.file))
+  return { total: entries.length, byCategory, byStatus, recent, entries: list }
 }
 function loadLedgerTasks() {
   const out = {}
@@ -233,7 +273,7 @@ function snapshot() {
     status: instances[r.instanceId]?.status ?? 'unknown',
     systems: instances[r.instanceId]?.systems ?? [],
   }))
-  return { generatedAt: new Date().toISOString(), instances: Object.values(instances), events: events.slice(-500), tasks, reviewQueue: rq, alerts: critical.slice(-50), governance: governance.slice(-50), collab: summarizeCollab(events.filter((e) => e.domain === 'collab')), identity: summarizeIdentity(events, instances), yuyi: readYuyiFace(), roots, addressBookSource: DATA_ROOTS.source, lastError: state.lastError }
+  return { generatedAt: new Date().toISOString(), instances: Object.values(instances), events: events.slice(-500), tasks, reviewQueue: rq, alerts: critical.slice(-50), governance: governance.slice(-50), collab: summarizeCollab(events.filter((e) => e.domain === 'collab')), identity: summarizeIdentity(events, instances), yuyi: readYuyiFace(), knowledgeBase: loadKnowledgeBase(), roots, addressBookSource: DATA_ROOTS.source, lastError: state.lastError }
 }
 
 // ---- 治理操作（经 task-ledger CLI，不旁路四不变量）----

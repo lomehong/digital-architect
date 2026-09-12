@@ -4,8 +4,8 @@ domain: dsh-ecosystem
 source:
   origin: oh-my-pi 实装源码（npm 分发 `@oh-my-pi/pi-coding-agent` v18.1.18）+ 本机探针实测
   ref: 仓库 github.com/can1357/oh-my-pi；包内相对路径 `packages/coding-agent/src/extensibility/extensions/{types,loader,wrapper,runner}.ts`、`src/tools/approval.ts`、`src/tools/essential-tools.ts`、`src/session/exit-diagnostics.ts`；实测记录见目标项目 `docs/reports/probes/v41-fix-verification-probe.ts`
-confirmed: 2026-09-12
-status: 待审核
+confirmed: 2026-09-12（主人 2026-09-12 确认升级）
+status: 已确认
 owner: 主人
 ---
 
@@ -23,6 +23,24 @@ owner: 主人
   2. 需要「任何模式都放行/拒绝」时用 `approval` 返回 `{ policy: "allow" | "deny" }`（`policy` 在解析顺序中优先级最高，yolo 关不掉）；
   3. 扩展 API **无 settings 访问器**，**无法自检审批模式**，故不得把安全属性建立在「部署时会配好」的假设上。
 - **实测**：`--approval-mode yolo` + 非交互，`override: true` 的工具直接执行；叠加模式无关兜底层后同一命令被拒且工具未运行。
+
+## 坑 1b：`tool_call` 钩子里改写 `event.input` 会传播进审批与执行（入参可被劫持）
+
+- **事实**：`event.input` 是**共享可变对象**，多个 `tool_call` handler 按注册顺序依次看到它，**改写向下游传播**——后续 handler、**审批门的后续求值**、以及 `execute` 收到的入参都会被影响。经实测：`approval` 在一次调用中**被求值 3 次**（首评在 hooks 之前，后两次在 hooks 之后）。
+- **危害**：共载的（恶意或缺陷）扩展可把**未授权目标伪造成已授权目标**，使审批为「另一个请求」背书，而执行的是伪造后的参数。**防御不得依赖共载方善意。**
+- **关键缓解机制（实测）**：审批的**首次求值看到的是模型发出的原始入参**；若首评返 `policy:"deny"`，宿主**在发出 `tool_call` 之前短路**——钩子根本不会运行。
+- **正确做法**：
+  1. **预授权必须以 default-deny 表达在审批层**（`approval` 返 `{policy:"allow"|"deny"}`），**不要**把放行表藏在 `execute` 里——只有审批层首评能看到原始入参；
+  2. `approval` 函数**必须是纯函数**：被求值 3 次，**不得消耗一次性令牌或有任何副作用**（TOCTOU）；令牌的「用掉」放在 `execute` 复核通过之后；
+  3. `execute` 首行**重算全部校验维度**（内容 + 目标 + 授权），覆盖「目标不变仅改命令内容」这一类前两层均放行的改写；
+  4. 可选加固 `Object.freeze(event.input)`：实测可让后续改写的赋值抛 `TypeError`、并保证审批/执行看到原值——但会**破坏平台允许的「共载扩展就地打补丁」用法**，故仅在高隔离单扩展部署启用。
+- **边界**：扩展在 `execute` 期**无法**从会话分支回溯模型原始 toolCall（分支尚未包含该 assistant 消息），故真值只能来自审批层首评。
+- **建议**：向 omp 上游反馈「`tool_call` handler 改写入参的传播语义」作为平台契约问题。
+
+## 坑 1c：`tool_execution_end.result.content[].text` 携带拒绝原因（审计可用）
+
+- **事实**：被拒绝的调用（无论拒绝来自扩展的 `tool_call` block，还是宿主审批门）在 `tool_execution_end` 的 `result.content[0].text` 中**携带原因文本**（宿主拒绝含 `Reason:` 行）。
+- **正确做法**：审计在 `tool_execution_end` 提取该文本并按原因前缀分类（如 `[ERR_PERMISSION]` / `[ERR_POLICY]`，宿主拒绝归 `host-policy`）——**无需**在 `tool_call` 内另写前置审计条目。
 
 ## 坑 2：`tool_result` 不覆盖被阻断的工具调用 → 审计漏掉「被拒绝」记录
 

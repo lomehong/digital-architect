@@ -33,6 +33,9 @@ services:
       - ZHIPU_API_KEY=${ZHIPU_API_KEY:-}
       # Z.AI 国际版套餐（备用）
       - ZAI_API_KEY=${ZAI_API_KEY:-}
+      # GitHub 凭证（gh CLI 原生识别 GH_TOKEN；git 私有仓经 entrypoint 配的 credential helper 免密）
+      # 建议细粒度 PAT：仅授权目标仓库的 contents 读写
+      - GH_TOKEN=${GH_TOKEN:-}
     volumes:
       # ── v3.2 白名单挂载（2026-09-11 主人否决整仓挂载，D11 同批）──
       # workspace = 架构师当前服务的目标项目（参数化，随任务切换）：

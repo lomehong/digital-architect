@@ -1,10 +1,4 @@
 # review-queue.yaml · 待审核队列（与条目 frontmatter status: 待审核 一一对应）
 # 维护纪律：主人确认后移除对应行，并把条目 status 改「已确认」、更新 confirmed 日期。
 # 台账是索引，frontmatter 仍是唯一权威（防双权威漂移）。
-# 2026-09-12：新增 2 条（OpsPi 评审实证产物），待主人确认后升级并移除对应行。
-- entry: practice/omp-extension-contract-pitfalls.md
-  added: 2026-09-12
-  reason: ops-pi v4.0 评审实测发现；待主人确认后升级为「已确认」
-- entry: practice/review-baseline-discipline.md
-  added: 2026-09-12
-  reason: 评审基准选错导致五条误判的教训；待主人确认后升级为「已确认」
+# 当前队列为空（2026-09-12：OpsPi 评审实证 2 条经主人确认升级为「已确认」）。

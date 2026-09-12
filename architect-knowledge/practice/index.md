@@ -6,12 +6,12 @@
 | [dsh-task-board-run-stuck.md](dsh-task-board-run-stuck.md) | run.status 状态机缺推进路径（套件侧 bug 观察 + scripts/task-board-cleanup.mjs 运维清理工具） | 已确认 |
 | [module-migration-reference-check.md](module-migration-reference-check.md) | 外壳化迁移断链与 detached HEAD 推送教训（kbcollect 案例） | 已确认 |
 | [commit-omission-mirror-drift.md](commit-omission-mirror-drift.md) | 漏 add 权威源致镜像/权威倒挂，G3 副本校验 CI 首次实战拦截 | 已确认 |
-| [knowledge-drift-cases.md](knowledge-drift-cases.md) | 知识漂移四案例与四步回写机制（先修方案再回写知识） | 已确认 |
+| [knowledge-drift-cases.md](knowledge-drift-cases.md) | 知识漂移**六**案例与四步回写机制（先修方案再回写知识）；含「适配层文档声称的机制实际不存在」 | 已确认 |
 | [git-filter-rewrite-and-disciplines.md](git-filter-rewrite-and-disciplines.md) | 重大卷稿事故（11d1494 卷 78 万行）+ filter-branch 实战 + 推送纪律升级 | 已确认 |
 | [multi-session-git-discipline.md](multi-session-git-discipline.md) | 多会话共享工作树提交纪律：git add -A 卷稿事故与三条教训 | 已确认 |
 | [service-knowledge-distill-lessons.md](service-knowledge-distill-lessons.md) | 蒸馏试点三教训：委托-把关模式、字节指标不成立、蒸馏即漂移探测 | 已确认 |
 | [suite-build-lessons.md](suite-build-lessons.md) | 套件建设事故教训三则、工程兼容原因表、流程经验 | 已确认 |
 | [ro-mount-case-alias-bypass.md](ro-mount-case-alias-bypass.md) | ro 子挂载被大小写别名绕过，v2 反转为父只读+精确白名单 | 已确认 |
 | [newline-and-env-handling-lessons.md](newline-and-env-handling-lessons.md) | Windows 检出 CRLF 致 shebang 失效（.gitattributes 根治）+ .env 操作事故纪律 | 已确认 |
-| [omp-extension-contract-pitfalls.md](omp-extension-contract-pitfalls.md) | oh-my-pi 扩展四坑：默认 yolo×override 静默放行、tool_result 漏审计被拒调用、systemPrompt 是数组、loadMode 默认 discoverable | 待审核 |
-| [review-baseline-discipline.md](review-baseline-discipline.md) | 评审基准纪律：先锁定被评审对象声明的基准并取证，再评分（拿唯一可得实现当标准的五条误判） | 待审核 |
+| [omp-extension-contract-pitfalls.md](omp-extension-contract-pitfalls.md) | oh-my-pi 扩展六坑：yolo×override 静默放行、input 改写传播（审批可被劫持，default-deny 首评兜住）、拒绝原因在 result.content、tool_result 漏审计被拒调用、systemPrompt 是数组、loadMode 默认 discoverable | 已确认 |
+| [review-baseline-discipline.md](review-baseline-discipline.md) | 评审基准纪律：先锁定被评审对象声明的基准并取证，再评分（拿唯一可得实现当标准的五条误判） | 已确认 |

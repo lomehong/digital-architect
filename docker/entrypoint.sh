@@ -50,5 +50,21 @@ if [ -d /workspace ]; then
   chown "${PUID}:${PGID}" /workspace 2>/dev/null || echo "[supervisor] Note: /workspace ownership unchanged" >&2
 fi
 
+# ── GitHub 凭证（GH_TOKEN → gh CLI 原生识别；git 私有仓经 credential helper 免密）──
+# GH_TOKEN 属按需增强：缺失仅 WARN 显式降级（不阻断启动）；占位符同 FATAL 判定（防占位符顶掉真值的事故模式）
+if [ -z "${GH_TOKEN:-}" ]; then
+  echo "[supervisor] Note: GH_TOKEN 未配置——gh/git 私有仓访问将 401（按需增强，不阻断启动）"
+else
+  case "${GH_TOKEN}" in
+    [Pp][Ll][Aa][Cc][Ee][Hh][Oo][Ll][Dd][Ee][Rr]*)
+      echo "[supervisor][FATAL] GH_TOKEN 仍是占位符——拒绝启动（请在 docker/.env 填入真实 token）。" >&2
+      exit 1
+      ;;
+  esac
+  echo "[supervisor] GitHub credential: OK（token 未回显）"
+fi
+# 幂等配置 pi 用户的 git credential helper（gh 读 GH_TOKEN env，token 不落盘）
+gosu "${USER_NAME}" git config --global credential.helper '!/usr/local/bin/gh auth git-credential' 2>/dev/null || true
+
 echo "[supervisor] Starting: gosu pi $*"
 exec gosu "${USER_NAME}" "$@"

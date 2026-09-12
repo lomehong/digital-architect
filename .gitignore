@@ -6,3 +6,6 @@ packages/architect-core/lib/
 
 obs/
 observatory/server.pid
+# Model B：平台独立部署打包产物（pack.mjs 重建即得）与 governor 缺省状态目录（未显式 --state 时）
+observatory/dist/
+observatory/governor-state/

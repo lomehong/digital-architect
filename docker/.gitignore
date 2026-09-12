@@ -12,4 +12,7 @@ cache/
 terminal-sessions/
 run/
 last-changelog-version
-plugins/extensions/
+# omp agent 运行时数据：扩展构建产物与 blob 缓存不入库
+# （2026-09-12 修正：原 plugins/extensions/ 路径写错从未生效，真实路径为 omp/agent/extensions/）
+omp/agent/extensions/
+omp/agent/blobs/

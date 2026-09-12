@@ -267,4 +267,4 @@ E:\Development\Code\nodejs\digital-architect\
 > 1. **B1 结案**：原「御驿消息结构化依赖 Yuyi 身份接口（跨团队阻断）」经源码核实**已解除**——受支持接口本就存在：Hub 权威回填 `from.agentId/ownerUsername/role`（客户端不可自报）、实例本地 `bridge.agentId` + `yufu_whoami`/`yufu_agent_get`、`@qianji/agent-daemon` 闸门（终止/屏蔽双侧拒绝）。跨团队请求撤销；观测面**不接管身份**。依据见设计文档 §7.2.1。
 > 2. **新增能力**：御驿消息结构化（协作视图）· 身份自验证据（三态 + 漂移检出）· 跨实例统一治理（地址簿 + 选择器 + 批量）· 看板渲染烟测（无浏览器回归）。
 > 3. **事故与加固（重要）**：本会话在负测中**两次**误对生产台账 `ops-pi/docs/tasks/OPSP-P0.yaml` 执行 confirm，均已回滚并追加 `rollback` 事件留痕；随后加固两条防线（操作者必填不代填 + 真实台账 `confirmReal` 拦截）与负测隔离夹具。教训已入 `architect-knowledge/practice/observatory-platform-bootstrap.md` 与 `suite-build-lessons.md`。
-> 4. **待主人处置**：① OPSP-P0 现为「待确认」（P0 报告称验收全部通过），等待主人裁决；② ops-pi R-1 审批通道决策（A/B/C）待主人选择，简报见 `ops-pi/docs/reports/`；③ observatory 写操作防线的定级待追认。
+> 4. **待主人处置**：① OPSP-P0 现为「待确认」（P0 报告称验收全部通过），等待主人裁决——**归属 ops-pi（主人 + omp 侧实施方），不在本仓任务范围**；② ops-pi R-1 审批通道决策（A/B/C）待主人选择，归属同上；③ ~~observatory 写操作防线待追认~~ → **主人 2026-09-12 已追认**，四防线固化于设计文档 §7.4/§8；事故复盘见 `docs/designs/2026-09-12-治理写操作误用-事故复盘.md`。

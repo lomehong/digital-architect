@@ -9,10 +9,11 @@
  * 用法：node server.mjs [--root <总仓根>] [--port 8787]   # 缺省 root = 脚本上级目录
  */
 import http from 'node:http'
-import { watch, existsSync, readFileSync, readdirSync, mkdirSync, writeFileSync } from 'node:fs'
+import { watch, existsSync, readFileSync, readdirSync, mkdirSync, writeFileSync, appendFileSync, unlinkSync } from 'node:fs'
 import { join, resolve, dirname } from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import { DatabaseSync } from 'node:sqlite'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const PORT = Number(process.argv.includes('--port') ? process.argv[process.argv.indexOf('--port') + 1] : 8787)
@@ -23,9 +24,14 @@ const HEARTBEAT_FACTOR = 3
 
 // 台账目录（可重复 --tasks <dir>）：yaml 现值为权威状态源，事件流提供历史轨迹
 const TASK_DIRS = []
+// 运行时库（omp agent.db，只读摄取；缺省 docker/omp/agent/agent.db）
+let AGENT_DB = join(ROOT, 'docker', 'omp', 'agent', 'agent.db')
 {
   const argv = process.argv
-  for (let i = 2; i < argv.length; i++) if (argv[i] === '--tasks') TASK_DIRS.push(argv[++i])
+  for (let i = 2; i < argv.length; i++) {
+    if (argv[i] === '--tasks') TASK_DIRS.push(argv[++i])
+    else if (argv[i] === '--agentdb') AGENT_DB = argv[++i]
+  }
 }
 
 // ---- 内存聚合模型 ----
@@ -142,6 +148,49 @@ function appendEvent(ev) {
   writeFileSync(join(dir, `${day}.ndjson`), JSON.stringify(ev) + '\n', { flag: 'a' })
 }
 
+// ---- 运行时层：omp agent.db 只读摄取（node:sqlite，零 npm 依赖）----
+function runtimeSnapshot() {
+  if (!existsSync(AGENT_DB)) return { available: false, reason: `agent.db 不存在：${AGENT_DB}` }
+  try {
+    const db = new DatabaseSync(AGENT_DB, { readOnly: true })
+    try {
+      const perf = db.prepare('SELECT model_key, samples, output_tokens, gen_ms, ttft_samples, ttft_ms, updated_at FROM model_perf ORDER BY samples DESC').all()
+      const usage = db.prepare('SELECT model_key, last_used_at FROM model_usage').all()
+      return {
+        available: true,
+        models: perf.map((r) => ({
+          model: r.model_key,
+          samples: r.samples,
+          outputTokens: Math.round(r.output_tokens ?? 0),
+          avgGenMs: r.samples > 0 ? Math.round(r.gen_ms / r.samples) : 0,
+          avgTtftMs: r.ttft_samples > 0 ? Math.round(r.ttft_ms / r.ttft_samples) : 0,
+          lastUsedAt: usage.find((u) => u.model_key === r.model_key)?.last_used_at ?? null,
+        })),
+      }
+    } finally { db.close() }
+  } catch (e) { return { available: false, reason: e.message } }
+}
+
+// ---- HTTP 上报端点（二期：契约校验 + append 到 obs/events/http/）----
+function httpIngest(body) {
+  const events = Array.isArray(body) ? body : [body]
+  const problems = []
+  const valid = []
+  for (const ev of events) {
+    for (const k of ['ts', 'instanceId', 'hostType', 'system', 'domain', 'type', 'severity']) {
+      if (typeof ev[k] !== 'string' || ev[k] === '') { problems.push(`缺必填 ${k}`); break }
+    }
+    if (problems.length === 0 || problems.length === valid.length) valid.push(ev)
+  }
+  if (valid.length > 0) {
+    const dir = join(EVENTS_DIR, 'http')
+    mkdirSync(dir, { recursive: true })
+    const day = new Date().toISOString().slice(0, 10)
+    appendFileSync(join(dir, `${day}.ndjson`), valid.map((e) => JSON.stringify(e)).join('\n') + '\n')
+  }
+  return { accepted: valid.length, rejected: events.length - valid.length, problems }
+}
+
 // ---- HTTP ----
 function sendJson(res, code, body) {
   res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'cache-control': 'no-store' })
@@ -156,7 +205,20 @@ const server = http.createServer((req, res) => {
       res.end(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'public', 'index.html')))
       return
     }
-    if (req.method === 'GET' && url.pathname === '/api/snapshot') return sendJson(res, 200, snapshot())
+    if (req.method === 'GET' && url.pathname === '/api/snapshot') return sendJson(res, 200, { ...snapshot(), runtime: runtimeSnapshot() })
+    if (req.method === 'GET' && url.pathname === '/api/runtime') return sendJson(res, 200, runtimeSnapshot())
+    if (req.method === 'POST' && url.pathname === '/api/events') {
+      let body = ''
+      req.on('data', (c) => { body += c; if (body.length > 262144) req.destroy() })
+      req.on('end', () => {
+        try {
+          const parsed = JSON.parse(body || '{}')
+          const events = Array.isArray(parsed) ? parsed : parsed.events ?? [parsed]
+          sendJson(res, 200, httpIngest(events))
+        } catch (e) { sendJson(res, 400, { error: e.message }) }
+      })
+      return
+    }
     if (req.method === 'POST' && url.pathname === '/api/govern/task') {
       let body = ''
       req.on('data', (c) => { body += c; if (body.length > 16384) req.destroy() })
@@ -192,6 +254,11 @@ try {
 
 mkdirSync(INSTANCES_DIR, { recursive: true })
 mkdirSync(EVENTS_DIR, { recursive: true })
+// PID 登记（精确管理面：按 server.pid 启停，禁按进程名批量杀）
+try { writeFileSync(join(dirname(fileURLToPath(import.meta.url)), 'server.pid'), String(process.pid)) } catch { /* 登记失败不阻断启动 */ }
+const cleanupPid = () => { try { unlinkSync(join(dirname(fileURLToPath(import.meta.url)), 'server.pid')) } catch { /* 已不存在或目录只读 */ } }
+process.on('exit', cleanupPid)
+for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(sig, () => { cleanupPid(); process.exit(0) })
 server.listen(PORT, '127.0.0.1', () => {
   console.log(`[observatory] 看板 http://127.0.0.1:${PORT}  数据根 ${OBS}`)
   appendEvent({ domain: 'platform', type: 'platform.started', severity: 'info', subject: `observatory@${PORT}` })

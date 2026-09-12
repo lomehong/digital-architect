@@ -36,6 +36,7 @@
     <button data-v="instances">实例视图</button>
     <button data-v="knowledge">知识视图</button>
     <button data-v="govern">治理操作</button>
+    <button data-v="runtime">运行时</button>
   </nav>
 </header>
 <div id="err"></div>
@@ -79,7 +80,12 @@ function render() {
     }).join('') || '<p class="dim">暂无实例</p>'
   } else if (VIEW === 'knowledge') {
     v.innerHTML = `<h2>评审队列</h2><p class="dim">review-queue 条目数：${SNAP.reviewQueue.entries}</p><h2>说明</h2><p class="dim">知识条目升级走「治理操作」页（待审核 → 已确认），操作将修订条目 status 并发治理审计事件。</p>`
-  } else if (VIEW === 'govern') {
+  } else if (VIEW === 'runtime') {
+  const rt = SNAP.runtime ?? { available: false }
+  v.innerHTML = !rt.available ? '<p class="warn">运行时数据不可用：' + esc(rt.reason) + '</p>' :
+    '<h2>模型性能（omp agent.db 只读摄取）</h2><table><tr><th>模型</th><th>样本</th><th>输出 tokens</th><th>平均生成 ms</th><th>平均 TTFT ms</th></tr>' +
+    rt.models.map((m) => '<tr><td>' + esc(m.model) + '</td><td>' + m.samples + '</td><td>' + m.outputTokens + '</td><td>' + m.avgGenMs + '</td><td>' + m.avgTtftMs + '</td></tr>').join('') + '</table>'
+} else if (VIEW === 'govern') {
     const taskIds = Object.keys(SNAP.tasks || {})
     v.innerHTML = `<h2>任务 confirm / reject</h2>
       <p class="dim">仅对「待确认」状态的任务有效；四不变量由 task-ledger 强制，平台不旁路。</p>

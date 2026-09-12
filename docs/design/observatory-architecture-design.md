@@ -148,6 +148,27 @@ severity: `info | warning | critical`。**校验器**：`observatory/contracts/v
 | **二期** | 运行时层摄取（agent.db/会话/成本）、告警规则、御驿消息结构化 | **治理面扩展**：**审批代办**（各实例 pending approval 上屏、主人在平台批准/拒绝——文件请求/应答协议）、评审队列确认面、跨 Agent 权限开放确认（B1 交付后）、ops_audit 治理视图 |
 | **三期** | 不可变审计归档（RR-2 闭环）、HTTP 上报端点、omp-stats 集成评估 | **治理面完备**：御符强验证下的签名治理（Yufu 对接，confirm 可验签）、跨实例统一治理（任一实例的任务/审批统一操作）、治理操作合规留档 |
 
+### 7.5 实施状态（随进度更新）
+
+| 项 | 期 | 状态 | 验证证据 |
+|---|---|---|---|
+| 事件契约 v1 + 校验器 | 一期 | ✅ 完成 | `contracts/validate.mjs` 实测 PASS |
+| 实例注册 + 心跳 | 一期 | ✅ 完成 | `omp-ops-pi-01` 容器心跳（30s）+ `dsh-architect-01`，看板双实例 online |
+| 看板（团队/系统/实例/知识/运行时/事件流/治理 七视图） | 一期+二期 | ✅ 完成 | 浏览器实测；`public/index.html` 零构建 |
+| 任务台账直读（`--tasks`） | 一期 | ✅ 完成 | OPSP-P0~P5 + GOV-TEST 全量呈现，yaml 现值为权威 |
+| **任务治理 confirm/reject** | 一期 | ✅ 完成并端到端验证 | GOV-TEST：待确认 → 平台 confirm → 已落定；ledger 正确拒绝非法跳步与无来源确认（四不变量生效） |
+| **知识条目升级** | 一期 | ✅ 实现（端点就绪） | `POST /api/govern/knowledge`；主人经 review-queue 纪律升级 2 条后队列空 |
+| **文档落定确认** | 一期 | ✅ 自举完成 | 本设计文档自身：status 待确认 → 已落定（confirmedBy/confirmedVia 记录） |
+| 运行时层（agent.db 只读摄取） | 二期 | ✅ 完成 | `/api/runtime` 实测 3 模型（deepseek-flash 194 样本 / glm-5.3-flash 139 / MiniMax-M3 10） |
+| HTTP 上报端点 | 二期 | ✅ 完成 | `POST /api/events` 实测 accepted=1 rejected=0 |
+| 告警规则 + 抑制 + 历史 | 二期 | ✅ 完成并端到端验证 | 5 条规则加载；注入 critical 事件 → 2 条告警触发 → 二次快照 suppressed=true → 历史仅记首次 |
+| 健康端点 | 二期 | ✅ 完成 | `/api/health`：pid/uptime/五数据源全 ok/规则数 |
+| 知识视图 + 事件实时流 | 二期 | ✅ 完成 | 看板视图实现（评审队列明细/知识域事件/事件流筛选+10s 刷新） |
+| **审批代办（含参考实现）** | 二期 | ✅ 完成并端到端验证 | pending 写入 → 平台 approve → 决定文件 → 参考实例收到"allow by 主人" → pending 清理；超时自动 deny 已实现 |
+| 御驿消息结构化 | 二期 | ⏸ 待 B1 | 依赖 Yuyi 身份接口交付（跨团队阻断中） |
+| 不可变审计归档（RR-2） | 三期 | ⏸ 未开始 | 待排期 |
+| 御符强验证（Yufu 对接） | 三期 | ⏸ 未开始 | 待 Yufu 接口 |
+
 ## 8. 决策门记录
 
 | 门 | 决策 | 决策人/时间 |

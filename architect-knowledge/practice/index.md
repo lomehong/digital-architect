@@ -15,3 +15,4 @@
 | [newline-and-env-handling-lessons.md](newline-and-env-handling-lessons.md) | Windows 检出 CRLF 致 shebang 失效（.gitattributes 根治）+ .env 操作事故纪律 | 已确认 |
 | [omp-extension-contract-pitfalls.md](omp-extension-contract-pitfalls.md) | oh-my-pi 扩展六坑：yolo×override 静默放行、input 改写传播（审批可被劫持，default-deny 首评兜住）、拒绝原因在 result.content、tool_result 漏审计被拒调用、systemPrompt 是数组、loadMode 默认 discoverable | 已确认 |
 | [review-baseline-discipline.md](review-baseline-discipline.md) | 评审基准纪律：先锁定被评审对象声明的基准并取证，再评分（拿唯一可得实现当标准的五条误判） | 已确认 |
+| [observatory-platform-bootstrap.md](observatory-platform-bootstrap.md) | 观测平台自举经验：零依赖服务/只读摄取 agent.db/事件按实例分文件/文件承载审批/治理不旁路；七坑（ESM 无 require、const TDZ、对象重复键、规则静默失败、YAML 边界、计划任务启动即退、按名批量杀） | 已确认 |

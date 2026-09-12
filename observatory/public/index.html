@@ -37,6 +37,7 @@
     <button data-v="knowledge">知识视图</button>
     <button data-v="govern">治理操作</button>
     <button data-v="runtime">运行时</button>
+    <button data-v="events">事件流</button>
   </nav>
 </header>
 <div id="err"></div>
@@ -51,6 +52,11 @@ async function refresh() {
     $('#err').textContent = SNAP.lastError ? '数据面告警: ' + SNAP.lastError : ''
     $('#gen').textContent = SNAP.generatedAt
     render()
+    // 健康信息（独立端点，失败静默）
+    fetch('/api/health').then((x) => x.json()).then((h) => {
+      const el = document.getElementById('health')
+      if (el) el.textContent = `pid ${h.pid} · 运行 ${h.uptimeSec}s · 告警规则 ${h.alertRules} 条 · 数据源 ${Object.entries(h.sources).map(([k, v]) => k + ':' + (v === 'ok' ? '✅' : v === 'disabled' ? '—' : '❌')).join(' ')}`
+    }).catch(() => {})
   } catch (e) { $('#err').textContent = '快照获取失败: ' + e.message }
 }
 function render() {
@@ -61,7 +67,9 @@ function render() {
     v.innerHTML = `<h2>实例</h2><table><tr><th>实例(御符)</th><th>宿主</th><th>负责系统</th><th>状态</th><th>心跳</th></tr>${inst || '<tr><td colspan=5 class=dim>暂无注册实例</td></tr>'}</table>
       <h2>最近 critical 事件</h2><table><tr><th>类型</th><th>主体</th><th>时间</th></tr>${alerts || '<tr><td colspan=3 class=dim>无</td></tr>'}</table>
       <h2>告警</h2>
-      ${(SNAP.alerts||[]).length === 0 ? '<p class=ok>✅ 无告警</p>' : `<table><tr><th>级别</th><th>告警</th></tr>${SNAP.alerts.map((a) => `<tr><td class="${a.severity==='critical'?'crit':'warn'}">${esc(a.severity)}</td><td><b>${esc(a.title)}</b><br><span class=dim>${esc(a.message||'')}</span></td></tr>`).join('')}</table>`}
+      ${(SNAP.alerts||[]).length === 0 ? '<p class=ok>✅ 无告警</p>' : `<table><tr><th>级别</th><th>告警</th><th>状态</th></tr>${SNAP.alerts.map((a) => `<tr><td class="${a.severity==='critical'?'crit':'warn'}">${esc(a.severity)}</td><td><b>${esc(a.title)}</b><br><span class=dim>${esc(a.message||'')}</span></td><td>${a.suppressed?'<span class=dim>抑制中</span>':('<span class=warn>新触发</span>'+(a.firedCount>1?` <span class=dim>×${a.firedCount}</span>`:''))}</td></tr>`).join('')}</table>`}
+      <h2>健康</h2>
+      <p class=dim id=health>加载中…</p>
       <h2>审批代办（pending）</h2>
       ${(SNAP.pendingApprovals||[]).length === 0 ? '<p class=dim>无挂单</p>' : `<table><tr><th>实例</th><th>工具</th><th>原因</th><th>截止</th><th>批准 / 拒绝</th></tr>${SNAP.pendingApprovals.map((p) => `<tr><td>${esc(p.instanceId)}<br><span class=dim>${esc(p.requestId)}</span></td><td>${esc(p.tool||'-')}</td><td>${esc(p.reason||'-')}</td><td class=${Date.parse(p.requiredBy)<Date.now()?'crit':'dim'}>${esc(p.requiredBy)}</td><td><button class=btn onclick="approv('${esc(p.requestId)}','allow')">批准</button><button class=btn onclick="approv('${esc(p.requestId)}','deny')">拒绝</button></td></tr>`).join('')}</table>`}
       <h2>治理留痕（最近）</h2><table><tr><th>动作</th><th>主体</th><th>经手</th><th>时间</th></tr>${SNAP.governance.map((e) => `<tr><td>${esc(e.type)}</td><td>${esc(e.subject)}</td><td>${esc((e.payload||{}).via)}</td><td class="dim">${esc(e.ts)}</td></tr>`).join('') || '<tr><td colspan=4 class=dim>无</td></tr>'}</table>`
@@ -82,8 +90,22 @@ function render() {
         <p class="dim">宿主 ${esc(i.hostType)} · 负责 ${esc(i.systems.join(', '))} · 心跳间隔 ${i.heartbeatIntervalSec}s</p>
         <table><tr><th>时间</th><th>事件</th><th>级别</th><th>主体</th></tr>${evs || '<tr><td colspan=4 class=dim>无事件</td></tr>'}</table>`
     }).join('') || '<p class="dim">暂无实例</p>'
+  } else if (VIEW === 'events') {
+    const items = (SNAP.events || []).slice(-60).reverse()
+    v.innerHTML = `<h2>事件实时流（最近 60 条，10s 自动刷新）</h2>
+      <p class="dim">实例 <select id="ev-filter" onchange="render()"><option value="">全部</option>${SNAP.instances.map((i) => `<option ${window._evFilter === i.instanceId ? 'selected' : ''} value="${esc(i.instanceId)}">${esc(i.instanceId)}</option>`).join('')}</select></p>
+      <table><tr><th>时间</th><th>实例</th><th>域/类型</th><th>级别</th><th>主体</th></tr>${items.filter((e) => !window._evFilter || e.instanceId === window._evFilter).map((e) => `<tr><td class=dim>${esc(String(e.ts).slice(11, 19))}</td><td>${esc(e.instanceId)}</td><td>${esc(e.domain)}/${esc(e.type)}</td><td class="${e.severity === 'critical' ? 'crit' : e.severity === 'warning' ? 'warn' : 'dim'}">${esc(e.severity)}</td><td>${esc(e.subject ?? '')}</td></tr>`).join('') || '<tr><td colspan=5 class=dim>无事件</td></tr>'}</table>`
   } else if (VIEW === 'knowledge') {
-    v.innerHTML = `<h2>评审队列</h2><p class="dim">review-queue 条目数：${SNAP.reviewQueue.entries}</p><h2>说明</h2><p class="dim">知识条目升级走「治理操作」页（待审核 → 已确认），操作将修订条目 status 并发治理审计事件。</p>`
+    const rq = SNAP.reviewQueue || { entries: 0, raw: '' }
+    const lines = (rq.raw || '').split(/\r?\n/).filter((l) => l.trim().startsWith('- ') || /^\s+\w+:/.test(l))
+    v.innerHTML = `<h2>评审队列（review-queue.yaml）</h2>
+      <p>队列条目数：<b>${rq.entries}</b>${rq.entries === 0 ? ' <span class="ok">（空队列 = 无待审核项）</span>' : ' <span class="warn">（有待审核项，请到治理操作页升级）</span>'}</p>
+      ${lines.length ? `<table><tr><th>队列明细</th></tr>${lines.map((l) => `<tr><td class=dim>${esc(l.trim())}</td></tr>`).join('')}</table>` : ''}
+      <h2>知识域事件（最近 20）</h2>
+      <table><tr><th>时间</th><th>类型</th><th>主体</th></tr>${(SNAP.events || []).filter((e) => e.domain === 'knowledge').slice(-20).reverse().map((e) => `<tr><td class=dim>${esc(e.ts)}</td><td>${esc(e.type)}</td><td>${esc(e.subject ?? '')}</td></tr>`).join('') || '<tr><td colspan=3 class=dim>无知识域事件</td></tr>'}</table>
+      <h2>治理留痕（知识相关）</h2>
+      <table><tr><th>时间</th><th>动作</th><th>主体</th></tr>${(SNAP.governance || []).filter((e) => String(e.type).includes('knowledge')).slice(-20).reverse().map((e) => `<tr><td class=dim>${esc(e.ts)}</td><td>${esc(e.type)}</td><td>${esc(e.subject ?? '')}</td></tr>`).join('') || '<tr><td colspan=3 class=dim>无知识治理留痕</td></tr>'}</table>
+      <h2>说明</h2><p class="dim">升级操作走「治理操作」页（待审核 → 已确认）；操作修订条目 status 并发 governance 审计事件，不旁路 review-queue 纪律。</p>`
   } else if (VIEW === 'runtime') {
   const rt = SNAP.runtime ?? { available: false }
   v.innerHTML = !rt.available ? '<p class="warn">运行时数据不可用：' + esc(rt.reason) + '</p>' :
@@ -126,6 +148,7 @@ document.querySelectorAll('nav button').forEach((b) => b.onclick = () => {
   document.querySelectorAll('nav button').forEach((x) => x.classList.remove('active')); b.classList.add('active')
   VIEW = b.dataset.v; render()
 })
+document.addEventListener('change', (e) => { if (e.target && e.target.id === 'ev-filter') { window._evFilter = e.target.value; render() } })
 refresh(); setInterval(refresh, 10000)
 </script>
 </body>

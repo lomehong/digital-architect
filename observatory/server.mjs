@@ -26,13 +26,18 @@ const HEARTBEAT_FACTOR = 3
 const TASK_DIRS = []
 // 运行时库（omp agent.db，只读摄取；缺省 docker/omp/agent/agent.db）
 let AGENT_DB = join(ROOT, 'docker', 'omp', 'agent', 'agent.db')
+// 告警抑制窗口（同一规则 N ms 内不重复入库/通知；抑制状态仍呈现但标记 suppressed）
+let ALERT_COOLDOWN_MS = 10 * 60 * 1000
 {
   const argv = process.argv
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--tasks') TASK_DIRS.push(argv[++i])
     else if (argv[i] === '--agentdb') AGENT_DB = argv[++i]
+    else if (argv[i] === '--alert-cooldown-ms') ALERT_COOLDOWN_MS = Number(argv[++i])
   }
 }
+// 告警状态（进程内：抑制窗口与触发计数；历史落 obs/alerts-history.ndjson）
+const alertState = {}
 
 // ---- 内存聚合模型 ----
 const state = { instances: {}, events: [], alerts: [], lastError: null }
@@ -149,35 +154,89 @@ function appendEvent(ev) {
 }
 
 // ---- 运行时层：omp agent.db 只读摄取（node:sqlite，零 npm 依赖）----
-// ---- 告警规则（alerts.yml）加载与评估 ----
-const ALERT_RULES = (() => {
-  const p = join(ROOT, 'observatory', 'alert-rules.yml')
-  if (!existsSync(p)) return { list: [], source: null };
-  try { const r = require('node:fs').readFileSync(p, 'utf8'); return { list: YAML.parse(r).rules || [], source: p } } catch (e) { return { list: [], source: p, error: e.message } }})()
-// 零依赖的极简 YAML 解析（仅支持 alerts.yml 形态：顶层 rules: [ { id, when, severity, title, message } ]）
+// 零依赖的极简 YAML 解析（仅支持 alert-rules.yml 形态：顶层 `rules:` + `  - key: value` 列表）
 const YAML = { parse: (txt) => {
-  const lines = txt.split(/\r?\n/)
   const out = { rules: [] }
-  let i = 0
-  const readScalar = (l) => l.replace(/^[\s#-]*/, '').trim()
-  while (i < lines.length) {
-    if (lines[i].match(/^rules:\s*$/)) { i++; continue }
-    if (lines[i].match(/^\s*-\s*$/)) { i++; const rule = {}; while (i < lines.length && lines[i].match(/^\s{2,}\w/)) { const m = lines[i].match(/^\s+(\w+):\s*(.*)$/); if (m) rule[m[1]] = m[2].trim(); i++ } out.rules.push(rule); continue }
-    i++
+  let cur = null
+  const unquote = (v) => {
+    const t = v.trim()
+    if ((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'"))) return t.slice(1, -1)
+    return t
+  }
+  for (const raw of txt.split(/\r?\n/)) {
+    const line = raw.replace(/\s+$/, '')
+    if (line.trim() === '' || /^\s*#/.test(line)) continue
+    if (/^rules:\s*$/.test(line.trim())) continue
+    const item = line.match(/^\s*-\s+([\w-]+):\s*(.*)$/)   // 列表项起始（- id: xxx）
+    if (item) { cur = {}; cur[item[1]] = unquote(item[2]); out.rules.push(cur); continue }
+    const kv = line.match(/^\s+([\w-]+):\s*(.*)$/)         // 同级续行（when/severity/title/message）
+    if (kv && cur) { cur[kv[1]] = unquote(kv[2]); continue }
   }
   return out
 } }
+// ---- 告警规则（alert-rules.yml）加载与评估 ----
+const ALERT_RULES = (() => {
+  const p = join(ROOT, 'observatory', 'alert-rules.yml')
+  if (!existsSync(p)) return { list: [], source: null }
+  try {
+    return { list: YAML.parse(readFileSync(p, 'utf8')).rules || [], source: p }
+  } catch (e) { return { list: [], source: p, error: e.message } }
+})()
 function evaluateAlerts(snap) {
   if (ALERT_RULES.list.length === 0) return []
-  const ctx = { events: snap.events, instances: snap.instances, tasks: snap.tasks, Date, Date: { parse: (s) => new Date(s).getTime() }, now: Date.now() }
+  const ctx = { events: snap.events, instances: snap.instances, tasks: snap.tasks, Date, Object, JSON, now: Date.now() }
   const out = []
+  const COOLDOWN_MS = ALERT_COOLDOWN_MS
   for (const r of ALERT_RULES.list) {
     try {
       const fn = new Function(...Object.keys(ctx), `return (${r.when})`)
-      if (fn(...Object.values(ctx))) out.push({ id: r.id, severity: r.severity, title: r.title, message: r.message })
-    } catch { /* 单条规则失败不阻断其他 */ }
+      if (fn(...Object.values(ctx))) {
+        const st = alertState[r.id] ?? (alertState[r.id] = { lastFiredAt: 0, count: 0 })
+        const now = Date.now()
+        const suppressed = now - st.lastFiredAt < COOLDOWN_MS
+        if (!suppressed) {
+          st.lastFiredAt = now
+          st.count++
+          recordAlertHistory({ ts: new Date(now).toISOString(), id: r.id, severity: r.severity, title: r.title, message: r.message })
+        }
+        out.push({ id: r.id, severity: r.severity, title: r.title, message: r.message, suppressed, firedCount: st.count })
+      }
+    } catch (e) {
+      // 规则求值失败不静默：以 warning 快照呈现（fail-loud，与本项目纪律一致）
+      out.push({ id: r.id, severity: 'warning', title: `告警规则求值失败：${r.id}`, message: String(e && e.message || e), suppressed: false, firedCount: 0, ruleError: true })
+    }
   }
   return out
+}
+
+function recordAlertHistory(entry) {
+  try {
+    mkdirSync(OBS, { recursive: true })
+    appendFileSync(join(OBS, 'alerts-history.ndjson'), JSON.stringify(entry) + '\n')
+  } catch { /* 历史写入失败不影响告警呈现 */ }
+}
+
+function healthSnapshot() {
+  const startedAt = process.uptime()
+  const probe = (fn) => { try { fn(); return 'ok' } catch (e) { return `error: ${e.message}` } }
+  return {
+    ok: true,
+    pid: process.pid,
+    version: 'observatory/1',
+    uptimeSec: Math.round(startedAt),
+    startedAt: new Date(Date.now() - startedAt * 1000).toISOString(),
+    sources: {
+      instances: probe(() => readdirSync(INSTANCES_DIR)),
+      events: probe(() => readdirSync(EVENTS_DIR)),
+      tasks: TASK_DIRS.length === 0 ? 'disabled' : probe(() => readdirSync(TASK_DIRS[0])),
+      runtime: probe(() => { const db = new DatabaseSync(AGENT_DB, { readOnly: true }); db.prepare('SELECT 1').all(); db.close() }),
+      approvals: probe(() => readdirSync(APPROVALS_PENDING_DIR)),
+    },
+    taskDirs: TASK_DIRS,
+    agentDb: AGENT_DB,
+    lastError: state.lastError,
+    alertRules: ALERT_RULES.list.length,
+  }
 }
 
 // ---- 审批代办（pending 扫描 + 决定写入 + 事件发射）----
@@ -271,6 +330,18 @@ const server = http.createServer((req, res) => {
       return sendJson(res, 200, snap)
     }
     if (req.method === 'GET' && url.pathname === '/api/runtime') return sendJson(res, 200, runtimeSnapshot())
+    if (req.method === 'GET' && url.pathname === '/api/health') return sendJson(res, 200, healthSnapshot())
+    if (req.method === 'GET' && url.pathname === '/api/alerts-history') {
+      const p = join(OBS, 'alerts-history.ndjson')
+      const items = existsSync(p) ? readFileSync(p, 'utf8').split(/\r?\n/).filter((l) => l.trim()).slice(-100).map((l) => { try { return JSON.parse(l) } catch { return null } }).filter(Boolean) : []
+      return sendJson(res, 200, { count: items.length, items })
+    }
+    if (req.method === 'GET' && url.pathname === '/api/events') {
+      const limit = Math.min(Number(url.searchParams.get('limit') ?? 100), 1000)
+      const inst = url.searchParams.get('instanceId')
+      const all = loadEvents().filter((e) => !inst || e.instanceId === inst)
+      return sendJson(res, 200, { total: all.length, items: all.slice(-limit) })
+    }
     if (req.method === 'POST' && url.pathname === '/api/events') {
       let body = ''
       req.on('data', (c) => { body += c; if (body.length > 262144) req.destroy() })
@@ -329,6 +400,27 @@ const server = http.createServer((req, res) => {
     sendJson(res, 404, { error: 'not found' })
   } catch (e) { sendJson(res, 500, { error: e.message }) }
 })
+
+// ---- 平台自注册与心跳（平台自身也是一个可见实例：谁在看）----
+const SELF_INSTANCE_ID = 'observatory-platform'
+function writeSelfHeartbeat() {
+  try {
+    mkdirSync(INSTANCES_DIR, { recursive: true })
+    writeFileSync(join(INSTANCES_DIR, `${SELF_INSTANCE_ID}.yaml`), [
+      `instanceId: ${SELF_INSTANCE_ID}`,
+      'hostType: dsh',
+      'host: dsh 桌面宿主（平台自身）',
+      'systems: [digital-architect]',
+      'capabilities: [observability, governance, alerting]',
+      'status: online',
+      `lastSeenAt: ${new Date().toISOString()}`,
+      'heartbeatIntervalSec: 30',
+      '',
+    ].join('\n'))
+  } catch { /* 心跳写入失败不影响服务 */ }
+}
+writeSelfHeartbeat()
+setInterval(writeSelfHeartbeat, 30_000)
 
 // ---- 数据面 watch（变更即重聚合；聚合本身惰性，watch 只做日志提示与快照预热）----
 try {

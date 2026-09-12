@@ -20,8 +20,8 @@ rules:
     title: 2 个或以上实例失联
     message: "可能是宿主/网络故障或实例自报停止，需立即排查"
 
-  - id: heartbeat-only-one-instance
-    when: instances.filter(i => i.status === 'online').length === 1 && (Date.now() - Date.parse(instances[0]?.lastSeenAt || 0)) > 5*60*1000
+  - id: single-online-instance-stale
+    when: instances.filter(i => i.status === 'online').length === 1 && (Date.now() - Date.parse(instances.filter(i => i.status === 'online')[0].lastSeenAt)) > 5*60*1000
     severity: warning
     title: 唯一在线实例心跳滞后 > 5 分钟
     message: "无第二实例冗余——单点风险"

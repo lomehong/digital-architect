@@ -87,6 +87,25 @@ start http://127.0.0.1:8787
 
 验收回归：`node observatory/contracts/brain-mirror-e2e.mjs`（临时夹具远端隔离，16 断言：全量条目上屏 / 升级 push 落远端 / 第二副本克隆同见 / 分叉拒写负测 / 随仓回归）。
 
+## 治理指令单（Model B / C3，governor 远端执行面）
+
+平台发「治理指令单」（管理员令牌门 + 单号幂等 + HMAC 签名）→ 实例宿主 governor **领单**（御符 token 认证）→ 白名单本地执行 → 回执留痕。pull 模型：宿主不开端口；不用计划任务/隐藏窗口。
+
+| 端点 | 说明 |
+|---|---|
+| `POST /api/govern/dispatch` | 发单（管理员令牌；action 白名单 task-ledger/doc-status；无 `GOV_SIGN_KEY` 拒绝发单） |
+| `GET /api/govern/orders?instanceId=` | governor 领单（Bearer 御符 token；幂等重发直到回执） |
+| `POST /api/govern/receipt` | 回执归档 + `governance.receipt` 事件（伪造签名拒绝=critical） |
+
+宿主侧（可见终端手动启动）：
+
+```powershell
+$env:YUFU_CREDENTIAL="<御符token>"; $env:GOV_SIGN_KEY="<与平台同值>"
+node observatory/governor.mjs --platform http://<平台地址>:8787 --instance <实例id> --allow-root <可治理项目根> --interval-sec 15
+```
+
+验收回归：`node observatory/contracts/governor-e2e.mjs`（15 断言：认证 401 / 白名单双侧拒单 / 跨宿主 confirm 端到端 / 伪造签名拒绝+critical / 幂等 dedupe / 契约校验）。
+
 ## API
 
 | 端点 | 说明 |
@@ -211,12 +230,13 @@ Start-Process -FilePath node -ArgumentList "observatory/server.mjs" -WorkingDire
 observatory/
 ├── server.mjs                 平台服务（零 npm 依赖，仅 node: 内置模块）
 ├── brain-mirror.mjs           大脑仓 git 镜像（Model B / C2：只读同步 + 升级 commit+push + 冲突拒写）
+├── governor.mjs               实例宿主治理 agent（Model B / C3：领单/验签/白名单执行/回执）
 ├── seal.mjs                   审计归档封印与校验（哈希链）
 ├── heartbeat.mjs              通用实例心跳工具（+ 可选身份自验上报）
 ├── alert-rules.yml            告警规则 v1（5 条，支持抑制窗口）
 ├── data-roots.yml             治理地址簿（实例 → 台账根）
 ├── public/index.html          看板单页（原生 JS，无构建，8 视图）
-├── contracts/                 事件契约校验器 + 渲染烟测 + 镜像 e2e + 审批代办契约
+├── contracts/                 事件契约校验器 + 渲染烟测 + 镜像/governor e2e + 审批代办契约
 ├── approval-demo/             审批参考实现 + 说明
 ├── collab-demo/               御驿消息结构化参考实现
 ├── identity-demo/             身份自验证据参考实现（四态）
@@ -242,5 +262,5 @@ obs/                           运行时数据根（gitignore）
 - **已评估不实施**：`omp stats` CLI 集成——它读同一 `agent.db`，直接只读摄取更同源、无 CLI/输出格式耦合（成本列 `client_usage.cost_usd` 与 `usage_history` 当前为空，待数据积累再做成本/趋势视图）
 - **Model B / C1 ✅ 完成（baf41a8）**：独立部署包（`pack.mjs` → tarball）+ 配置寻址数据根优先（`<数据根>/config/` → 包内 → 仓内）；验收=无仓目录启动全功能
 - **Model B / C2 ✅ 完成（86baa10，主人已确认）**：大脑仓 git 镜像——知识面独立（只读同步 / 升级 commit+push / 冲突拒写呈报 / 凭据只进进程环境）；评审结论与走查记录见 `docs/designs/2026-09-12-平台独立部署演进-{评审结论,走查记录}.md`
-- **Model B / C3 ▶ 实施中（主人已放行）**：governor 远端执行面——宿主清单=先本机 dsh + omp 容器（2026-09-12 主人拍板）
-- **Model B / C4 ⏸ 排期**：迁移手册——部署目标形态主人已定为**云主机**（受保护模式 + 令牌为前置）
+- **Model B / C3 ✅ 已实施（待主人确认）**：governor 远端执行面——指令单（管理员令牌 + HMAC 签名 + 幂等单号 + 双侧白名单 + 全量回执留痕）；宿主清单=先本机 dsh + omp 容器（2026-09-12 主人拍板）；走查见 `docs/designs/2026-09-12-平台独立部署演进-C3-走查记录.md`
+- **Model B / C4 ✅ 手册已产出（待主人确认）**：云主机迁移手册（凭据清单 / 部署步骤 / 验证与负测清单 / 镜像分叉收敛 / systemd / 回滚）——`docs/designs/2026-09-12-平台独立部署演进-C4-云主机迁移手册.md`

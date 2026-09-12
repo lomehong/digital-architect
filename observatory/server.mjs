@@ -18,7 +18,7 @@ import { join, resolve, dirname } from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { DatabaseSync } from 'node:sqlite'
-import { createHash, timingSafeEqual } from 'node:crypto'
+import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 import { readYuyiFace } from './yuyi-ingest.mjs'
 import { beatInstance } from './instance-beat.mjs'
 import { ensureBrainMirror, syncBrainMirror, commitAndPushBrain, brainStatus } from './brain-mirror.mjs'
@@ -351,7 +351,7 @@ function snapshot() {
     status: instances[r.instanceId]?.status ?? 'unknown',
     systems: instances[r.instanceId]?.systems ?? [],
   }))
-  return { generatedAt: new Date().toISOString(), instances: Object.values(instances), events: events.slice(-500), tasks, reviewQueue: rq, alerts: critical.slice(-50), governance: governance.slice(-50), collab: summarizeCollab(events.filter((e) => e.domain === 'collab')), identity: summarizeIdentity(events, instances), yuyi: readYuyiFace(), knowledgeBase: loadKnowledgeBase(), roots, addressBookSource: DATA_ROOTS.source, brain: brainStatus(), lastError: state.lastError }
+  return { generatedAt: new Date().toISOString(), instances: Object.values(instances), events: events.slice(-500), tasks, reviewQueue: rq, alerts: critical.slice(-50), governance: governance.slice(-50), collab: summarizeCollab(events.filter((e) => e.domain === 'collab')), identity: summarizeIdentity(events, instances), yuyi: readYuyiFace(), knowledgeBase: loadKnowledgeBase(), roots, addressBookSource: DATA_ROOTS.source, brain: brainStatus(), governorOrders: govSnapshot(), lastError: state.lastError }
 }
 
 // ---- 治理操作（经 task-ledger CLI，不旁路四不变量）----
@@ -410,6 +410,81 @@ function appendEvent(ev) {
   mkdirSync(dir, { recursive: true })
   const day = ev.ts.slice(0, 10)
   writeFileSync(join(dir, `${day}.ndjson`), JSON.stringify(ev) + '\n', { flag: 'a' })
+}
+
+// ---- Model B / C3 治理指令单（governor 远端执行面）----
+// 平台发单（管理员令牌门 + 单号幂等 + HMAC 签名）→ 实例宿主 governor 领单（御符 token 认证）
+// → 白名单执行（仅 task-ledger / 文档 status）→ 回执留痕。幂等双重防线：单号全局唯一 +
+// governor 本地 executed 集合去重（重复领单不重复执行）。无 GOV_SIGN_KEY 拒绝发单（无签名不发单）。
+const GOV_ACTIONS = ['task-ledger', 'doc-status']
+const GOV_PENDING_DIR = join(OBS, 'govern-orders', 'pending')
+const GOV_DONE_DIR = join(OBS, 'govern-orders', 'done')
+const govCanonical = (o) => [o.id, o.instanceId, o.action, JSON.stringify(o.args), o.createdAt].join('|')
+const govSign = (payload) => createHmac('sha256', process.env.GOV_SIGN_KEY || '').update(payload).digest('hex')
+const govSummary = (action, a) => (action === 'task-ledger' ? `${a.sub} ${a.taskId}` : `${a.file || ''} → ${a.to || ''}`)
+
+function govDispatch({ instanceId, action, by, args }) {
+  if (!process.env.GOV_SIGN_KEY) throw new Error('平台未配置 GOV_SIGN_KEY（指令单签名密钥），拒绝发单——无签名不发单')
+  if (!instanceId || !GOV_ACTIONS.includes(action)) throw new Error(`参数不合法（action 白名单：${GOV_ACTIONS.join(' / ')}）`)
+  if (typeof by !== 'string' || by.trim() === '') throw new Error('发单必须显式提供 by（操作者标识）；平台不代填「主人」')
+  const a = { ...args, by: by.trim() }
+  delete a.confirmReal // confirmReal 是平台发单防线，不随单下发宿主
+  if (action === 'task-ledger') {
+    if (!a.taskId || !a.root || !['confirm', 'reject'].includes(a.sub)) throw new Error('task-ledger 单需 taskId / root(宿主视角路径) / sub(confirm|reject)')
+    // 与本地治理同一纪律：地址簿登记实例 = 生产台账，自动化发单须显式 confirmReal=true（2026-09-12 防线）
+    if (DATA_ROOTS.list.some((r) => r.instanceId === instanceId) && args.confirmReal !== true) throw new Error(`拒绝：${instanceId} 是治理地址簿登记的实例（生产台账）。脚本/自动化发单须显式 confirmReal=true；看板人工发单经二次确认自动携带`)
+  }
+  if (action === 'doc-status' && (!a.file || !a.to)) throw new Error('doc-status 单需 file / to')
+  const order = { id: `GOV-${Date.now()}-${randomBytes(3).toString('hex')}`, instanceId, action, args: a, createdAt: new Date().toISOString() }
+  mkdirSync(GOV_PENDING_DIR, { recursive: true })
+  writeFileSync(join(GOV_PENDING_DIR, `${order.id}.json`), JSON.stringify({ order, sig: govSign(govCanonical(order)) }, null, 2))
+  appendEvent({ domain: 'governance', type: 'governance.dispatch', severity: 'info', subject: order.id, payload: { instanceId, action, by: by.trim(), summary: govSummary(action, a) } })
+  return { ok: true, id: order.id }
+}
+
+// 领单：返回该实例全部待回执指令单（幂等重发——同一单重复领到由 governor 去重，不重复执行）
+function govClaim(instanceId) {
+  if (!instanceId) return { orders: [] }
+  const out = []
+  try {
+    for (const f of readdirSync(GOV_PENDING_DIR).filter((f) => f.endsWith('.json'))) {
+      try {
+        const p = join(GOV_PENDING_DIR, f)
+        const box = JSON.parse(readFileSync(p, 'utf8'))
+        if (box.order.instanceId !== instanceId) continue
+        if (!box.claimedAt) { box.claimedAt = new Date().toISOString(); writeFileSync(p, JSON.stringify(box, null, 2)) }
+        out.push(box)
+      } catch { /* 单文件损坏不阻断其余 */ }
+    }
+  } catch { /* 目录未建 = 无单 */ }
+  return { orders: out }
+}
+
+function govReceipt({ orderId, ok, refusal, out, error }) {
+  const p = join(GOV_PENDING_DIR, `${orderId}.json`)
+  if (!existsSync(p)) throw new Error('指令单不存在或已回执')
+  const box = JSON.parse(readFileSync(p, 'utf8'))
+  mkdirSync(GOV_DONE_DIR, { recursive: true })
+  writeFileSync(join(GOV_DONE_DIR, `${orderId}.json`), JSON.stringify({ ...box, receipt: { ok: Boolean(ok), refusal: refusal || '', out: String(out || '').slice(-800), error: String(error || '').slice(-300), at: new Date().toISOString() } }, null, 2))
+  unlinkSync(p)
+  // 全量回执留痕；伪造签名拒绝 = critical（最高危面被探测的信号）
+  const sev = ok ? 'info' : (refusal === 'signature' ? 'critical' : 'warning')
+  appendEvent({ domain: 'governance', type: 'governance.receipt', severity: sev, subject: orderId, payload: { instanceId: box.order.instanceId, action: box.order.action, ok: Boolean(ok), refusal: refusal || '', summary: govSummary(box.order.action, box.order.args), out: String(out || error || '').slice(-200) } })
+  return { ok: true }
+}
+
+function govSnapshot() {
+  const brief = (dir, n) => {
+    try {
+      return readdirSync(dir).filter((f) => f.endsWith('.json')).sort().slice(-n).map((f) => {
+        try {
+          const b = JSON.parse(readFileSync(join(dir, f), 'utf8'))
+          return { id: b.order.id, instanceId: b.order.instanceId, action: b.order.action, summary: govSummary(b.order.action, b.order.args), by: b.order.args.by, createdAt: b.order.createdAt, claimedAt: b.claimedAt || '', state: b.receipt ? (b.receipt.ok ? '已完成' : `被拒${b.receipt.refusal ? '：' + b.receipt.refusal : ''}`) : '待执行', severity: b.receipt && !b.receipt.ok && b.receipt.refusal === 'signature' ? 'critical' : '' }
+        } catch { return null }
+      }).filter(Boolean)
+    } catch { return [] }
+  }
+  return { pending: brief(GOV_PENDING_DIR, 50), done: brief(GOV_DONE_DIR, 20), signKeyConfigured: Boolean(process.env.GOV_SIGN_KEY) }
 }
 
 // ---- 运行时层：omp agent.db 只读摄取（node:sqlite，零 npm 依赖）----
@@ -623,7 +698,7 @@ function sendJson(res, code, body) {
   res.end(JSON.stringify(body))
 }
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${HOST}:${PORT}`)
   try {
     // 看板外壳 openly 提供（无数据）；所有数据/写入端点按模式鉴权
@@ -632,8 +707,9 @@ const server = http.createServer((req, res) => {
       res.end(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'public', 'index.html')))
       return
     }
-    // 数据读取与治理：受保护模式要求管理员令牌
-    if (SECURED && !(url.pathname === '/api/events' && req.method === 'POST') && !adminOk(req)) {
+    // 数据读取与治理：受保护模式要求管理员令牌；例外=上报与 governor 领单/回执（自有御符 token 认证）
+    const governorAgentPath = (url.pathname === '/api/govern/orders' && req.method === 'GET') || (url.pathname === '/api/govern/receipt' && req.method === 'POST')
+    if (SECURED && !(url.pathname === '/api/events' && req.method === 'POST') && !governorAgentPath && !adminOk(req)) {
       return sendJson(res, 401, { error: '需要管理员令牌（x-obs-admin 头）' })
     }
     if (req.method === 'GET' && url.pathname === '/api/snapshot') {
@@ -722,6 +798,42 @@ const server = http.createServer((req, res) => {
           if (typeof by !== 'string' || by.trim() === '') throw new Error('知识条目升级必须显式提供 by（操作者标识）；平台不代填「主人」')
           sendJson(res, 200, promoteKnowledge(entry, to, by.trim()))
         } catch (e) { sendJson(res, 400, { ok: false, error: e.message }) }
+      })
+      return
+    }
+    if (req.method === 'POST' && url.pathname === '/api/govern/dispatch') {
+      let body = ''
+      req.on('data', (c) => { body += c; if (body.length > 16384) req.destroy() })
+      req.on('end', () => {
+        try {
+          const { instanceId, action, by, confirmReal, taskId, root, sub, file, to, from } = JSON.parse(body || '{}')
+          sendJson(res, 200, govDispatch({ instanceId, action, by, args: { taskId, root, sub, file, to, from, confirmReal } }))
+        } catch (e) { sendJson(res, 400, { ok: false, error: e.message }) }
+      })
+      return
+    }
+    if (req.method === 'GET' && url.pathname === '/api/govern/orders') {
+      // governor 领单：御符 token 认证（与上报同语义，验「谁在领单」）；平台管理员不经此端点
+      // （注意：GET 无请求体，不能等 req 'end'——外层回调为 async，此处直接 await）
+      if (SECURED || REQUIRE_TOKEN) {
+        const v = await verifyReporter(req.headers.authorization)
+        if (!v.ok) return sendJson(res, 401, { error: `领单被拒绝：${v.why}` })
+      }
+      return sendJson(res, 200, govClaim(url.searchParams.get('instanceId') || ''))
+    }
+    if (req.method === 'POST' && url.pathname === '/api/govern/receipt') {
+      let body = ''
+      req.on('data', (c) => { body += c; if (body.length > 65536) req.destroy() })
+      req.on('end', async () => {
+        try {
+          if (SECURED || REQUIRE_TOKEN) {
+            const v = await verifyReporter(req.headers.authorization)
+            if (!v.ok) { sendJson(res, 401, { error: `回执被拒绝：${v.why}` }); return }
+          }
+          const { orderId, ok, refusal, out, error } = JSON.parse(body || '{}')
+          if (!orderId) throw new Error('缺 orderId')
+          sendJson(res, 200, govReceipt({ orderId, ok, refusal, out, error }))
+        } catch (e) { sendJson(res, String(e.message).includes('不存在') ? 404 : 400, { ok: false, error: e.message }) }
       })
       return
     }

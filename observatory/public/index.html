@@ -319,9 +319,27 @@ function render() {
         <button class="btn verm" onclick="govern('confirm')">confirm 落定</button>
         <button class="btn" onclick="govern('reject')">reject 退回</button>
       </div>
+      <div class="row">
+        <div class="fld"><label>跨宿主发单（实例宿主需运行 governor：御符 token + 签名密钥；root 须为【实例宿主视角】路径）</label>
+          <span class="dim">上方任务号/台账根/操作者沿用，逐任务发单：</span>
+          <button class="btn" onclick="gDispatch('confirm')">📨 发单 confirm</button>
+          <button class="btn" onclick="gDispatch('reject')">📨 发单 reject</button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="fld"><label>跨宿主文档 status（路径须在 governor --allow-root 白名单内）</label>
+          <input id="g-doc-file" placeholder="E:/path/to/docs/xxx.md（宿主视角路径）" size="40">
+          <input id="g-doc-from" placeholder="现 status（可空）" size="14">
+          <input id="g-doc-to" placeholder="目标 status" size="14">
+          <button class="btn" onclick="gDispatchDoc()">📨 发单改 status</button>
+        </div>
+      </div>
       <p class="note2">地址簿来源：${esc(SNAP.addressBookSource || '（未配置 data-roots.yml）')}<br>待处理任务（点击填入）：${taskIds.map((id) => `<a href="#" onclick="fillTask('${esc(id)}');return false" class="${tasks[id].state === '已落定' ? 'dim' : ''}">${esc(id)}<span class="dim">（${esc(tasks[id].state)}）</span></a>`).join('　') || '（暂无任务事件）'}</p>
     </div>`
     v.innerHTML = zhupi +
+      blk('指令单状态（governor 领单执行 → 回执留痕；单号幂等，重复领单不重复执行）', `签名密钥：${(SNAP.governorOrders || {}).signKeyConfigured ? '<span class="teal">已配置</span>' : '<span class="amber">未配置（平台将拒绝发单）</span>'}`,
+        tw('<th>单号</th><th>实例</th><th>动作</th><th>摘要</th><th>状态</th><th>发单</th>',
+          [...(SNAP.governorOrders?.pending || []), ...(SNAP.governorOrders?.done || [])].slice(-25).reverse().map((o) => `<tr><td class="mono dim">${esc(o.id)}</td><td class="mono">${esc(o.instanceId)}</td><td>${esc(o.action)}</td><td>${esc(o.summary)}</td><td class="${o.severity === 'critical' ? 'crit' : o.state === '已完成' ? 'teal' : o.state === '待执行' ? 'amber' : 'amber'}">${esc(o.state)}</td><td class="dim mono">${esc(o.by)}<br>${esc(String(o.createdAt).slice(5, 16))}</td></tr>`).join(''), 6, '无指令单')) +
       blk('知识条目升级（待审核 → 已确认）', '操作者沿用上方「操作者」', `<div class="tw"><p><input id="k-entry" placeholder="omp-extension-contract-pitfalls" size="36"> <button class="btn" onclick="kPromote()">升级为已确认</button></p></div>`) +
       blk('治理结果', '', `<pre id="g-out">${esc(window._govResult || '')}</pre>`)
   } else if (VIEW === 'events') {
@@ -339,6 +357,31 @@ function pickRoot() {
 function fillTask(id) {
   const el = $('#g-task'); const cur = el.value.trim()
   el.value = cur === '' ? id : (cur.split(/[,\s]+/).includes(id) ? cur : cur + ', ' + id)
+}
+async function gDispatch(sub) {
+  const ids = $('#g-task').value.split(/[,\s]+/).map((s) => s.trim()).filter(Boolean)
+  const inst = $('#g-inst').value.trim(), root = $('#g-root').value.trim(), by = ($('#g-by').value || '').trim()
+  if (!inst || !ids.length || !root || !by) { $('#g-out').textContent = '发单需：实例（下拉选择）/ 任务号 / 台账根（实例宿主视角路径）/ 操作者'; return }
+  if (!confirm(`发跨宿主指令单：${inst} 对 ${ids.join(', ')} 执行 ${sub.toUpperCase()}？\nroot = ${root}\n（governor 领单后本地执行并回执；单号幂等）`)) return
+  let acc = ''
+  for (const taskId of ids) {
+    try {
+      // confirmReal：人工已在 confirm 对话框二次确认（与本地治理同一纪律）
+      const r = await api('/api/govern/dispatch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ instanceId: inst, action: 'task-ledger', sub, taskId, root, by, confirmReal: true }) })
+      const j = await r.json()
+      acc += `${j.ok ? '📨 已发单' : '❌'} ${taskId}：${j.id ?? j.error}\n`
+    } catch (e) { acc += `❌ ${taskId}：${e.message}\n` }
+  }
+  window._govResult = acc; $('#g-out').textContent = acc; refresh()
+}
+async function gDispatchDoc() {
+  const inst = $('#g-inst').value.trim(), by = ($('#g-by').value || '').trim()
+  const file = $('#g-doc-file').value.trim(), from = $('#g-doc-from').value.trim(), to = $('#g-doc-to').value.trim()
+  if (!inst || !by || !file || !to) { $('#g-out').textContent = '文档发单需：实例 / 操作者 / 文件路径（宿主视角，须在 governor --allow-root 内）/ 目标 status'; return }
+  if (!confirm(`发跨宿主指令单：${inst} 将 ${file} 的 status 改为「${to}」？`)) return
+  const r = await api('/api/govern/dispatch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ instanceId: inst, action: 'doc-status', file, from: from || undefined, to, by, confirmReal: true }) })
+  const j = await r.json()
+  window._govResult = `${j.ok ? '📨 已发单' : '❌'}：${j.id ?? j.error}\n`; $('#g-out').textContent = window._govResult; refresh()
 }
 async function govern(action) {
   const ids = $('#g-task').value.split(/[,\s]+/).map((s) => s.trim()).filter(Boolean)

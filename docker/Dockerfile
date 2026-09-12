@@ -55,13 +55,21 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/* \
   && apt-get clean
 
-# ---- 安装 Bun（omp 运行时）+ 官方 oh-my-pi ---------------------------------
+# ---- 安装 Bun（omp 运行时）+ 官方 oh-my-pi + GitHub CLI --------------------
 # npm 源走 npmmirror；omp 包内 natives 以平台子包预编译分发，无需本地 Rust。
+# gh 供 omp github 工具与 archify 源码证据场景；下载域可经 ARG 切加速前缀。
+ARG GH_VERSION=2.95.0
+ARG GH_DOWNLOAD_BASE=https://github.com/cli/cli/releases/download
 RUN npm config set registry "${NPM_REGISTRY}" --location=global \
  && npm install -g bun \
  && bun --version \
  && npm install -g @oh-my-pi/pi-coding-agent \
- && npm cache clean --force
+ && npm cache clean --force \
+ && curl -fsSL "${GH_DOWNLOAD_BASE}/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz" -o /tmp/gh.tgz \
+ && tar -xzf /tmp/gh.tgz -C /tmp \
+ && mv "/tmp/gh_${GH_VERSION}_linux_amd64/bin/gh" /usr/local/bin/gh \
+ && rm -rf /tmp/gh.tgz "/tmp/gh_${GH_VERSION}_linux_amd64" \
+ && gh --version
 
 # ---- 运行用户与目录 --------------------------------------------------------
 RUN deluser node 2>/dev/null || true \

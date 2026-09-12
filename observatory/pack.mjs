@@ -20,7 +20,7 @@ mkdirSync(join(dist, 'public'), { recursive: true })
 mkdirSync(join(dist, 'contracts'), { recursive: true })
 mkdirSync(join(dist, 'config'), { recursive: true })
 
-for (const f of ['server.mjs', 'yuyi-ingest.mjs', 'instance-beat.mjs', 'heartbeat.mjs', 'seal.mjs']) {
+for (const f of ['server.mjs', 'yuyi-ingest.mjs', 'instance-beat.mjs', 'heartbeat.mjs', 'seal.mjs', 'brain-mirror.mjs']) {
   copyFileSync(join(here, f), join(dist, f))
 }
 cpSync(join(here, 'public'), join(dist, 'public'), { recursive: true })

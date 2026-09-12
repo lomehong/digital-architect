@@ -9,6 +9,8 @@
  * 用法：node server.mjs [--root <总仓根>] [--data <数据根>] [--port 8787] [--tasks <dir>]... [--agentdb <path>]
  *   --root 若省略 = 脚本上级目录；--data 若省略 = <root>/obs
  *   --data 独立于 --root，便于在临时数据根上做无副作用端到端验证（总仓知识库/告警规则仍按 --root 读取）。
+ * Model B / C2：--brain <url|路径> 启用大脑仓 git 镜像（知识面独立；镜像缺省 <数据根>/brain-mirror，
+ *   --brain-dir 改位置，--brain-sync-sec 改同步周期；知识升级经镜像 commit+push，冲突拒写呈报）。
  */
 import http from 'node:http'
 import { watch, existsSync, readFileSync, readdirSync, mkdirSync, writeFileSync, appendFileSync, unlinkSync, statSync } from 'node:fs'
@@ -19,6 +21,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { createHash, timingSafeEqual } from 'node:crypto'
 import { readYuyiFace } from './yuyi-ingest.mjs'
 import { beatInstance } from './instance-beat.mjs'
+import { ensureBrainMirror, syncBrainMirror, commitAndPushBrain, brainStatus } from './brain-mirror.mjs'
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url))
 // 总仓根（知识库/告警规则/缺省 tasks 与 agent.db）与数据根（instances/events/approvals/archive）
@@ -40,6 +43,12 @@ let HOST = '127.0.0.1'
 let ADMIN_TOKEN = ''
 let AUTH_YUFU_URL = process.env.OBS_YUFU_URL || ''
 let REQUIRE_TOKEN = false
+// —— Model B / C2 大脑仓 git 镜像（知识面独立）——
+// --brain <url|路径> 启用镜像：知识面（architect-knowledge/评审队列）改读镜像，fetch+ff-only 只读同步；
+// 知识升级 = 镜像内 commit+push（git 为权威）；冲突 → 回滚拒写并呈报主人。未启用 = 随仓直读（现状不变）。
+let BRAIN_URL = ''
+let BRAIN_DIR = ''
+let BRAIN_SYNC_SEC = 300
 {
   const argv = process.argv
   for (let i = 2; i < argv.length; i++) {
@@ -54,8 +63,14 @@ let REQUIRE_TOKEN = false
     else if (argv[i] === '--admin-token') ADMIN_TOKEN = argv[++i]
     else if (argv[i] === '--yufu-url') AUTH_YUFU_URL = argv[++i]
     else if (argv[i] === '--require-token') REQUIRE_TOKEN = true
+    else if (argv[i] === '--brain') BRAIN_URL = argv[++i]
+    else if (argv[i] === '--brain-dir') BRAIN_DIR = argv[++i]
+    else if (argv[i] === '--brain-sync-sec') BRAIN_SYNC_SEC = Number(argv[++i])
   }
 }
+if (BRAIN_URL && !BRAIN_DIR) BRAIN_DIR = join(OBS, 'brain-mirror')
+// 知识面寻址（C2）：镜像模式读 <镜像>/architect-knowledge，随仓读 <ROOT>/architect-knowledge（与 C1 配置寻址同思路）
+const knowledgeBaseRoot = () => (BRAIN_URL ? BRAIN_DIR : ROOT)
 const isLoopbackHost = (h) => h === 'localhost' || h === '::1' || /^127\./.test(h)
 
 // —— 配置寻址（Model B / C1 配置解耦）——
@@ -152,13 +167,13 @@ function loadEvents() {
 }
 function loadReviewQueue() {
   try {
-    const raw = readFileSync(join(ROOT, 'architect-knowledge', 'review-queue.yaml'), 'utf8')
+    const raw = readFileSync(join(knowledgeBaseRoot(), 'architect-knowledge', 'review-queue.yaml'), 'utf8')
     return { raw, entries: (raw.match(/- /g) ?? []).length }
   } catch { return { raw: '', entries: 0 } }
 }
 // ---- 知识库只读摄取（architect-knowledge 五类目录，frontmatter 轻解析，零依赖）----
 function loadKnowledgeBase() {
-  const base = join(ROOT, 'architect-knowledge')
+  const base = join(knowledgeBaseRoot(), 'architect-knowledge')
   const entries = []
   for (const cat of ['meta', 'principle', 'scenario', 'practice', 'reference']) {
     let files = []
@@ -336,7 +351,7 @@ function snapshot() {
     status: instances[r.instanceId]?.status ?? 'unknown',
     systems: instances[r.instanceId]?.systems ?? [],
   }))
-  return { generatedAt: new Date().toISOString(), instances: Object.values(instances), events: events.slice(-500), tasks, reviewQueue: rq, alerts: critical.slice(-50), governance: governance.slice(-50), collab: summarizeCollab(events.filter((e) => e.domain === 'collab')), identity: summarizeIdentity(events, instances), yuyi: readYuyiFace(), knowledgeBase: loadKnowledgeBase(), roots, addressBookSource: DATA_ROOTS.source, lastError: state.lastError }
+  return { generatedAt: new Date().toISOString(), instances: Object.values(instances), events: events.slice(-500), tasks, reviewQueue: rq, alerts: critical.slice(-50), governance: governance.slice(-50), collab: summarizeCollab(events.filter((e) => e.domain === 'collab')), identity: summarizeIdentity(events, instances), yuyi: readYuyiFace(), knowledgeBase: loadKnowledgeBase(), roots, addressBookSource: DATA_ROOTS.source, brain: brainStatus(), lastError: state.lastError }
 }
 
 // ---- 治理操作（经 task-ledger CLI，不旁路四不变量）----
@@ -351,13 +366,40 @@ function governTask(taskId, root, action, by) {
   appendEvent({ domain: 'governance', type: `governance.${action}`, severity: 'info', subject: taskId, payload: { by, via: 'observatory', out: out.slice(-200) } })
   return { ok: true, out: out.slice(-500) }
 }
+// 知识条目五类解析（修复：原实现硬编码 practice/，非 practice 条目升级会写错路径）
+const KB_CATEGORIES = ['meta', 'principle', 'scenario', 'practice', 'reference']
+function resolveKnowledgeFile(entry) {
+  const base = join(knowledgeBaseRoot(), 'architect-knowledge')
+  const name = entry.endsWith('.md') ? entry : `${entry}.md`
+  for (const cat of KB_CATEGORIES) {
+    const p = name.startsWith(`${cat}/`) ? join(base, name) : join(base, cat, name)
+    if (existsSync(p)) return p
+  }
+  return null
+}
 function promoteKnowledge(entry, to, by) {
-  const file = join(ROOT, 'architect-knowledge', 'practice', `${entry}.md`)
-  let c = readFileSync(file, 'utf8')
-  c = c.replace(/status:\s*(待审核|已确认)/, `status: ${to}`)
-  writeFileSync(file, c)
-  appendEvent({ domain: 'governance', type: 'governance.knowledge-promote', severity: 'info', subject: entry, payload: { to, by, via: 'observatory' } })
-  return { ok: true }
+  const file = resolveKnowledgeFile(entry)
+  if (!file) throw new Error(`未找到知识条目：${entry}（五类目录解析均未命中）`)
+  const c = readFileSync(file, 'utf8')
+  if (!/status:\s*(待审核|已确认)/.test(c)) throw new Error('条目缺 status: 待审核|已确认 字段，拒绝盲改')
+  const next = c.replace(/status:\s*(待审核|已确认)/, `status: ${to}`)
+  let commit = ''
+  let plane = 'repo'
+  if (BRAIN_URL) {
+    // Model B / C2：升级写入大脑仓镜像 → commit + push（git 为权威）；失败/冲突已回滚拒写
+    plane = 'brain-mirror'
+    const r = commitAndPushBrain({ dir: BRAIN_DIR, message: `知识治理：${entry} → ${to}（via observatory，by ${by}）`, paths: [file], mutate: () => writeFileSync(file, next) })
+    if (!r.ok) {
+      // 拒写必须留痕呈报：critical 事件是「呈报主人」的持久载体（看板告警区可见）
+      appendEvent({ domain: 'platform', type: 'platform.brain.sync', severity: 'critical', subject: entry, payload: { action: 'knowledge-promote-rejected', conflict: Boolean(r.conflict), error: r.error } })
+      throw new Error(r.conflict ? `镜像与远端冲突，已拒写并回滚（呈报主人裁决）：${r.error}` : `镜像提交失败（已回滚拒写）：${r.error}`)
+    }
+    commit = r.commit || ''
+  } else {
+    writeFileSync(file, next) // 随仓部署：仓即工作副本，git 同步由主人工作流负责（现状行为）
+  }
+  appendEvent({ domain: 'governance', type: 'governance.knowledge-promote', severity: 'info', subject: entry, payload: { to, by, via: 'observatory', plane, commit } })
+  return { ok: true, plane, commit }
 }
 function appendEvent(ev) {
   ev.ts = new Date().toISOString()
@@ -486,7 +528,10 @@ function healthSnapshot() {
       approvals: probe(() => readdirSync(APPROVALS_PENDING_DIR)),
       // 御驿协作面（只读摄取 ~/.yuyi）：接入则 ok，未接入则该机无此数据源（disabled 语义）
       yuyi: (() => { try { const f = readYuyiFace(); return f.available ? 'ok' : 'disabled' } catch (e) { return `error: ${e.message}` } })(),
+      // 大脑仓镜像（C2）：未启用=disabled；启用后按同步状态如实呈现
+      brain: !BRAIN_URL ? 'disabled' : (() => { const st = brainStatus(); return st.lastError && !st.head ? `error: ${st.lastError}` : (st.lastOkAt ? 'ok' : 'pending') })(),
     },
+    brain: brainStatus(),
     taskDirs: TASK_DIRS,
     agentDb: AGENT_DB,
     lastError: state.lastError,
@@ -727,8 +772,30 @@ try { writeFileSync(PID_FILE, String(process.pid)) } catch { /* 登记失败不�
 const cleanupPid = () => { try { unlinkSync(PID_FILE) } catch { /* 已不存在或目录只读 */ } }
 process.on('exit', cleanupPid)
 for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(sig, () => { cleanupPid(); process.exit(0) })
+// ---- Model B / C2 大脑仓镜像：启动即同步，之后按 --brain-sync-sec 周期同步（进程内建，无独立进程）----
+// 事件只在状态跃迁时发一次（不随周期刷屏）；conflict=critical（知识升级已被拒写，呈报主人裁决）
+let brainLastOk = null
+function brainTick() {
+  try {
+    ensureBrainMirror({ url: BRAIN_URL, dir: BRAIN_DIR })
+    const st = syncBrainMirror({ dir: BRAIN_DIR })
+    const bad = st.conflict || st.lastError
+    if (!bad && brainLastOk === false) appendEvent({ domain: 'platform', type: 'platform.brain.sync', severity: 'info', subject: BRAIN_URL, payload: { recovered: true, head: st.head, behind: st.behind } })
+    if (!bad) { brainLastOk = true; return }
+    if (brainLastOk !== false) appendEvent({ domain: 'platform', type: 'platform.brain.sync', severity: st.conflict ? 'critical' : 'warning', subject: BRAIN_URL, payload: { conflict: st.conflict, error: st.lastError, behind: st.behind } })
+    brainLastOk = false
+  } catch (e) {
+    if (brainLastOk !== false) appendEvent({ domain: 'platform', type: 'platform.brain.sync', severity: 'warning', subject: BRAIN_URL, payload: { error: e.message } })
+    brainLastOk = false
+  }
+}
+
 server.listen(PORT, HOST, () => {
   const mode = SECURED ? (REQUIRE_TOKEN || !isLoopbackHost(HOST) ? `受保护（上报=御符token 验证${AUTH_YUFU_URL ? ' @ ' + AUTH_YUFU_URL : '未配置!'}，管理=${ADMIN_TOKEN ? '令牌已设' : '未设'}）` : 'token 强制') : '本机信任（127.0.0.1，未鉴权）'
-  console.log(`[observatory] 看板 http://${HOST}:${PORT}  数据根 ${OBS}  认证模式：${mode}`)
+  console.log(`[observatory] 看板 http://${HOST}:${PORT}  数据根 ${OBS}  认证模式：${mode}${BRAIN_URL ? `  大脑仓镜像 ${BRAIN_DIR}` : ''}`)
   appendEvent({ domain: 'platform', type: 'platform.started', severity: 'info', subject: `observatory@${PORT}` })
+  if (BRAIN_URL) {
+    brainTick()
+    setInterval(brainTick, Math.max(30, BRAIN_SYNC_SEC) * 1000)
+  }
 })

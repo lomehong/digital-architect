@@ -268,3 +268,12 @@ E:\Development\Code\nodejs\digital-architect\
 > 2. **新增能力**：御驿消息结构化（协作视图）· 身份自验证据（三态 + 漂移检出）· 跨实例统一治理（地址簿 + 选择器 + 批量）· 看板渲染烟测（无浏览器回归）。
 > 3. **事故与加固（重要）**：本会话在负测中**两次**误对生产台账 `ops-pi/docs/tasks/OPSP-P0.yaml` 执行 confirm，均已回滚并追加 `rollback` 事件留痕；随后加固两条防线（操作者必填不代填 + 真实台账 `confirmReal` 拦截）与负测隔离夹具。教训已入 `architect-knowledge/practice/observatory-platform-bootstrap.md` 与 `suite-build-lessons.md`。
 > 4. **待主人处置**：① OPSP-P0 现为「待确认」（P0 报告称验收全部通过），等待主人裁决——**归属 ops-pi（主人 + omp 侧实施方），不在本仓任务范围**；② ops-pi R-1 审批通道决策（A/B/C）待主人选择，归属同上；③ ~~observatory 写操作防线待追认~~ → **主人 2026-09-12 已追认**，四防线固化于设计文档 §7.4/§8；事故复盘见 `docs/designs/2026-09-12-治理写操作误用-事故复盘.md`。
+
+---
+
+> **2026-09-12 补记二（Model B / C1-C2 实施推进）**
+>
+> 1. 平台独立部署演进（Model B）进入实施：**C1 打包与配置解耦**完成（`baf41a8`：pack.mjs 独立 tarball + 配置寻址数据根优先，验收=无仓目录独立启动全功能）；**C2 大脑仓 git 镜像**已实施——`observatory/brain-mirror.mjs` + server 集成（`--brain`：fetch/ff-only 只读同步、知识升级=镜像内 commit+push、冲突 reset 回滚**拒写**并 critical 呈报、`OBS_BRAIN_TOKEN` 凭据只进进程环境）。验收回归 `observatory/contracts/brain-mirror-e2e.mjs` 16 断言全过（临时夹具远端，隔离无生产副作用）。
+> 2. 新增文档：评审结论 `docs/designs/2026-09-12-平台独立部署演进-评审结论.md`（六维度 54/60，通过待主人确认）、走查记录 `docs/designs/2026-09-12-平台独立部署演进-走查记录.md`。
+> 3. 顺带修复：知识升级 `promoteKnowledge` 原硬编码 `practice/` 目录——非 practice 条目经看板升级会写错路径；已改五类解析（e2e 有回归）。
+> 4. **待主人处置**：① C1/C2 结果确认；② 部署目标形态 NAS/云主机/常开 PC + 大脑仓 git 远端确认（C4 迁移手册前）；③ C3 governor 宿主清单（C3 启动决策门）。

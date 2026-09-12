@@ -73,6 +73,20 @@ start http://127.0.0.1:8787
 `data-roots.yml` 登记「实例 → 台账根」，治理页实例选择器据此自动填 `root`。
 **`taskRoot` 必须是平台所在主机视角的路径**（容器内 `/workspace` ≠ 宿主路径）；仅支持本地路径，跨主机需远端执行面（未支持）。
 
+## 大脑仓 git 镜像（Model B / C2，知识面独立）
+
+`--brain <url|路径>` 启用后，平台持有大脑仓 **git 镜像**（缺省 `<数据根>/brain-mirror`），知识面不再依赖仓目录：
+
+| 行为 | 语义 |
+|---|---|
+| 只读同步 | 缺席自动 clone（remote 名 `brain`）；启动即同步 + 每 `--brain-sync-sec` 周期 `fetch --prune` + `merge --ff-only` |
+| 知识升级 | 治理操作升级条目 = 镜像内写文件 → commit → push——**git 为权威**，多副本经远端 git 同步 |
+| 冲突防线 | 远端分叉 / push 被拒 → `reset --hard` 回滚本地提交 → **拒写**（HTTP 400）+ `platform.brain.sync` critical 留痕呈报主人；不静默强推、不改写历史 |
+| 凭据 | `OBS_BRAIN_TOKEN` 环境变量 → askpass（令牌只进平台进程环境，不落盘明文/不进远端 URL/不进 .git/config）；未设置则用系统凭据助手；`GIT_TERMINAL_PROMPT=0` 非交互 fail-fast |
+| 呈现 | `/api/snapshot`、`/api/health` 增 `brain` 状态；看板知识视图徽标（分支/同步时间/落后/分叉告警） |
+
+验收回归：`node observatory/contracts/brain-mirror-e2e.mjs`（临时夹具远端隔离，16 断言：全量条目上屏 / 升级 push 落远端 / 第二副本克隆同见 / 分叉拒写负测 / 随仓回归）。
+
 ## API
 
 | 端点 | 说明 |
@@ -177,7 +191,7 @@ Start-Process -FilePath node -ArgumentList "observatory/server.mjs" -WorkingDire
 
 **升级触发条件**：若将来确实需要开机自启，应先在杀软中为本仓与 DSH-Desktop 配置**排除项**（变更安全姿态，需主人同意），而不是直接注册任务。
 
-**启动参数**：`--port <n>`（默认 8787）· `--host <addr>`（默认 127.0.0.1；绑定非回环即进入**受保护模式**）· `--root <总仓根>`（知识库/告警规则/缺省 tasks 与 agent.db）· `--data <数据根>`（缺省 `<root>/obs`）· `--tasks <dir>`（可重复，台账目录）· `--agentdb <path>` · `--alert-cooldown-ms <n>` · `--heartbeat <实例id,...>`（平台进程内建心跳）
+**启动参数**：`--port <n>`（默认 8787）· `--host <addr>`（默认 127.0.0.1；绑定非回环即进入**受保护模式**）· `--root <总仓根>`（知识库/告警规则/缺省 tasks 与 agent.db）· `--data <数据根>`（缺省 `<root>/obs`）· `--tasks <dir>`（可重复，台账目录）· `--agentdb <path>` · `--alert-cooldown-ms <n>` · `--heartbeat <实例id,...>`（平台进程内建心跳）· `--brain <url|路径>`（大脑仓 git 镜像，见下节）· `--brain-dir <dir>`（镜像位置，缺省 `<数据根>/brain-mirror`）· `--brain-sync-sec <n>`（同步周期，缺省 300）
 
 **多宿主上报与认证（受保护模式）**：绑定非回环地址或 `--require-token` 时进入受保护模式——
 - **上报者**（各宿主实例/采集器）：`POST /api/events` 必须带 `Authorization: Bearer <御符token>`，平台调 `yufu_verify` 验「谁在上报」，验证通过的 agentId 以 **`verifiedAs`** 平台注记写入事件（平台生成的溯源元数据，非实例自报）；验证结果按 token 摘要缓存 10 分钟（仅内存）
@@ -196,12 +210,13 @@ Start-Process -FilePath node -ArgumentList "observatory/server.mjs" -WorkingDire
 ```
 observatory/
 ├── server.mjs                 平台服务（零 npm 依赖，仅 node: 内置模块）
+├── brain-mirror.mjs           大脑仓 git 镜像（Model B / C2：只读同步 + 升级 commit+push + 冲突拒写）
 ├── seal.mjs                   审计归档封印与校验（哈希链）
 ├── heartbeat.mjs              通用实例心跳工具（+ 可选身份自验上报）
 ├── alert-rules.yml            告警规则 v1（5 条，支持抑制窗口）
 ├── data-roots.yml             治理地址簿（实例 → 台账根）
 ├── public/index.html          看板单页（原生 JS，无构建，8 视图）
-├── contracts/                 事件契约校验器 + 渲染烟测 + 审批代办契约
+├── contracts/                 事件契约校验器 + 渲染烟测 + 镜像 e2e + 审批代办契约
 ├── approval-demo/             审批参考实现 + 说明
 ├── collab-demo/               御驿消息结构化参考实现
 ├── identity-demo/             身份自验证据参考实现（四态）
@@ -223,5 +238,9 @@ obs/                           运行时数据根（gitignore）
 - **三期 ✅ 完成**：**不可变审计归档**（哈希链封印 + 篡改检测）· **御符强验证**（重界定为实例自验 + 证据存档）· **跨实例统一治理**（地址簿 + 选择器 + 批量）· **治理写操作防线** · **看板渲染烟测**
 - **剩余（非阻断）**：跨主机治理的**远端执行面**（治理指令下发到实例侧 agent 执行；上报/认证通道已就绪）
 - **已实现（2026-09-12）**：受保护模式——上报者御符 token 验证（verifiedAs 溯源注记）+ 管理员令牌门 + 非回环强制启用
-- **演进中（待主人确认设计方案）**：平台独立部署 Model B——平台脱离大脑仓常驻（打包独立发布 / 配置迁数据根 / 大脑仓 git 镜像 / governor 远端执行面），方案见 `docs/designs/2026-09-12-平台独立部署演进-技术方案.md`；在此之前**平台随大脑仓部署**（仓在哪平台在哪）是显式前提而非隐含假设
+- **演进（Model B 平台独立部署）**：方案见 `docs/designs/2026-09-12-平台独立部署演进-技术方案.md`，实施状态见下方 C1–C4 条目；在本平台实际迁往独立部署前，「平台随大脑仓部署」（仓在哪平台在哪）仍是显式前提
 - **已评估不实施**：`omp stats` CLI 集成——它读同一 `agent.db`，直接只读摄取更同源、无 CLI/输出格式耦合（成本列 `client_usage.cost_usd` 与 `usage_history` 当前为空，待数据积累再做成本/趋势视图）
+- **Model B / C1 ✅ 完成（baf41a8）**：独立部署包（`pack.mjs` → tarball）+ 配置寻址数据根优先（`<数据根>/config/` → 包内 → 仓内）；验收=无仓目录启动全功能
+- **Model B / C2 ✅ 已实施（待主人确认）**：大脑仓 git 镜像——知识面独立（只读同步 / 升级 commit+push / 冲突拒写呈报 / 凭据只进进程环境）；评审结论与走查记录见 `docs/designs/2026-09-12-平台独立部署演进-{评审结论,走查记录}.md`
+- **Model B / C3 ⏸ 决策门**：governor 远端执行面——待主人给出宿主清单（§6-③）
+- **Model B / C4 ⏸ 决策门**：迁移手册——待主人给出部署目标形态（§6-②）

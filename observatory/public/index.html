@@ -107,6 +107,9 @@
   .zhupi .todo li { margin: 4px 0 }
   .zhupi .todo b { color: var(--amber) }
   .zhupi .allclear { color: var(--teal); font-size: 12.5px; margin: 0 }
+  /* 无待决时的整页空态：朱批操作台不渲染 */
+  .govern-empty { color: var(--paper); background: var(--ink2); border: 1px solid var(--line); border-left: 3px solid var(--teal); border-radius: 3px; padding: 14px 18px; margin: 10px 0 6px 14px }
+  .govern-empty a { margin-left: 10px }
 
   .loading { color: var(--dim); padding: 30px 22px }
 
@@ -375,11 +378,19 @@ function render() {
         </div>
       </div>
     </div>`
-    v.innerHTML = zhupi +
-      blk('指令单状态（governor 领单执行 → 回执留痕；单号幂等，重复领单不重复执行）', `签名密钥：${(SNAP.governorOrders || {}).signKeyConfigured ? '<span class="teal">已配置</span>' : '<span class="amber">未配置（平台将拒绝发单）</span>'}`,
-        tw('<th>单号</th><th>实例</th><th>动作</th><th>摘要</th><th>状态</th><th>发单</th>',
-          [...(SNAP.governorOrders?.pending || []), ...(SNAP.governorOrders?.done || [])].slice(-25).reverse().map((o) => `<tr><td class="mono dim">${esc(o.id)}</td><td class="mono">${esc(o.instanceId)}</td><td>${esc(o.action)}</td><td>${esc(o.summary)}</td><td class="${o.severity === 'critical' ? 'crit' : o.state === '已完成' ? 'teal' : o.state === '待执行' ? 'amber' : 'amber'}">${esc(o.state)}</td><td class="dim mono">${esc(o.by)}<br>${esc(String(o.createdAt).slice(5, 16))}</td></tr>`).join(''), 6, '无指令单')) +
-      blk('治理结果', '', `<pre id="g-out">${esc(window._govResult || '')}</pre>`)
+    // 拍板门：只有确有「需主人决定」的事项（待确认任务/审批挂单/待审核条目）才渲染朱批操作台；
+    // 指令单待执行是执行态不是待决，不触发弹台。操作台也可经页尾链接手动展开（发单等主动操作用）。
+    const hasDecision = pendingTasks.length > 0 || pendingApprovals > 0 || pendingReviews > 0
+    const ordersBlk = blk('指令单状态（governor 领单执行 → 回执留痕；单号幂等，重复领单不重复执行）', `签名密钥：${(SNAP.governorOrders || {}).signKeyConfigured ? '<span class="teal">已配置</span>' : '<span class="amber">未配置（平台将拒绝发单）</span>'}`,
+      tw('<th>单号</th><th>实例</th><th>动作</th><th>摘要</th><th>状态</th><th>发单</th>',
+        [...(SNAP.governorOrders?.pending || []), ...(SNAP.governorOrders?.done || [])].slice(-25).reverse().map((o) => `<tr><td class="mono dim">${esc(o.id)}</td><td class="mono">${esc(o.instanceId)}</td><td>${esc(o.action)}</td><td>${esc(o.summary)}</td><td class="${o.severity === 'critical' ? 'crit' : o.state === '已完成' ? 'teal' : o.state === '待执行' ? 'amber' : 'amber'}">${esc(o.state)}</td><td class="dim mono">${esc(o.by)}<br>${esc(String(o.createdAt).slice(5, 16))}</td></tr>`).join(''), 6, '无指令单'))
+    const resultBlk = blk('治理结果', '', `<pre id="g-out">${esc(window._govResult || '')}</pre>`)
+    if (!hasDecision && !window._govOpsExpanded) {
+      v.innerHTML = `<div class="govern-empty">当前无需主人拍板的事项。<a href="#" onclick="window._govOpsExpanded = true; render(); return false">需要发跨宿主指令单等主动操作？展开操作台</a></div>` + ordersBlk + resultBlk
+      return
+    }
+    const collapse = (!hasDecision && window._govOpsExpanded) ? `<p class="dim" style="margin:10px 0 6px 14px"><a href="#" onclick="window._govOpsExpanded = false; render(); return false">◂ 收起操作台（当前无待决事项）</a></p>` : ''
+    v.innerHTML = collapse + zhupi + ordersBlk + resultBlk
   } else if (VIEW === 'events') {
     const items = (SNAP.events || []).slice(-60).reverse()
     v.innerHTML = blk('事件实时流', '最近 60 条　每 10s 自动刷新　' +

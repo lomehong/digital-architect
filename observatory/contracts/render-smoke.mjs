@@ -119,9 +119,19 @@ try {
   if (!node('#view').innerHTML.includes('暂无协作消息事件')) problems.push('collab 空态：未显示预期空态提示')
 } catch (e) { problems.push('collab 空态: render 抛错 — ' + e.message) }
 
+// 反向验证：无待决事项时朱批操作台不得渲染（拍板门——只有需要主人决定时才出现）
+try {
+  probe.SNAP = { ...snap, pendingApprovals: [], reviewQueue: { entries: 0, raw: '' }, tasks: { 'OPSP-P0': { ...snap.tasks['OPSP-P0'], state: '执行中' } }, governorOrders: { pending: [], done: [], signKeyConfigured: false } }
+  probe.VIEW = 'govern'
+  probe.render()
+  const out = node('#view').innerHTML
+  if (!out.includes('当前无需主人拍板的事项')) problems.push('govern 空态：未显示「无需拍板」提示')
+  if (out.includes('class="zh-sec"') || out.includes('class="zh-cap"')) problems.push('govern 空态：操作台不应渲染（朱批只在有待决时出现）')
+} catch (e) { problems.push('govern 空态: render 抛错 — ' + e.message) }
+
 if (problems.length > 0) {
-  console.error(`[render-smoke] FAIL（${VIEWS.length + 1} 视图检查）`)
+  console.error(`[render-smoke] FAIL（${VIEWS.length + 2} 场景检查）`)
   for (const p of problems) console.error('[render-smoke]   - ' + p)
   process.exit(1)
 }
-console.log(`[render-smoke] PASS：${VIEWS.length} 视图渲染正常 + 空态降级正常（无浏览器）`)
+console.log(`[render-smoke] PASS：${VIEWS.length} 视图渲染正常 + 2 项空态/拍板门场景正常（无浏览器）`)

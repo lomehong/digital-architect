@@ -286,3 +286,11 @@ E:\Development\Code\nodejs\digital-architect\
 > 2. **C4 云主机迁移手册已产出**：`docs/designs/2026-09-12-平台独立部署演进-C4-云主机迁移手册.md`（凭据清单 / 8 步部署 / 验证负测清单 / 镜像分叉收敛手册〔评审遗留闭环〕/ systemd 模板 / 回滚）。
 > 3. 顺带加固：`http` 回调改 async——修复「无体 GET 端点等 req 'end' 会悬挂」的潜在缺口（governor 领单端点触发发现）。
 > 4. **主人已处置（2026-09-12）**：① C3/C4 结果**确认落定**——Model B 四期全部结案；② 现役平台已于 23:15 **重启换新代码**（实测：health ok、brain mode=repo、快照含 governorOrders、知识 38 条照常）；③ 云主机资源与切换窗口后续提供（按 C4 手册执行）。**注意**：现役平台启动环境未配 `GOV_SIGN_KEY`——跨宿主发单门将按设计拒绝（无签名不发单），需用指令单时在启动环境补配该密钥并与 governor 宿主共享。
+
+---
+
+> **2026-09-12 补记四（demo 清退与真实实现审计）**
+>
+> 1. 主人指出 `observatory/` 下三个 demo 目录不符「真实实现」要求。审计结论（诚实分级）：**身份自验**=真实（`heartbeat.mjs --yufu-url`，生产有真实御符自验事件）；**审批挂单**=平台端真实、实例侧此前仅 demo——已转正为 `observatory/require-approval.mjs`（契约 v1 真实工具，exit code 门闩：0=批准/1=拒绝/2=超时，实测三路径 + 事件过契约校验）；**协作消息实例侧转写**=未实施（平台本机真实摄取 = `yuyi-ingest.mjs`；omp 扩展内无转写代码）——如实列入多宿主/云迁移 backlog，不再以 demo 冒名。
+> 2. `approval-demo/`、`collab-demo/`、`identity-demo/` 三目录已删除，README 与 observatory 设计文档引用同步更正；历史事件按留痕纪律保留在 obs/。
+> 3. 另：gitignore 修正（`docker/.gitignore` 的 `plugins/extensions/` 路径笔误修正为 `omp/agent/extensions/`，补 `blobs/` 与 `observatory/dist/`、`observatory/governor-state/`）。

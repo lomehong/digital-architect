@@ -42,7 +42,7 @@ start http://127.0.0.1:8787
 | **自验** | 实例调 `yufu_verify` 验证自身 token 后上报 `platform.identity.verified` | 标「已验证 / 失效 / 未申报」+ **身份漂移检出** |
 
 **平台不接御符内部 API、不做身份验证**（Yuyi 身份插件自治）；验证在实例侧完成，平台只存档证据。
-参考实现：`identity-demo/instance.mjs`（四态：已验证/失效/未申报/漂移）。
+真实工具：`heartbeat.mjs --yufu-url`（真实御符自验上报，已实测）；四态呈现与漂移检出逻辑见 `server.mjs summarizeIdentity`。
 
 ## 三类治理操作（决定权在主人）
 
@@ -148,7 +148,7 @@ node observatory/seal.mjs --verify
 | 身份自验证据 | `contracts/validate.mjs`（域约定） | `platform.identity.verified` 必带 `identityId`(非空) / `verified`(boolean) / `via`；`verified=false` 必带 `reason` |
 | 审批代办契约 v1 | `contracts/approval-request-v1.md` | 文件请求/应答协议（pending → decisions）+ 事件对 |
 | 渲染烟测 | `contracts/render-smoke.mjs` | node:vm + 最小 DOM stub 真实执行 `render()`：8 视图关键内容 + 无 `undefined`/`NaN` + 空态降级（无需浏览器），`node contracts/render-smoke.mjs` |
-| 参考实现 | `approval-demo/`、`collab-demo/`、`identity-demo/` | 契约活样例；**仅在隔离数据根注入**（不污染生产看板） |
+| 实例侧真实工具 | `heartbeat.mjs`（心跳+身份自验）· `require-approval.mjs`（审批挂单，exit code 门闩） | 生产工具，非样例；**协作消息实例侧转写尚未实施**（远端宿主场景，随多宿主/云迁移阶段落地；平台本机真实摄取走 `yuyi-ingest.mjs`） |
 | 隔离夹具 | `test-fixtures/fake-ledger/` | 治理合法写路径的测试目标（不落盘），保证测试无生产副作用 |
 
 ## 实例接入
@@ -184,6 +184,15 @@ node observatory/heartbeat.mjs --instance my-instance --systems a,b --host "描�
 **语义**：只刷新心跳字段（`status` / `lastSeenAt` / `heartbeatIntervalSec`），**保留实例自身声明的** `systems` / `capabilities` / `host`——心跳工具不覆盖身份声明。
 
 **身份自验（可选，不配置则不发证据）**：加 `--yufu-url http://127.0.0.1:<port>` 与环境变量 `YUFU_CREDENTIAL=<御符 token>` → 调 `POST /api/v1/auth/agent/verify`，把结论作为 `platform.identity.verified` 上报。**未配置时不发事件**——平台不做身份验证，也不接受凭空证据。
+
+**审批挂单（真实门闩工具，2026-09-12 由 demo 转正）**：
+
+```powershell
+# 高风险动作前把决定权交给主人：挂单 → 等看板批准/拒绝 → 退出码返回结论
+node observatory/require-approval.mjs --instance <实例id> --tool <动作名> `
+  --params-json '{"host":"prod-db"}' --reason "需要主人批准" --required-by-sec 300
+# exit 0=已批准（继续执行） 1=已拒绝 2=超时未决（保守失败） 3=参数错误
+```
 
 > ⛔ 本工具**只用于手动单次调用或随平台进程运行**；**禁止**注册为计划任务（2026-09-12 事故，见下节）。
 
@@ -233,14 +242,12 @@ observatory/
 ├── governor.mjs               实例宿主治理 agent（Model B / C3：领单/验签/白名单执行/回执）
 ├── seal.mjs                   审计归档封印与校验（哈希链）
 ├── heartbeat.mjs              通用实例心跳工具（+ 可选身份自验上报）
+├── require-approval.mjs        审批挂单实例侧工具（契约 v1，exit code 门闩，2026-09-12 由 demo 转正）
 ├── alert-rules.yml            告警规则 v1（5 条，支持抑制窗口）
 ├── data-roots.yml             治理地址簿（实例 → 台账根）
 ├── public/index.html          看板单页（原生 JS，无构建，8 视图）
 ├── contracts/                 事件契约校验器 + 渲染烟测 + 镜像/governor e2e + 审批代办契约
-├── approval-demo/             审批参考实现 + 说明
-├── collab-demo/               御驿消息结构化参考实现
-├── identity-demo/             身份自验证据参考实现（四态）
-└── test-fixtures/fake-ledger/ 隔离台账夹具（治理测试专用，不落盘）
+├── test-fixtures/fake-ledger/ 隔离台账夹具（治理测试专用，不落盘）
 obs/                           运行时数据根（gitignore）
 ├── server.pid                 运行中实例 PID（数据根归属，gitignore）
 ├── instances/                 实例注册与心跳

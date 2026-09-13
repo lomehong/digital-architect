@@ -152,7 +152,7 @@ severity: `info | warning | critical`。**校验器**：`observatory/contracts/v
 **契约约束（`contracts/validate.mjs` 与 `POST /api/events` 摄入同源强制）**：`collab.message.*` 必带 `direction`(inbound|outbound)；`peerRole` 限枚举；`peerOwner` 在位而 `peerAgentId` 缺席 → FAIL（禁半可信身份）；`collab.gate-denied` 必带 `decision` 与 `reason`。
 
 **平台呈现**：「协作」视图——对端清单（御符 id / Owner / 角色 / 流向计数 / 身份来源标注）+ 闸门拒绝证据 + 最近消息事件。
-**参考实现**：`observatory/collab-demo/instance.mjs`（四类转写 + 闸门拒绝；主平台注入为契约活样例）。
+**真实数据源（2026-09-12 审计后如实标注）**：平台本机 = `yuyi-ingest.mjs`（只读摄取 `~/.yuyi`）；**实例侧消息转写尚未实施**（原 `collab-demo` 仅为契约样例，已随 2026-09-12 demo 清退删除）——远端宿主转写随多宿主/云迁移阶段实施（Model B backlog）。
 
 ### 7.3 平台服务（observatory/server.mjs，零 npm 依赖）
 
@@ -162,7 +162,7 @@ severity: `info | warning | critical`。**校验器**：`observatory/contracts/v
 - **启动参数**：`--root <总仓根>`（知识库/告警规则/缺省 tasks 与 agent.db）、`--data <数据根>`（instances/events/approvals/archive，缺省 `<root>/obs`）、`--port`、`--tasks <dir>`（可重复）、`--agentdb`、`--alert-cooldown-ms`。`--data` 独立于 `--root`，便于在临时数据根上做无副作用端到端验证。
 - **进程登记**：PID 写入 **`<数据根>/server.pid`**（非脚本目录）——多实例/临时数据根并存时互不覆盖；停启只按该登记精确操作（禁按进程名批量杀）。
 - **降级**：某实例事件缺失 → 实例视图标 stale（数据即状态，不虚构）；协作面身份未回填 → 显式「未验证」。
-- **回归资产**：`contracts/validate.mjs`（契约）、`contracts/render-smoke.mjs`（8 视图无浏览器渲染烟测 + 空态降级）、`approval-demo/`、`collab-demo/`、`identity-demo/`（契约参考实现，仅在隔离数据根注入）。
+- **回归资产**：`contracts/validate.mjs`（契约）、`contracts/render-smoke.mjs`（8 视图无浏览器渲染烟测 + 空态降级）、`contracts/brain-mirror-e2e.mjs` + `contracts/governor-e2e.mjs`（Model B 验收回归，夹具隔离）。~~approval-demo / collab-demo / identity-demo~~（契约样例已于 2026-09-12 清退：身份自验真实实现 = `heartbeat.mjs --yufu-url`；审批挂单真实工具 = `require-approval.mjs`；协作实例侧转写列入多宿主 backlog）。
 - **与 `omp stats` 的关系（评估结论）**：**不集成**该 CLI——它读的是同一 `agent.db`，本平台直接只读摄取是同源且无进程/输出格式耦合的路径；`omp` 升级不影响观测面。
 
 ### 7.4 治理操作面（贯穿主线）与分期
@@ -226,7 +226,7 @@ severity: `info | warning | critical`。**校验器**：`observatory/contracts/v
 | **审批代办（含参考实现）** | 二期 | ✅ 完成并端到端验证 | pending 写入 → 平台 approve → 决定文件 → 参考实例收到"allow by 主人" → pending 清理；超时自动 deny 已实现 |
 | 御驿消息结构化 | 二期 | ✅ 完成并端到端验证 | 契约 §7.2.1：临时数据根 e2e 4 对端（3 已验证 / 1 未验证）+ 闸门拒绝 2；契约负测 4/4 命中；摄入**混批**修复实测 accepted=1/rejected=2（修复前会误收 3 条） |
 | **不可变审计归档（RR-2）** | 三期 | ✅ 完成并篡改检测实测 | `seal.mjs` 哈希链封印 + `--verify` 校验（闭日严格/当日检查点）；实测：篡改已封印文件 → FAIL 并定位；复原 → PASS；`/api/archive` 看板呈现 |
-| 御符强验证（Yufu 对接） | 三期 | ✅ 完成（重界定为「实例自验 + 证据存档」） | `platform.identity.verified` 契约 + 校验器 + 看板三态（已验证/失效/未申报）+ **身份漂移检出**；`identity-demo` 四态实测；平台不接御符内部 API（身份归 Yuyi 插件） |
+| 御符强验证（Yufu 对接） | 三期 | ✅ 完成（重界定为「实例自验 + 证据存档」） | `platform.identity.verified` 契约 + 校验器 + 看板三态（已验证/失效/未申报）+ **身份漂移检出**；真实实现 `heartbeat.mjs --yufu-url`（真实御符自验实测，2026-09-12 起 `identity-demo` 样例清退）；平台不接御符内部 API（身份归 Yuyi 插件） |
 | 跨实例统一治理 | 三期 | ✅ 完成并端到端验证 | 治理地址簿 `data-roots.yml` + 实例选择器（自动填 root）+ 批量逐个留痕；隔离夹具实测放行、生产台账实测拦截 |
 | 治理写操作防线 | 三期 | ✅ 完成并实测 | 操作者显式（服务端拒绝空 by）+ 真实台账 `confirmReal` 拦截（实测 400）；2026-09-12 两次误操作已回滚并追加留痕；事故复盘 `docs/designs/2026-09-12-治理写操作误用-事故复盘.md` |
 | **多宿主上报认证** | 三期+ | ✅ 完成并真实链路实测 | 受保护模式：无凭据/伪 token → 401（伪 token 被真实御符拒绝）；真实 token → 200 + `verifiedAs` 注记落盘；管理令牌门（读/治理 401/200）；非回环缺令牌拒绝启动（实测 exit 2）。多宿主语义：事件契约为唯一真实数据面 |

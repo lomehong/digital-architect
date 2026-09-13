@@ -81,30 +81,32 @@
   a:hover { text-decoration: underline }
   pre#out { font-family: var(--mono); font-size: 11.5px; white-space: pre-wrap; color: var(--dim); background: var(--ink2); border: 1px solid var(--line); border-radius: 3px; padding: 10px 12px; margin: 8px 0 0 14px }
 
-  /* —— 朱批台：全页唯一的大胆处 —— */
-  .zhupi { background: var(--paper); color: #20242E; border-radius: 3px; padding: 22px 26px 24px; margin: 10px 0 6px 14px }
-  .zhupi h1 { font-family: var(--kai); font-size: 26px; font-weight: normal; margin: 0 0 2px; letter-spacing: .12em }
-  .zhupi h1 em { font-style: normal; color: var(--verm-deep) }
-  .zhupi .zh-note { color: #5A6272; font-size: 12px; margin: 0 0 16px }
-  .zhupi label { display: inline-block; font-size: 12px; color: #5A6272; margin: 10px 6px 3px 0 }
-  .zhupi input, .zhupi select { background: #FBFAF6; color: #20242E; border-color: #C9C4B6 }
-  .zhupi input:focus-visible, .zhupi select:focus-visible { outline-color: var(--verm-deep) }
+  /* —— 朱批台：主人的决定动作台（漆墨同源，朱色只做旨意点缀）—— */
+  .zhupi { background: var(--ink2); color: var(--paper); border: 1px solid var(--line); border-left: 3px solid var(--verm); border-radius: 3px; padding: 18px 22px 20px; margin: 10px 0 6px 14px }
+  .zhupi h1 { font-family: var(--kai); font-size: 20px; font-weight: normal; margin: 0 0 2px; letter-spacing: .12em }
+  .zhupi h1 em { font-style: normal; color: var(--verm) }
+  .zhupi .zh-note { color: var(--dim); font-size: 12px; margin: 0 0 14px }
+  .zhupi label { display: inline-block; font-size: 12px; color: var(--dim); margin: 10px 6px 3px 0 }
   .zhupi .row { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: flex-end }
   .zhupi .fld { display: flex; flex-direction: column }
   .zhupi .fld input, .zhupi .fld select { min-width: 0 }
   .zhupi .btn { white-space: nowrap }
-  .zhupi .fld .btn { align-self: flex-start }
   .zhupi .btn-row { display: flex; gap: 8px; align-self: flex-end }
-  /* 纸面小节：楷体题签 + 虚线分隔 + 内联控件行（跨宿主指令单 / 文档 status） */
-  .zhupi .zh-sec { border-top: 1px dashed #CFC9B8; margin-top: 18px; padding-top: 14px }
+  /* 纸内小节：楷体题签 + 虚线分隔 + 内联控件行 */
+  .zhupi .zh-sec { border-top: 1px dashed var(--line); margin-top: 16px; padding-top: 12px }
   .zhupi .zh-cap { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 0 0 10px }
-  .zhupi .zh-cap b { font-family: var(--kai); font-size: 15px; color: #8C2B15; letter-spacing: .1em; font-weight: normal }
-  .zhupi .zh-cap span { color: #5A6272; font-size: 11.5px }
+  .zhupi .zh-cap b { font-family: var(--kai); font-size: 15px; color: var(--verm); letter-spacing: .1em; font-weight: normal }
+  .zhupi .zh-cap span { color: var(--dim); font-size: 11.5px }
+  .zhupi .zh-cap .when { color: var(--teal); font-size: 11.5px }
   .zhupi .zh-inline { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center }
-  .zhupi .zh-inline .dim { color: #5A6272; font-size: 11.5px }
-  .zhupi a { color: #8C2B15 }
-  .zhupi .note2 { color: #5A6272; font-size: 11.5px; margin: 14px 0 0 }
-  .zhupi pre { font-family: var(--mono); font-size: 11.5px; white-space: pre-wrap; background: #F2EFE7; border: 1px solid #D8D3C4; border-radius: 3px; padding: 10px 12px; color: #4A4135; max-height: 260px; overflow: auto }
+  .zhupi .zh-inline .dim { color: var(--dim); font-size: 11.5px }
+  .zhupi a { color: var(--teal) }
+  .zhupi .note2 { color: var(--dim); font-size: 11.5px; margin: 12px 0 0 }
+  /* 待决事项清单 */
+  .zhupi .todo { margin: 0; padding-left: 18px; font-size: 12.5px }
+  .zhupi .todo li { margin: 4px 0 }
+  .zhupi .todo b { color: var(--amber) }
+  .zhupi .allclear { color: var(--teal); font-size: 12.5px; margin: 0 }
 
   .loading { color: var(--dim); padding: 30px 22px }
 
@@ -316,44 +318,67 @@ function render() {
     const taskIds = Object.keys(tasks)
     const roots = SNAP.roots || []
     const opts = roots.map((r) => `<option value="${esc(r.instanceId)}">${esc(r.instanceId)}　${esc(r.label || '')}［${esc(r.status)}］</option>`).join('')
+    const pendingTasks = taskIds.filter((id) => tasks[id].state === '待确认')
+    const pendingApprovals = (SNAP.pendingApprovals || []).length
+    const pendingOrders = (SNAP.governorOrders?.pending || []).length
+    const pendingReviews = (SNAP.reviewQueue || {}).entries || 0
+    const todos = [
+      pendingTasks.length ? `<li>待确认任务 <b>${pendingTasks.length}</b>：${pendingTasks.map((id) => `<a href="#" onclick="fillTask('${esc(id)}');return false">${esc(id)}</a>`).join('、')}（点击填入下方任务号）</li>` : '',
+      pendingApprovals ? `<li>审批挂单 <b>${pendingApprovals}</b> 件待批准/拒绝（团队总览「审批挂单」区）</li>` : '',
+      pendingOrders ? `<li>指令单 <b>${pendingOrders}</b> 单待 governor 领单执行（下方「指令单状态」）</li>` : '',
+      pendingReviews ? `<li>评审队列 <b>${pendingReviews}</b> 条待升级（下方「知识条目升级」）</li>` : '',
+    ].filter(Boolean)
+    const decision = todos.length ? `<ul class="todo">${todos.join('')}</ul>` : `<p class="allclear">当前无待决事项——下方操作台按需使用，本页无需处理。</p>`
     const zhupi = `<div class="zhupi">
-      <h1>朱批 <em>·</em> 跨实例统一治理</h1>
-      <p class="zh-note">confirm 只能由主人发起——以谁的名义落定，台账就记谁；四不变量由 task-ledger 强制，本台不旁路。批量按逐个调用，各自留痕，部分失败逐条报告。</p>
-      <div class="row">
-        <div class="fld"><label>操作者（必填，平台不代填「主人」）</label><input id="g-by" placeholder="主人" size="22"></div>
-        <div class="fld"><label>实例（选择后自动填 root）</label><select id="g-inst" onchange="pickRoot()"><option value="">— 选择实例 —</option>${opts}</select></div>
-      </div>
-      <div class="row">
-        <div class="fld"><label>任务号（逗号或空格分隔 = 批量）</label><input id="g-task" placeholder="OPSP-P0, OPSP-P1" size="34"></div>
-        <div class="fld"><label>台账根</label><input id="g-root" value="${esc(roots[0] ? roots[0].taskRoot : '')}" placeholder="选择实例后自动填入，或粘贴台账根路径" size="34"></div>
-        <div class="btn-row">
-          <button class="btn verm" onclick="govern('confirm')">confirm 落定</button>
-          <button class="btn" onclick="govern('reject')">reject 退回</button>
+      <h1>朱批 <em>·</em> 治理操作台（跨实例统一治理）</h1>
+      <p class="zh-note">这里是主人的决定动作台：有事待决时在此落定。confirm 以谁的名义执行、台账就记谁——四不变量由 task-ledger 强制，平台不旁路任何机制。</p>
+      <div class="zh-cap"><b>待决事项</b><span>有事项才需要动下方操作台；无事项时本页无需处理</span></div>
+      ${decision}
+      <div class="zh-sec">
+        <div class="zh-cap"><b>任务落定 / 退回</b><span class="when">何时用：台账出现「待确认」任务，需要主人拍板（本地台账，平台直调 task-ledger）</span></div>
+        <div class="row">
+          <div class="fld"><label>操作者（必填，平台不代填「主人」）</label><input id="g-by" placeholder="主人" size="20"></div>
+          <div class="fld"><label>实例（选择后自动填 root）</label><select id="g-inst" onchange="pickRoot()"><option value="">— 选择实例 —</option>${opts}</select></div>
         </div>
+        <div class="row">
+          <div class="fld"><label>任务号（逗号或空格分隔 = 批量）</label><input id="g-task" placeholder="OPSP-P0, OPSP-P1" size="30"></div>
+          <div class="fld"><label>台账根</label><input id="g-root" value="${esc(roots[0] ? roots[0].taskRoot : '')}" placeholder="选择实例后自动填入" size="30"></div>
+          <div class="btn-row">
+            <button class="btn verm" onclick="govern('confirm')">confirm 落定</button>
+            <button class="btn" onclick="govern('reject')">reject 退回</button>
+          </div>
+        </div>
+        <p class="note2">待确认任务（点击填入）：${pendingTasks.map((id) => `<a href="#" onclick="fillTask('${esc(id)}');return false">${esc(id)}</a>`).join('　') || '（无）'}　·　地址簿来源：${esc(SNAP.addressBookSource || '（未配置 data-roots.yml）')}</p>
       </div>
       <div class="zh-sec">
-        <div class="zh-cap"><b>跨宿主指令单</b><span>governor 领单本地执行 · 御符 token + 签名密钥 · 单号幂等 · 台账根须为【实例宿主视角】路径</span></div>
+        <div class="zh-cap"><b>跨宿主指令单</b><span class="when">何时用：动作需在【实例宿主本地】执行（governor 领单：御符 token + 签名密钥，单号幂等）</span></div>
         <div class="zh-inline">
-          <span class="dim">沿用上方任务号 / 台账根 / 操作者，逐任务发单：</span>
+          <span class="dim">任务：</span>
           <button class="btn" onclick="gDispatch('confirm')">📨 发单 confirm</button>
           <button class="btn" onclick="gDispatch('reject')">📨 发单 reject</button>
+          <span class="dim">沿用上方任务号 / 台账根（须为实例宿主视角路径）/ 操作者</span>
         </div>
-        <div class="zh-cap" style="margin-top:14px"><b>跨宿主文档 status</b><span>路径须在 governor --allow-root 白名单内</span></div>
+        <div class="zh-cap" style="margin-top:12px"><b>跨宿主文档 status</b><span class="when">何时用：改宿主侧文档的 frontmatter status（路径须在 governor --allow-root 白名单内）</span></div>
         <div class="zh-inline">
           <input id="g-doc-file" placeholder="E:/path/to/docs/xxx.md（宿主视角路径）" size="42">
-          <input id="g-doc-from" placeholder="现 status（可空）" size="14">
+          <input id="g-doc-from" placeholder="现 status（可空）" size="13">
           <span class="dim">→</span>
-          <input id="g-doc-to" placeholder="目标 status" size="12">
+          <input id="g-doc-to" placeholder="目标 status" size="11">
           <button class="btn" onclick="gDispatchDoc()">📨 发单改 status</button>
         </div>
       </div>
-      <p class="note2">地址簿来源：${esc(SNAP.addressBookSource || '（未配置 data-roots.yml）')}<br>待处理任务（点击填入）：${taskIds.map((id) => `<a href="#" onclick="fillTask('${esc(id)}');return false" class="${tasks[id].state === '已落定' ? 'dim' : ''}">${esc(id)}<span class="dim">（${esc(tasks[id].state)}）</span></a>`).join('　') || '（暂无任务事件）'}</p>
+      <div class="zh-sec">
+        <div class="zh-cap"><b>知识条目升级</b><span class="when">何时用：评审队列出现「待审核」条目（当前 ${pendingReviews} 条；待审核 → 已确认）</span></div>
+        <div class="zh-inline">
+          <input id="k-entry" placeholder="条目名（五类目录自动解析）" size="36">
+          <button class="btn" onclick="kPromote()">升级为已确认</button>
+        </div>
+      </div>
     </div>`
     v.innerHTML = zhupi +
       blk('指令单状态（governor 领单执行 → 回执留痕；单号幂等，重复领单不重复执行）', `签名密钥：${(SNAP.governorOrders || {}).signKeyConfigured ? '<span class="teal">已配置</span>' : '<span class="amber">未配置（平台将拒绝发单）</span>'}`,
         tw('<th>单号</th><th>实例</th><th>动作</th><th>摘要</th><th>状态</th><th>发单</th>',
           [...(SNAP.governorOrders?.pending || []), ...(SNAP.governorOrders?.done || [])].slice(-25).reverse().map((o) => `<tr><td class="mono dim">${esc(o.id)}</td><td class="mono">${esc(o.instanceId)}</td><td>${esc(o.action)}</td><td>${esc(o.summary)}</td><td class="${o.severity === 'critical' ? 'crit' : o.state === '已完成' ? 'teal' : o.state === '待执行' ? 'amber' : 'amber'}">${esc(o.state)}</td><td class="dim mono">${esc(o.by)}<br>${esc(String(o.createdAt).slice(5, 16))}</td></tr>`).join(''), 6, '无指令单')) +
-      blk('知识条目升级（待审核 → 已确认）', '操作者沿用上方「操作者」', `<div class="tw"><p><input id="k-entry" placeholder="omp-extension-contract-pitfalls" size="36"> <button class="btn" onclick="kPromote()">升级为已确认</button></p></div>`) +
       blk('治理结果', '', `<pre id="g-out">${esc(window._govResult || '')}</pre>`)
   } else if (VIEW === 'events') {
     const items = (SNAP.events || []).slice(-60).reverse()

@@ -92,6 +92,16 @@
   .zhupi .row { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: flex-end }
   .zhupi .fld { display: flex; flex-direction: column }
   .zhupi .fld input, .zhupi .fld select { min-width: 0 }
+  .zhupi .btn { white-space: nowrap }
+  .zhupi .fld .btn { align-self: flex-start }
+  .zhupi .btn-row { display: flex; gap: 8px; align-self: flex-end }
+  /* 纸面小节：楷体题签 + 虚线分隔 + 内联控件行（跨宿主指令单 / 文档 status） */
+  .zhupi .zh-sec { border-top: 1px dashed #CFC9B8; margin-top: 18px; padding-top: 14px }
+  .zhupi .zh-cap { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 0 0 10px }
+  .zhupi .zh-cap b { font-family: var(--kai); font-size: 15px; color: #8C2B15; letter-spacing: .1em; font-weight: normal }
+  .zhupi .zh-cap span { color: #5A6272; font-size: 11.5px }
+  .zhupi .zh-inline { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center }
+  .zhupi .zh-inline .dim { color: #5A6272; font-size: 11.5px }
   .zhupi a { color: #8C2B15 }
   .zhupi .note2 { color: #5A6272; font-size: 11.5px; margin: 14px 0 0 }
   .zhupi pre { font-family: var(--mono); font-size: 11.5px; white-space: pre-wrap; background: #F2EFE7; border: 1px solid #D8D3C4; border-radius: 3px; padding: 10px 12px; color: #4A4135; max-height: 260px; overflow: auto }
@@ -316,21 +326,24 @@ function render() {
       <div class="row">
         <div class="fld"><label>任务号（逗号或空格分隔 = 批量）</label><input id="g-task" placeholder="OPSP-P0, OPSP-P1" size="34"></div>
         <div class="fld"><label>台账根</label><input id="g-root" value="${esc(roots[0] ? roots[0].taskRoot : '')}" placeholder="选择实例后自动填入，或粘贴台账根路径" size="34"></div>
-        <button class="btn verm" onclick="govern('confirm')">confirm 落定</button>
-        <button class="btn" onclick="govern('reject')">reject 退回</button>
+        <div class="btn-row">
+          <button class="btn verm" onclick="govern('confirm')">confirm 落定</button>
+          <button class="btn" onclick="govern('reject')">reject 退回</button>
+        </div>
       </div>
-      <div class="row">
-        <div class="fld"><label>跨宿主发单（实例宿主需运行 governor：御符 token + 签名密钥；root 须为【实例宿主视角】路径）</label>
-          <span class="dim">上方任务号/台账根/操作者沿用，逐任务发单：</span>
+      <div class="zh-sec">
+        <div class="zh-cap"><b>跨宿主指令单</b><span>governor 领单本地执行 · 御符 token + 签名密钥 · 单号幂等 · 台账根须为【实例宿主视角】路径</span></div>
+        <div class="zh-inline">
+          <span class="dim">沿用上方任务号 / 台账根 / 操作者，逐任务发单：</span>
           <button class="btn" onclick="gDispatch('confirm')">📨 发单 confirm</button>
           <button class="btn" onclick="gDispatch('reject')">📨 发单 reject</button>
         </div>
-      </div>
-      <div class="row">
-        <div class="fld"><label>跨宿主文档 status（路径须在 governor --allow-root 白名单内）</label>
-          <input id="g-doc-file" placeholder="E:/path/to/docs/xxx.md（宿主视角路径）" size="40">
+        <div class="zh-cap" style="margin-top:14px"><b>跨宿主文档 status</b><span>路径须在 governor --allow-root 白名单内</span></div>
+        <div class="zh-inline">
+          <input id="g-doc-file" placeholder="E:/path/to/docs/xxx.md（宿主视角路径）" size="42">
           <input id="g-doc-from" placeholder="现 status（可空）" size="14">
-          <input id="g-doc-to" placeholder="目标 status" size="14">
+          <span class="dim">→</span>
+          <input id="g-doc-to" placeholder="目标 status" size="12">
           <button class="btn" onclick="gDispatchDoc()">📨 发单改 status</button>
         </div>
       </div>

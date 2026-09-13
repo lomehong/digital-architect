@@ -148,7 +148,7 @@ node observatory/seal.mjs --verify
 | 身份自验证据 | `contracts/validate.mjs`（域约定） | `platform.identity.verified` 必带 `identityId`(非空) / `verified`(boolean) / `via`；`verified=false` 必带 `reason` |
 | 审批代办契约 v1 | `contracts/approval-request-v1.md` | 文件请求/应答协议（pending → decisions）+ 事件对 |
 | 渲染烟测 | `contracts/render-smoke.mjs` | node:vm + 最小 DOM stub 真实执行 `render()`：8 视图关键内容 + 无 `undefined`/`NaN` + 空态降级（无需浏览器），`node contracts/render-smoke.mjs` |
-| 实例侧真实工具 | `heartbeat.mjs`（心跳+身份自验）· `require-approval.mjs`（审批挂单，exit code 门闩） | 生产工具，非样例；**协作消息实例侧转写尚未实施**（远端宿主场景，随多宿主/云迁移阶段落地；平台本机真实摄取走 `yuyi-ingest.mjs`） |
+| 实例侧真实工具 | `heartbeat.mjs`（心跳+身份自验）· `require-approval.mjs`（审批挂单，exit code 门闩）· `yuyi-transcribe.mjs`（协作消息转写） | 生产工具，非样例；协作转写已实测（omp 容器 entrypoint 内建 15s 循环；dsh/远端宿主可独立运行，支持文件约定或 `--http` 认证上报） |
 | 隔离夹具 | `test-fixtures/fake-ledger/` | 治理合法写路径的测试目标（不落盘），保证测试无生产副作用 |
 
 ## 实例接入
@@ -243,10 +243,11 @@ observatory/
 ├── seal.mjs                   审计归档封印与校验（哈希链）
 ├── heartbeat.mjs              通用实例心跳工具（+ 可选身份自验上报）
 ├── require-approval.mjs        审批挂单实例侧工具（契约 v1，exit code 门闩，2026-09-12 由 demo 转正）
+├── yuyi-transcribe.mjs         协作消息实例侧转写（~/.yuyi → collab.* 事件；检查点幂等；正文永不入库）
 ├── alert-rules.yml            告警规则 v1（5 条，支持抑制窗口）
 ├── data-roots.yml             治理地址簿（实例 → 台账根）
 ├── public/index.html          看板单页（原生 JS，无构建，8 视图）
-├── contracts/                 事件契约校验器 + 渲染烟测 + 镜像/governor e2e + 审批代办契约
+├── contracts/                 事件契约校验器 + 渲染烟测 + 镜像/转写/governor e2e + 审批代办契约
 ├── test-fixtures/fake-ledger/ 隔离台账夹具（治理测试专用，不落盘）
 obs/                           运行时数据根（gitignore）
 ├── server.pid                 运行中实例 PID（数据根归属，gitignore）
@@ -263,7 +264,7 @@ obs/                           运行时数据根（gitignore）
 - **一期 ✅ 完成**：契约 v1 + 校验器 + 实例注册/心跳 + 看板 + omp 实例接入 + 任务治理 confirm + 双实例冒烟
 - **二期 ✅ 完成**：运行时层（agent.db 只读摄取）· HTTP 上报端点 · 告警规则 + 抑制 + 历史 · 健康端点 · 知识视图 + 事件实时流 · **审批代办端到端** · **御驿消息结构化**（§7.2.1，B1 已解除）
 - **三期 ✅ 完成**：**不可变审计归档**（哈希链封印 + 篡改检测）· **御符强验证**（重界定为实例自验 + 证据存档）· **跨实例统一治理**（地址簿 + 选择器 + 批量）· **治理写操作防线** · **看板渲染烟测**
-- **剩余（非阻断）**：跨主机治理的**远端执行面**（治理指令下发到实例侧 agent 执行；上报/认证通道已就绪）
+- **剩余（非阻断）**：~~跨主机治理的远端执行面~~（✅ C3 governor 已实施）；~~协作消息实例侧转写~~（✅ `yuyi-transcribe.mjs` 已实施，omp 容器 entrypoint 内建）
 - **已实现（2026-09-12）**：受保护模式——上报者御符 token 验证（verifiedAs 溯源注记）+ 管理员令牌门 + 非回环强制启用
 - **演进（Model B 平台独立部署）**：方案见 `docs/designs/2026-09-12-平台独立部署演进-技术方案.md`，实施状态见下方 C1–C4 条目；在本平台实际迁往独立部署前，「平台随大脑仓部署」（仓在哪平台在哪）仍是显式前提
 - **已评估不实施**：`omp stats` CLI 集成——它读同一 `agent.db`，直接只读摄取更同源、无 CLI/输出格式耦合（成本列 `client_usage.cost_usd` 与 `usage_history` 当前为空，待数据积累再做成本/趋势视图）

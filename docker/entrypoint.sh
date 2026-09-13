@@ -98,6 +98,23 @@ if [ -d "$OBS_DIR" ]; then
     done
   ) &
   echo "[supervisor] observatory heartbeat 已启动（$INSTANCE_ID → $OBS_DIR）"
+  # ── 协作消息实例侧转写（Model B：~/.yuyi 协作事实 → collab.* 事件，契约 §7.2.1）──
+  # Yuyi 未接入（无 agent.json）或工具缺失 → 显式停用（不阻断，不伪造）；实例只转写不判定身份，正文永不入库。
+  if [ -f /home/pi/.yuyi/agent.json ] && [ -f /opt/architect/observatory/yuyi-transcribe.mjs ]; then
+    (
+      while true; do
+        # 错误进容器日志（docker logs 可见），不静默吞掉；单轮失败不终止循环
+        node /opt/architect/observatory/yuyi-transcribe.mjs --once \
+          --instance "$INSTANCE_ID" --host-type omp --system ops-pi \
+          --obs "$OBS_DIR" --yuyi /home/pi/.yuyi \
+          --state "$OBS_DIR/.yuyi-transcribe-$INSTANCE_ID.json" || true
+        sleep 15
+      done
+    ) &
+    echo "[supervisor] observatory yuyi-transcribe 已启动（$INSTANCE_ID：/home/pi/.yuyi → $OBS_DIR）"
+  else
+    echo "[supervisor] Note: yuyi-transcribe 未启用（Yuyi 未接入或观测工具未挂载）——协作事件转写显式停用"
+  fi
 fi
 
 echo "[supervisor] Starting: gosu pi $*"

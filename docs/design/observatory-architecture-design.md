@@ -152,7 +152,7 @@ severity: `info | warning | critical`。**校验器**：`observatory/contracts/v
 **契约约束（`contracts/validate.mjs` 与 `POST /api/events` 摄入同源强制）**：`collab.message.*` 必带 `direction`(inbound|outbound)；`peerRole` 限枚举；`peerOwner` 在位而 `peerAgentId` 缺席 → FAIL（禁半可信身份）；`collab.gate-denied` 必带 `decision` 与 `reason`。
 
 **平台呈现**：「协作」视图——对端清单（御符 id / Owner / 角色 / 流向计数 / 身份来源标注）+ 闸门拒绝证据 + 最近消息事件。
-**真实数据源（2026-09-12 审计后如实标注）**：平台本机 = `yuyi-ingest.mjs`（只读摄取 `~/.yuyi`）；**实例侧消息转写尚未实施**（原 `collab-demo` 仅为契约样例，已随 2026-09-12 demo 清退删除）——远端宿主转写随多宿主/云迁移阶段实施（Model B backlog）。
+**真实数据源（2026-09-12 审计后实施收口）**：平台本机 = `yuyi-ingest.mjs`（只读摄取 `~/.yuyi`）；**实例侧转写 = `yuyi-transcribe.mjs`**（已实施：读 Hub 库 messages/delivered_index/message_events/would_deny_events + yuyi-agent/events.jsonl → `collab.*` 事件；检查点幂等；身份三元组只取 Hub 权威回填、正文永不入库；omp 容器 entrypoint 内建 15s 循环，远端宿主可独立运行或 `--http` 认证上报；验收 `contracts/yuyi-transcribe-e2e.mjs` 14 断言）。原 `collab-demo` 契约样例已随 2026-09-12 demo 清退删除。
 
 ### 7.3 平台服务（observatory/server.mjs，零 npm 依赖）
 

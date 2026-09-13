@@ -98,9 +98,12 @@ if [ -d "$OBS_DIR" ]; then
     done
   ) &
   echo "[supervisor] observatory heartbeat 已启动（$INSTANCE_ID → $OBS_DIR）"
-  # ── 协作消息实例侧转写（Model B：~/.yuyi 协作事实 → collab.* 事件，契约 §7.2.1）──
-  # Yuyi 未接入（无 agent.json）或工具缺失 → 显式停用（不阻断，不伪造）；实例只转写不判定身份，正文永不入库。
-  if [ -f /home/pi/.yuyi/agent.json ] && [ -f /opt/architect/observatory/yuyi-transcribe.mjs ]; then
+  # ── 协作消息实例侧转写（Model B：Hub 镜像协作事实 → collab.* 事件，契约 §7.2.1）──
+  # 拓扑事实（2026-09-13 实测）：Hub 在云（hub.qianji.io），hub/inbox.db 是 **Hub 同机侧守护进程**
+  # 同步的本地镜像。omp 容器是纯客户端，本地只有 agent.json、没有镜像——协作事实由 **Hub 镜像
+  # 同机侧**（平台宿主，data-roots.yml agentId 映射）转写。容器内仅当本地真有镜像（如容器内跑
+  # Hub）才启动循环，否则单条说明、不空转。
+  if [ -f /home/pi/.yuyi/hub/inbox.db ] && [ -f /opt/architect/observatory/yuyi-transcribe.mjs ]; then
     (
       while true; do
         # 错误进容器日志（docker logs 可见），不静默吞掉；单轮失败不终止循环
@@ -113,7 +116,7 @@ if [ -d "$OBS_DIR" ]; then
     ) &
     echo "[supervisor] observatory yuyi-transcribe 已启动（$INSTANCE_ID：/home/pi/.yuyi → $OBS_DIR）"
   else
-    echo "[supervisor] Note: yuyi-transcribe 未启用（Yuyi 未接入或观测工具未挂载）——协作事件转写显式停用"
+    echo "[supervisor] Note: yuyi-transcribe 循环未启动（本容器为 Hub 纯客户端，无本地收件箱镜像）——协作事实由 Hub 镜像同机侧（平台宿主）按 data-roots.yml agentId 映射转写"
   fi
 fi
 

@@ -152,7 +152,7 @@ severity: `info | warning | critical`。**校验器**：`observatory/contracts/v
 **契约约束（`contracts/validate.mjs` 与 `POST /api/events` 摄入同源强制）**：`collab.message.*` 必带 `direction`(inbound|outbound)；`peerRole` 限枚举；`peerOwner` 在位而 `peerAgentId` 缺席 → FAIL（禁半可信身份）；`collab.gate-denied` 必带 `decision` 与 `reason`。
 
 **平台呈现**：「协作」视图——对端清单（御符 id / Owner / 角色 / 流向计数 / 身份来源标注）+ 闸门拒绝证据 + 最近消息事件。
-**真实数据源（2026-09-12 审计后实施收口）**：平台本机 = `yuyi-ingest.mjs`（只读摄取 `~/.yuyi`）；**实例侧转写 = `yuyi-transcribe.mjs`**（已实施：读 Hub 库 messages/delivered_index/message_events/would_deny_events + yuyi-agent/events.jsonl → `collab.*` 事件；检查点幂等；身份三元组只取 Hub 权威回填、正文永不入库；omp 容器 entrypoint 内建 15s 循环，远端宿主可独立运行或 `--http` 认证上报；验收 `contracts/yuyi-transcribe-e2e.mjs` 14 断言）。原 `collab-demo` 契约样例已随 2026-09-12 demo 清退删除。
+**真实数据源（2026-09-12 审计、2026-09-13 拓扑实测后实施收口）**：平台本机 = `yuyi-ingest.mjs`（只读摄取 `~/.yuyi`）；**协作事件转写 = `yuyi-transcribe.mjs`**（已实施）——Hub 在云（hub.qianji.io），`hub/inbox.db` 是 Hub 同机侧守护进程同步的本地镜像，纯客户端（omp 容器）本地无镜像；故转写在**镜像同机侧**执行：平台内建循环（治理地址簿 `agentId` 映射逐实例归属，映射非空自动启用）+ 独立 CLI（`--self`/`--http`，供其它镜像同机场景）。纪律：身份三元组只取 Hub 权威回填、词表外 gate 动作跳过不编造、正文永不入库、检查点幂等。验收 `contracts/yuyi-transcribe-e2e.mjs` 16 断言 + 真实镜像实测。原 `collab-demo` 契约样例已随 2026-09-12 demo 清退删除。
 
 ### 7.3 平台服务（observatory/server.mjs，零 npm 依赖）
 

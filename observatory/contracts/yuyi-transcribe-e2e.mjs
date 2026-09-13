@@ -43,11 +43,15 @@ try {
     CREATE TABLE would_deny_events (id INTEGER, msg_id TEXT, sender_agent TEXT, sender_owner TEXT, target TEXT, action TEXT, mode TEXT, reason TEXT, rule_snapshot TEXT, classification TEXT, processed INTEGER, classified_by TEXT, classified_at INTEGER, ts INTEGER);`)
   db.prepare('insert into recipients values (?,?,?,?,?,?,?,?,?,?)').run('r-1', 'yf-0001a2b3', 'master-pc', 'yufu-owner', 'avatar-client', '{}', now, now, 'u1', 'lome')
   db.prepare('insert into recipients values (?,?,?,?,?,?,?,?,?,?)').run('r-2', 'yf-0009ff01', 'ops-node', 'ops-pi-01', 'worker-client', '{}', now, now, 'u1', 'lome')
-  // ① 回填身份入向 / ② 无回填入向
+  db.prepare('insert into recipients values (?,?,?,?,?,?,?,?,?,?)').run('r-self', 'yf-self01', 'oh-my-pi', 'omp-ops-pi-01', 'worker-client', '{}', now, now, 'u1', 'lome')
+  db.prepare('insert into recipients values (?,?,?,?,?,?,?,?,?,?)').run('r-other', 'yf-other-x', 'other-node', 'other-agent', 'mcp', '{}', now, now, 'u2', 'someone')
+  // ① 回填身份入向 / ② 无回填入向 / ⑩ 别人的收件（不归属本实例 → 不搬）
   db.prepare('insert into messages (seq,id,recipient_id,payload,byte_size,received_at,fetched_at) values (?,?,?,?,?,?,?)')
     .run(1, 'msg-1', 'r-self', JSON.stringify({ from: { device: 'master-pc', name: 'yufu-owner', agentId: 'yf-0001a2b3', ownerUsername: 'lome', role: 'avatar' }, to: { target: 'ops-pi-01' }, mode: 'notify', taskId: 'OPSP-P2', text: '正文不该进事件' }), 128, now - 60000, null)
   db.prepare('insert into messages (seq,id,recipient_id,payload,byte_size,received_at,fetched_at) values (?,?,?,?,?,?,?)')
     .run(2, 'msg-2', 'r-self', JSON.stringify({ from: { device: 'legacy-node', name: 'old-agent', sessionID: 's1' }, mode: 'notify', text: 'legacy hello' }), 64, now - 30000, null)
+  db.prepare('insert into messages (seq,id,recipient_id,payload,byte_size,received_at,fetched_at) values (?,?,?,?,?,?,?)')
+    .run(3, 'msg-other', 'r-other', JSON.stringify({ from: { device: 'x', name: 'x', agentId: 'yf-0001a2b3', ownerUsername: 'lome', role: 'avatar' }, mode: 'notify', text: '别人的信' }), 32, now - 20000, null)
   // ③ delivered_index：入向（recipient=self）/ 出向（sender=self）/ 无关行
   db.prepare('insert into delivered_index values (?,?,?,?,?)').run('msg-d1', 'yf-self01', 'yf-0001a2b3', 'OPSP-P2', now - 20000)
   db.prepare('insert into delivered_index values (?,?,?,?,?)').run('msg-d2', 'yf-0009ff01', 'yf-self01', 'OPSP-P3', now - 15000)
@@ -61,8 +65,7 @@ try {
   db.prepare('insert into message_events (seq,msg_id,event,from_device,to_device,mode,status,hop_count,detail,ts) values (?,?,?,?,?,?,?,?,?,?)')
     .run(1, 'msg-f1', 'deliver', 'master-pc', 'ops-node', 'mail', 'failed', 2, 'recipient offline', now - 3000)
   db.close()
-  // 自身份 + ⑤ 治理执行事件（terminated 是拒绝；released 不是）
-  writeFileSync(join(yuyi, 'agent.json'), JSON.stringify({ default: 'self', agents: { self: { agent_id: 'yf-self01', yufu_url: 'http://127.0.0.1:1' } }, hub: 'tcp://hub' }))
+  // ⑤ 治理执行事件（terminated 是拒绝；released 不是）。自身份首跑用 --self 显式指定（平台映射转写同路径）
   writeFileSync(join(yuyi, 'yuyi-agent', 'events.jsonl'), [
     JSON.stringify({ seq: 1, at: now - 8000, event: { kind: 'terminated', target: { agentId: 'yf-0009ff01', name: 'ops-pi-01' }, by: '主人', reason: '越权写路径' } }),
     JSON.stringify({ seq: 2, at: now - 7000, event: { kind: 'released', target: { agentId: 'yf-0009ff01', name: 'ops-pi-01' }, by: '主人', reason: '恢复' } }),
@@ -70,8 +73,8 @@ try {
 
   const obs = join(T, 'obs')
   const tool = join(OBS_TOOL, 'yuyi-transcribe.mjs')
-  const run = () => g([tool, '--instance', 'omp-ops-pi-01', '--host-type', 'omp', '--system', 'ops-pi', '--obs', obs, '--yuyi', yuyi, '--state', join(T, 'state.json'), '--once'])
-  run()
+  const run = (extra = []) => g([tool, '--instance', 'omp-ops-pi-01', '--host-type', 'omp', '--system', 'ops-pi', '--obs', obs, '--yuyi', yuyi, '--state', join(T, 'state.json'), '--once', ...extra])
+  run(['--self', 'yf-self01'])
   const eventsFile = () => { const d = join(obs, 'events', 'omp-ops-pi-01'); return readdirSync(d).map((f) => readFileSync(join(d, f), 'utf8').split(/\r?\n/).filter(Boolean).map((l) => JSON.parse(l))).flat() }
   const evs = eventsFile()
   const byType = (t) => evs.filter((e) => e.type === t)
@@ -85,6 +88,7 @@ try {
   const d2 = evs.find((e) => e.subject === 'msg-d2')
   ok(d2?.direction === 'outbound' && d2?.peerAgentId === 'yf-0009ff01' && d2?.peerOwner === 'lome', '③ 出向投递按自身份判方向并对端身份来自 Hub 目录')
   ok(!evs.some((e) => e.subject === 'msg-d3'), '无关投递不搬（Hub 全局库只取与自身相关行）')
+  ok(!evs.some((e) => e.subject === 'msg-other'), '⑩ 别人的收件不搬（recipients 归属过滤）')
   const denials = byType('collab.gate-denied')
   ok(denials.length === 2, `闸门拒绝 2 条（词表内 + events.jsonl terminated）：实际 ${denials.length}`)
   ok(denials.every((d) => d.decision !== 'magic-action') && !evs.some((e) => e.subject === 'msg-odd'), '④ 词表外 action 跳过不编造')
@@ -95,7 +99,8 @@ try {
   ok(!evs.some((e) => JSON.stringify(e).includes('正文不该进事件') || JSON.stringify(e).includes('legacy hello') || 'text' in e), '⑧ 隐私：正文 text 不进任何事件')
   ok(!evs.some((e) => 'peerOwner' in e && !('peerAgentId' in e)), '契约负规则：无「peerOwner 在位而 peerAgentId 缺席」')
 
-  // ⑦ 幂等
+  // ⑦ 幂等 + agent.json 自身份回退路径（同一身份 → 检查点去重为零）
+  writeFileSync(join(yuyi, 'agent.json'), JSON.stringify({ default: 'self', agents: { self: { agent_id: 'yf-self01', yufu_url: 'http://127.0.0.1:1' } }, hub: 'wss://hub' }))
   run()
   ok(eventsFile().length === evs.length, '⑦ 重复运行检查点去重（零重复事件）')
 

@@ -22,6 +22,8 @@ import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypt
 import { readYuyiFace } from './yuyi-ingest.mjs'
 import { beatInstance } from './instance-beat.mjs'
 import { ensureBrainMirror, syncBrainMirror, commitAndPushBrain, brainStatus } from './brain-mirror.mjs'
+import { createTranscriber } from './yuyi-transcribe.mjs'
+import { homedir } from 'node:os'
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url))
 // 总仓根（知识库/告警规则/缺省 tasks 与 agent.db）与数据根（instances/events/approvals/archive）
@@ -49,6 +51,7 @@ let REQUIRE_TOKEN = false
 let BRAIN_URL = ''
 let BRAIN_DIR = ''
 let BRAIN_SYNC_SEC = 300
+let YUYI_TRANSCRIBE_OFF = false
 {
   const argv = process.argv
   for (let i = 2; i < argv.length; i++) {
@@ -66,6 +69,7 @@ let BRAIN_SYNC_SEC = 300
     else if (argv[i] === '--brain') BRAIN_URL = argv[++i]
     else if (argv[i] === '--brain-dir') BRAIN_DIR = argv[++i]
     else if (argv[i] === '--brain-sync-sec') BRAIN_SYNC_SEC = Number(argv[++i])
+    else if (argv[i] === '--no-yuyi-transcribe') YUYI_TRANSCRIBE_OFF = true
   }
 }
 if (BRAIN_URL && !BRAIN_DIR) BRAIN_DIR = join(OBS, 'brain-mirror')
@@ -351,7 +355,7 @@ function snapshot() {
     status: instances[r.instanceId]?.status ?? 'unknown',
     systems: instances[r.instanceId]?.systems ?? [],
   }))
-  return { generatedAt: new Date().toISOString(), instances: Object.values(instances), events: events.slice(-500), tasks, reviewQueue: rq, alerts: critical.slice(-50), governance: governance.slice(-50), collab: summarizeCollab(events.filter((e) => e.domain === 'collab')), identity: summarizeIdentity(events, instances), yuyi: readYuyiFace(), knowledgeBase: loadKnowledgeBase(), roots, addressBookSource: DATA_ROOTS.source, brain: brainStatus(), governorOrders: govSnapshot(), lastError: state.lastError }
+  return { generatedAt: new Date().toISOString(), instances: Object.values(instances), events: events.slice(-500), tasks, reviewQueue: rq, alerts: critical.slice(-50), governance: governance.slice(-50), collab: summarizeCollab(events.filter((e) => e.domain === 'collab')), identity: summarizeIdentity(events, instances), yuyi: readYuyiFace(), knowledgeBase: loadKnowledgeBase(), roots, addressBookSource: DATA_ROOTS.source, brain: brainStatus(), governorOrders: govSnapshot(), yuyiTranscribe: { ...yuyiStatus }, lastError: state.lastError }
 }
 
 // ---- 治理操作（经 task-ledger CLI，不旁路四不变量）----
@@ -605,8 +609,11 @@ function healthSnapshot() {
       yuyi: (() => { try { const f = readYuyiFace(); return f.available ? 'ok' : 'disabled' } catch (e) { return `error: ${e.message}` } })(),
       // 大脑仓镜像（C2）：未启用=disabled；启用后按同步状态如实呈现
       brain: !BRAIN_URL ? 'disabled' : (() => { const st = brainStatus(); return st.lastError && !st.head ? `error: ${st.lastError}` : (st.lastOkAt ? 'ok' : 'pending') })(),
+      // 协作转写（Model B 多宿主数据面）：映射非空即启用，周期读 Hub 镜像
+      yuyiTranscribe: !yuyiStatus.enabled ? 'disabled' : (yuyiStatus.lastError ? `error: ${yuyiStatus.lastError}` : (yuyiStatus.lastRunAt ? 'ok' : 'pending')),
     },
     brain: brainStatus(),
+    yuyiTranscribe: { ...yuyiStatus },
     taskDirs: TASK_DIRS,
     agentDb: AGENT_DB,
     lastError: state.lastError,
@@ -841,6 +848,30 @@ const server = http.createServer(async (req, res) => {
   } catch (e) { sendJson(res, 500, { error: e.message }) }
 })
 
+// ---- Model B 多宿主数据面：Hub 镜像协作转写（内建循环，映射=治理地址簿 agentId 字段）----
+// Hub 在云（hub.qianji.io）；本机 ~/.yuyi/hub/inbox.db 是宿主 yuyi 守护进程同步的**本地镜像**——
+// 与平台同机，故平台内建循环逐映射实例转写（纯客户端如 omp 容器本地无镜像，不自行转写）。
+// 映射非空自动启用；--no-yuyi-transcribe 显式关闭；状态见 /api/health 与快照 yuyiTranscribe。
+const YUYI_MAPPED = DATA_ROOTS.list.filter((r) => r.agentId).map((r) => ({ instanceId: r.instanceId, agentId: r.agentId, hostType: r.hostType || 'omp', system: r.system || r.instanceId }))
+const yuyiStatus = { mapped: YUYI_MAPPED.length, enabled: false, lastRunAt: '', lastError: '', totalEmitted: 0 }
+const yuyiTranscribers = (!YUYI_TRANSCRIBE_OFF && YUYI_MAPPED.length > 0) ? YUYI_MAPPED.map((m) => createTranscriber({
+  instance: m.instanceId,
+  self: m.agentId,
+  yuyiDir: process.env.YUYI_STATE_DIR || join(homedir(), '.yuyi'),
+  hostType: m.hostType,
+  system: m.system,
+  stateFile: join(OBS, `.yuyi-transcribe-${m.instanceId}.json`),
+  sink: async (events) => { for (const e of events) appendEvent(e) },
+  log: (s) => console.log(`[yuyi-transcribe ${m.instanceId}] ${new Date().toISOString()} ${s}`),
+})) : []
+if (yuyiTranscribers.length > 0) yuyiStatus.enabled = true
+async function yuyiTick() {
+  for (const t of yuyiTranscribers) {
+    try { yuyiStatus.totalEmitted += await t.tick() } catch (e) { yuyiStatus.lastError = e.message }
+  }
+  yuyiStatus.lastRunAt = new Date().toISOString()
+}
+
 // ---- 平台自注册与心跳（平台自身也是一个可见实例：谁在看）----
 const SELF_INSTANCE_ID = 'observatory-platform'
 function writeSelfHeartbeat() {
@@ -904,10 +935,16 @@ function brainTick() {
 
 server.listen(PORT, HOST, () => {
   const mode = SECURED ? (REQUIRE_TOKEN || !isLoopbackHost(HOST) ? `受保护（上报=御符token 验证${AUTH_YUFU_URL ? ' @ ' + AUTH_YUFU_URL : '未配置!'}，管理=${ADMIN_TOKEN ? '令牌已设' : '未设'}）` : 'token 强制') : '本机信任（127.0.0.1，未鉴权）'
-  console.log(`[observatory] 看板 http://${HOST}:${PORT}  数据根 ${OBS}  认证模式：${mode}${BRAIN_URL ? `  大脑仓镜像 ${BRAIN_DIR}` : ''}`)
+  console.log(`[observatory] 看板 http://${HOST}:${PORT}  数据根 ${OBS}  认证模式：${mode}${BRAIN_URL ? `  大脑仓镜像 ${BRAIN_DIR}` : ''}${yuyiStatus.enabled ? `  协作转写 ${yuyiStatus.mapped} 实例` : ''}`)
   appendEvent({ domain: 'platform', type: 'platform.started', severity: 'info', subject: `observatory@${PORT}` })
   if (BRAIN_URL) {
     brainTick()
     setInterval(brainTick, Math.max(30, BRAIN_SYNC_SEC) * 1000)
+  }
+  if (yuyiStatus.enabled) {
+    yuyiTick()
+    setInterval(yuyiTick, 15_000)
+  } else if (!YUYI_TRANSCRIBE_OFF) {
+    console.log('[observatory] 协作转写未启用：治理地址簿无 agentId 映射（data-roots.yml 加 agentId 即自动启用）')
   }
 })

@@ -124,3 +124,18 @@
   used_by:
     - practice/omp-extension-contract-pitfalls.md
     - practice/review-baseline-discipline.md
+- id: src-omo-v070-selfcontained-installer
+  origin: oh-my-ops 仓 v0.7.0 自包含安装器（构建管线与安装器四脚本 + 探针报告 + 演练报告）
+  ref: github.com/lomehong/oh-my-ops（外部试点仓，main 分支；外部仓相对路径不入库）
+  type: 试点仓实现与真机演练
+  date: 2026-09-14
+  used_by:
+    - practice/self-contained-installer-pattern.md
+
+- id: src-pilot-drill-20260914
+  origin: 阶段 3 试点实证（dsh 侧评审会话截图分析 vs D-1 演练报告主人贴回实测输出反转）
+  ref: 外部试点仓 oh-my-ops 的 D-1 演练报告 S3 节（外部仓文件，本库不可回源，不入库路径）
+  type: 内部文档
+  date: 2026-09-14
+  used_by:
+    - practice/evidence-strength-vs-conclusion.md

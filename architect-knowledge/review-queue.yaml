@@ -1,4 +1,5 @@
 # review-queue.yaml · 待审核队列（与条目 frontmatter status: 待审核 一一对应）
 # 维护纪律：主人确认后移除对应行，并把条目 status 改「已确认」、更新 confirmed 日期。
 # 台账是索引，frontmatter 仍是唯一权威（防双权威漂移）。
-# 当前队列为空（2026-09-14：主人确认 self-contained-installer-pattern 与协同场景条目工程事实刷新，双双升「已确认」）。
+# 当前队列 1 条（2026-09-14：evidence-strength-vs-conclusion——单张截图误判教训，待主人复核）。
+- file: practice/evidence-strength-vs-conclusion.md

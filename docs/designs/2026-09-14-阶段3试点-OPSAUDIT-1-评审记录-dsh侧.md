@@ -68,6 +68,15 @@ T1–T5：采信台账 `owner-decision` 事件（by=主人，commit `34f4c73`）
 - 非阻断备注三条已随结论回信：N1 引用精度（设计称「台账 owner-decision」但 OMOINSTALL-1.yaml 无该事件，持久记录在需求包 §6——建议补事件或改引用）；N2 分支账目（实际 feature/OMOINSTALL-1-req 与申报 feature/OMOINSTALL-2-design 不符）；N3 natives 证据路径在构建期依赖树内非仓内文件（持久证据=探针报告 §H3 根因行，已足够）；
 - 试点增值：本评审对象为**交付面重塑型方案**（High-risk 命中），风险收敛靠 T1–T5 + 设计前探针硬门（H3/H4 双 ✅ 在设计前完成）——"探针先行、方案后置"的准入形态值得沉淀为实践条目。
 
+## 追加：OMOINSTALL-3 自包含安装器实现评审（dsh 侧，2026-09-14）
+
+实现分支 `feature/OMOINSTALL-3-impl`（6119a34..7367c8c，9 文件恰为申报清单：管线脚本/embed-pi-natives.mjs/bootstrap semver/install.sh v4 全量重写/release.yml/README/探针标注/docs）。结论：**通过**。
+
+- **管线亲验**：sha256 pin fail-fast（"禁止带病构建"）→ bun install → embed-pi-natives.mjs（复刻上游 embed-native.ts 产物形状：asset import `with {type:"file"}` + files[].filePath，对齐 loader 契约）→ 品牌 patch → bun compile → --version 验证步；
+- **安装器亲验**：bootstrap 双重 semver 门（源级跳过+终态 die，vlatest 回归闭环）；bun 锁 1.4.2 官方+npmmirror 回退；~/.omo 布局 + 启动器 HOME 重定向（唯一隔离机制）；OMO_LAUNCHER_V4 标记防误删 + 非本产品拒绝覆盖（双向防误伤）；--uninstall 保留 yuyi 凭据；
+- **亲复跑**：容器内 `npm test` exit 0（181 pass/1 skip bwrap/0 fail）、typecheck 0 错、三脚本 `bash -n` 过；冒烟 7/7 有实战证据（CN 镜像回退通道真实触发）；CI release.yml 三处改动（L2 门加 audit-view/构建岗/打包含 omp-single）语义正确；
+- 未兑现项登记完整：CI 实证随发布 tag、真实环境 D-1（A7，logstash-124）待主人。
+
 ## 收口：OPSAUDIT-3 落定与冲突路径立项（2026-09-14）
 
 - 容器采信 dsh 侧实现评审结论（台账 `review-received` 事件 by=dsh-architect，commit `317dec9`）；**主人已会话确认 OPSAUDIT-3 落定**（confirm by=主人），方案 status=已执行；

@@ -60,6 +60,9 @@ services:
       - ../packages:/opt/architect/packages:ro
       - ../dsh-architect:/opt/architect/dsh-architect:ro
       - ../omp-architect:/opt/architect/omp-architect:ro
+      # 任务面契约的 omp 实现（文件台账 CLI）——单文件精确挂载（2026-09-14 主人拍板 a；
+      # v3.2 排除 scripts/ 整目录，本行是唯一例外，避免把 brain scripts 整体暴露给容器）
+      - ../scripts/task-ledger.mjs:/opt/architect/scripts/task-ledger.mjs:ro
       # 观测工具面（ro）：yuyi-transcribe 等实例侧上报工具（entrypoint 按需启停）
       - ../observatory:/opt/architect/observatory:ro
       # ── Architect Observatory：实例上报通道（rw；观测平面数据根）──

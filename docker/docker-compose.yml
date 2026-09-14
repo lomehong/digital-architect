@@ -46,9 +46,9 @@ services:
       - YUYI_ALIAS=${YUYI_ALIAS:-omp-docker}
     volumes:
       # ── v3.2 白名单挂载（2026-09-11 主人否决整仓挂载，D11 同批）──
-      # workspace = 架构师当前服务的目标项目（参数化，随任务切换）：
-      #   TARGET_PROJECT=E:\path\to\target docker compose up -d
-      - ${TARGET_PROJECT:-../}:/workspace
+      # workspace = 架构师当前服务的目标项目——**必须显式设置，无默认回退**：
+      # 默认回退 ../ 会把大脑仓本体（含 .git 与 docker/.env 密钥）rw 挂为现场（2026-09-14 审计修正）
+      - ${TARGET_PROJECT:?未设置 TARGET_PROJECT——请在 docker/.env 指定架构师服务的目标项目}:/workspace
       # 大脑仓【不整仓挂载】：仅按职责白名单——
       #   规则面（ro）：skills / templates / adapters / packages(核心) / dsh-architect / omp-architect
       #   写入面（rw）：architect-knowledge（蒸馏落库，唯一写通道）；工作产出落目标项目 docs/（workspace 天然 rw）

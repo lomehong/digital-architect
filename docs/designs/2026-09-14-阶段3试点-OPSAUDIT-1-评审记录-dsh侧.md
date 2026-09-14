@@ -68,6 +68,21 @@ T1–T5：采信台账 `owner-decision` 事件（by=主人，commit `34f4c73`）
 - 非阻断备注三条已随结论回信：N1 引用精度（设计称「台账 owner-decision」但 OMOINSTALL-1.yaml 无该事件，持久记录在需求包 §6——建议补事件或改引用）；N2 分支账目（实际 feature/OMOINSTALL-1-req 与申报 feature/OMOINSTALL-2-design 不符）；N3 natives 证据路径在构建期依赖树内非仓内文件（持久证据=探针报告 §H3 根因行，已足够）；
 - 试点增值：本评审对象为**交付面重塑型方案**（High-risk 命中），风险收敛靠 T1–T5 + 设计前探针硬门（H3/H4 双 ✅ 在设计前完成）——"探针先行、方案后置"的准入形态值得沉淀为实践条目。
 
+## 追加：KB-R7-LEGACY 裁定（dsh 侧知识库治理，2026-09-14）
+
+容器架构师（omp 容器，KB=v3.2 白名单挂载快照）跑 `architect_lint` 发现 11 处存量 R7 错误（ref 指向挂载快照中不存在的文件），按治理边界移交 dsh 侧裁定。
+
+**裁定：11/11 全部为「快照上下文假阳性」，零真实断链。** 实证：18 条文件路径在完整大脑仓全部存在（含 `docs/design/observatory-architecture-design.md` 单数路径；2 个 KB 内部路径经 KB 根解析存在）、commit `fef1bc2`/`b20b4de` 与备份分支 `backup/pre-rewrite-20260911` 均在。
+
+**根因**：R7 的 ref 解析基准随上下文漂移——dsh 侧（完整仓）ref 可解析故 0 错；容器侧 KB 挂载为白名单子集（v3.2 有意排除 `docs/`、`scripts/`、`.github/`），凡指向 KB 外大脑仓文件的 ref 全部解析失败。是 **v3.2 白名单（主人拍板）× R7 全仓根相对解析**的结构性张力，非条目缺陷。
+
+**处置（组合）**：
+1. **已确认条目零改动**——ref 正确且完整仓可回源，改写为非路径描述属降级，不做；
+2. **判定备案**：容器侧 R7 基线 = 11 处已备案豁免；**新增条目仍须 R7 清零**；
+3. **根修立项（dsh 侧）**：lint 隔离上下文感知——architect-core `lintKnowledgeAt` 增隔离/快照选项（KB 外 ref 降级 warning+计数备案），omp-architect 侧传参配合；未落地前容器以备案口径运行。
+
+（容器按一级来源纪律先取证后移交、未擅改已确认条目——处置得当。）
+
 ## 追加：OMOINSTALL-3 自包含安装器实现评审（dsh 侧，2026-09-14）
 
 实现分支 `feature/OMOINSTALL-3-impl`（6119a34..7367c8c，9 文件恰为申报清单：管线脚本/embed-pi-natives.mjs/bootstrap semver/install.sh v4 全量重写/release.yml/README/探针标注/docs）。结论：**通过**。

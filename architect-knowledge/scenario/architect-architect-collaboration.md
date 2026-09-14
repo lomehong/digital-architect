@@ -35,8 +35,8 @@ owner: 主人
 
 ## 工程事实（2026-09-14 刷新；行为以提交与走查为准）
 
-- dsh 侧客户端 = `dsh-yuyi` 插件（协议 v2 Hub 客户端，18 个 `yuyi_*` 工具，任务记忆 + 协同活动面板）；omp 侧 = Yuyi 官方 omp 插件（10 工具，notify 可唤醒 + 请求-响应闭环 + 合并拉箱）；两端连**同一个 Hub** 即互相寻址；
+- dsh 侧客户端 = `dsh-yuyi` 插件（协议 v2 Hub 客户端，18 个 `yuyi_*` 工具，任务记忆 + 协同活动面板）；omp 侧 = Yuyi 官方 omp 扩展（17 工具：通讯 5 + 任务记忆 12，notify 可唤醒 + 请求-响应闭环 + 合并拉箱）；两端连**同一个 Hub** 即互相寻址；
 - **omp 容器已接入御驿**（yuyi-pi 扩展部署 + 御符 env 注入 + entrypoint 生成 `~/.yuyi/agent.json`；身份由御符 token 经 Hub 握手权威派生，不落环境变量）；
 - **Hub 已上云**（hub.qianji.io）；两实例御符身份已签发并自验——observatory 协作转写实测生效（mapped=2：omp-ops-pi-01 与 dsh-architect-01）；
-- **接线与试点方案已落定**（`docs/designs/2026-09-11-协同御驿化接线与试点-技术方案.md`，57/60 评审通过、主人验收；K1=A：dsh 架构师 = 独立 dsh profile，本会话直执）——**剩余工作**：dsh 架构师 preset 物化（dsh-architect 物化器已入库）、适配层「跨 Agent 协同」面、SKILL 协同步骤（三副本）、真实需求试点两轮；
+- **接线与试点方案已落定**（`docs/designs/2026-09-11-协同御驿化接线与试点-技术方案.md`，57/60 评审通过、主人验收；K1=A：dsh 架构师 = 独立 dsh profile，本会话直执）——dsh preset 物化、适配层「跨 Agent 协同」面、SKILL 协同步骤已于 2026-09-14 落地（75bba4f/f2ab9e9）；**剩余工作**：真实需求试点两轮；
 - 2026-09-10《架构师 Agent 团队的知识共享机制》联邦草案**已撤销**（peers.yaml / 索引联邦 / changelog 通知均由御驿既有能力承接，撤稿说明见原方案文首）；契约条目字段纪律（owner/consumers/verify）作为知识条目格式增强**另议**。

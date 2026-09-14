@@ -19,6 +19,9 @@
 
 ## 本仓库特有事实
 
-- `dsh-architect/` 与 `dsh-yuyi/` 是 **git submodule**，改动需进子仓提交并更新父仓指针；
-- 检查器工具（`architect_digest` / `architect_design` / `architect_review`）由 `.omp/tools/architect/` 发现加载；
-- 宿主适配细节：`adapters/oh-my-pi.md`（提问=ask、任务=todo/task、记忆=retain/recall+git 为权威）。
+- `dsh-architect/`、`dsh-yuyi/`、`omp-architect/` 是 **git submodule**，改动需进子仓提交并更新父仓指针；
+- **工具面边界（别认错件）**：
+  - `architect_*` 四检查工具 = **omp-architect 插件**（CustomToolFactory ×4，核心在 `packages/architect-core`；容器内经 `omp plugin link` 注册。本地宿主 omp 未配置时工具缺席，属预期，不属故障）；
+  - `yuyi_*` 十工具 = **Yuyi 官方 omp 扩展**（容器内 `/home/pi/.omp/agent/extensions/` 已部署，身份 `~/.yuyi/agent.json` 由 entrypoint 从 env 生成）；
+  - **`dsh-yuyi/` 是 dsh 宿主（DeepSeek Harness cordis 插件）的御驿客户端源码——与 omp 无关**。omp 会话工具面里没有 `yuyi_*` 时，正确动作是确认运行环境（容器=有扩展；本地=未挂扩展），**不得把 `dsh-yuyi/` 源码当作 yuyi 工具来读或试**；
+- 宿主适配细节：`adapters/oh-my-pi.md`（提问=ask、任务=todo/task、记忆=retain/recall+git 为权威、协同=yuyi omp 插件）。

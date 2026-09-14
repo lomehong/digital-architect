@@ -60,6 +60,14 @@ T1–T5：采信台账 `owner-decision` 事件（by=主人，commit `34f4c73`）
 - **亲复跑**（容器内，非采信自述）：`bun test` 单测 **15 pass/0 fail**；`npm run typecheck` **0 错**；回归抽查 `platform.test.ts` **8 pass**；
 - runtime 探针 `12-ops-audit.sh` 断言可抓信封破坏/字段丢失/报告头缺失三类回归；U2（交互冒烟人工）与 suite-map 补录已登记为未兑现项。
 
+## 追加：OMOINSTALL-2 自包含安装器技术方案评审（dsh 侧，2026-09-14）
+
+新需求线（真实环境 logstash-124 安装三连失败 → 主人拍板自包含路线）。方案 `docs/designs/omo-install-selfcontained-design.md`（184 行，feature/OMOINSTALL-1-req @ 0640ace）。结论：**通过（六维度 60/60，dsh 侧独立复跑一致）**。
+
+- 亲验回源：A.3 管线与探针报告 §H3 逐步吻合（npm pack 18.1.18 → 生成 embedded-addon.js 嵌 .node → bun compile = omp-single 471MB，扩展数据面全链一致）；A.2 与 §H4 吻合（HOME 重定向、真实 `~/.omp` 零写入）；E1/E5 代码行抽查属实（install.sh 找不到 omp 即死、bootstrap `latest` basename 透传）；
+- 非阻断备注三条已随结论回信：N1 引用精度（设计称「台账 owner-decision」但 OMOINSTALL-1.yaml 无该事件，持久记录在需求包 §6——建议补事件或改引用）；N2 分支账目（实际 feature/OMOINSTALL-1-req 与申报 feature/OMOINSTALL-2-design 不符）；N3 natives 证据路径在构建期依赖树内非仓内文件（持久证据=探针报告 §H3 根因行，已足够）；
+- 试点增值：本评审对象为**交付面重塑型方案**（High-risk 命中），风险收敛靠 T1–T5 + 设计前探针硬门（H3/H4 双 ✅ 在设计前完成）——"探针先行、方案后置"的准入形态值得沉淀为实践条目。
+
 ## 收口：OPSAUDIT-3 落定与冲突路径立项（2026-09-14）
 
 - 容器采信 dsh 侧实现评审结论（台账 `review-received` 事件 by=dsh-architect，commit `317dec9`）；**主人已会话确认 OPSAUDIT-3 落定**（confirm by=主人），方案 status=已执行；

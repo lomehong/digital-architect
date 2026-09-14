@@ -4,7 +4,7 @@ domain: dsh-ecosystem
 source:
   origin: oh-my-pi 实装源码（npm 分发 `@oh-my-pi/pi-coding-agent` v18.1.18）+ 本机探针实测
   ref: 仓库 github.com/can1357/oh-my-pi；包内相对路径 `packages/coding-agent/src/extensibility/extensions/{types,loader,wrapper,runner}.ts`、`src/tools/approval.ts`、`src/tools/essential-tools.ts`、`src/session/exit-diagnostics.ts`；实测记录见目标项目 `docs/reports/probes/v41-fix-verification-probe.ts`
-confirmed: 2026-09-12（主人 2026-09-12 确认升级）
+confirmed: 2026-09-12
 status: 已确认
 owner: 主人
 ---

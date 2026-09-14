@@ -4,7 +4,7 @@ domain: methodology
 source:
   origin: dsh-memory 条目 mem_1788978083156_yycfzp + digital-twin/docs/suite-charter.md §5
   ref: 渐进式披露实证 / 违规登记册
-confirmed: 2026-09-12（补案例六）
+confirmed: 2026-09-12
 status: 已确认
 owner: 主人
 ---

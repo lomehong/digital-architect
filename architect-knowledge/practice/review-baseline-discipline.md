@@ -4,7 +4,7 @@ domain: methodology
 source:
   origin: 架构师会话实证（OpsPi 方案评审，2026-09-12）
   ref: 目标项目 `docs/reports/ops-pi-design-review-2026-09-12.md` 勘误节；对照 `architect-knowledge/practice/knowledge-drift-cases.md` 案例一
-confirmed: 2026-09-12（主人 2026-09-12 确认升级）
+confirmed: 2026-09-12
 status: 已确认
 owner: 主人
 ---

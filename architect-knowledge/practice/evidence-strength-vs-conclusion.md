@@ -5,7 +5,7 @@ source:
   origin: 阶段 3 试点实证（dsh 侧评审会话截图分析 vs D-1 演练报告主人贴回实测输出）
   ref: 外部试点仓 oh-my-ops 的 D-1 演练报告（S3 原始输出：6 条含 ops_service blocked；外部仓文件，本库不可回源，以该报告为准）
 confirmed: 2026-09-14
-status: 待审核
+status: 已确认
 owner: 主人
 ---
 

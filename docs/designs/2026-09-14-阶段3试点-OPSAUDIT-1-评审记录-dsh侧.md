@@ -49,3 +49,22 @@ T1–T5：采信台账 `owner-decision` 事件（by=主人，commit `34f4c73`）
 - **跨宿主同核双跑**：dsh 侧 `architect-core checkDesign` 独立复跑 = 60/60、五问 5/5、占位符 0，与 omp 插件自检一致（同核异宿交叉验证，试点增值发现）；
 - 需求覆盖：B1–B9/D1–D7/T1–T5（owner-decision 34f4c73 + 781cef8）逐条落点，无私扩范围；
 - 非阻断备注已随结论回信：U2 人工冒烟回填台账、N2 前置 npm install、architecture-map 补录 oh-my-ops（收口后知识任务）。
+
+## 追加：OPSAUDIT-3 实现评审（dsh 侧，2026-09-14）
+
+实现分支 `feature/OPSAUDIT-3-impl`（82ad530..da25b08，8 文件恰为申报清单）。结论：**通过**——可报请主人确认落定。
+
+- **红线实测**：`hooks.ts` 区间 diff 为空；全 diff 无 `registerTool`/`systemPrompt` 触点；无危险命令注册；
+- **代码对齐**：注册块 = §A.1 六步链路；先读后写（成功路径 notify 后才自审计，本次输出不含本次条目）；fail-soft 双路（读取异常与参数非法均 notify error + 自审计 isError:true）；
+- **字段纪律**：`toAuditViews` 全字段 typeof 校验→缺失保持 undefined；`formatLine` 缺失呈 `-`、isError 以 ok/blocked 可辨（B3 零臆造）；
+- **亲复跑**（容器内，非采信自述）：`bun test` 单测 **15 pass/0 fail**；`npm run typecheck` **0 错**；回归抽查 `platform.test.ts` **8 pass**；
+- runtime 探针 `12-ops-audit.sh` 断言可抓信封破坏/字段丢失/报告头缺失三类回归；U2（交互冒烟人工）与 suite-map 补录已登记为未兑现项。
+
+## 追加：OPSAUDIT-2 技术方案评审（dsh 侧，2026-09-14）
+
+容器架构师在 `feature/OPSAUDIT-2-design @ 3edfd0a` 产出可执行技术方案 `docs/designs/ops-audit-command-design.md`（178 行），经御驿请求 dsh 侧独立窗口评审（8 项验收准则）。结论：**通过（六维度 60/60）**。
+
+- 亲验回源：信封形状探针 `v42-layer-audit-probe.ts:27-29`（`{type,customType,data}`）；三写入点 `hooks.ts:90-101`/`52-58`/`commands.ts:80,89` 均含 `data.ts`；平台面声明 `types/vendor-platform.d.ts:68-78,122-163`；
+- **跨宿主同核双跑**：dsh 侧 `architect-core checkDesign` 独立复跑 = 60/60、五问 5/5、占位符 0，与 omp 插件自检一致（同核异宿交叉验证，试点增值发现）；
+- 需求覆盖：B1–B9/D1–D7/T1–T5（owner-decision 34f4c73 + 781cef8）逐条落点，无私扩范围；
+- 非阻断备注已随结论回信：U2 人工冒烟回填台账、N2 前置 npm install、architecture-map 补录 oh-my-ops（收口后知识任务）。

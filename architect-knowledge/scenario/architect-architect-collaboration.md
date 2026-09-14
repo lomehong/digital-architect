@@ -5,7 +5,7 @@ source:
   origin: 主人指示（2026-09-11：不发明新基建，Agent 协同基建以御驿承接，撤联邦草案）+ Yuyi 仓 docs（《御驿-任务记忆层-设计》v0.2、《agent-org/御驿-Agent团队协作体系-设计》v1.0、《御驿-Agent协作最佳实践》、《企业Agent基础设施-顶层架构设计》v0.2）
   ref: 仓库 HuizeSecurity/yuyi（内网 git）docs/ 目录；登记见 source-manifest.yaml src-yuyi-docs
 confirmed: 2026-09-14
-status: 待审核
+status: 已确认
 owner: 主人
 ---
 

@@ -2,6 +2,7 @@
 
 | 条目 | 一句话定位 | 状态 |
 |---|---|---|
+| [self-contained-installer-pattern.md](self-contained-installer-pattern.md) | 自包含安装器模式：bun compile 单文件（原生件嵌入契约）+ HOME 重定向状态隔离 + 老 curl 兼容 + 打包清单断言 | 已确认 |
 | [dsh-twin-pending-confirms-not-rendered.md](dsh-twin-pending-confirms-not-rendered.md) | dsh-twin 活动视图漏渲染 pendingConfirms 通道（宿主侧 bug 观察） | 已确认 |
 | [dsh-task-board-run-stuck.md](dsh-task-board-run-stuck.md) | run.status 状态机缺推进路径（套件侧 bug 观察 + scripts/task-board-cleanup.mjs 运维清理工具） | 已确认 |
 | [module-migration-reference-check.md](module-migration-reference-check.md) | 外壳化迁移断链与 detached HEAD 推送教训（kbcollect 案例） | 已确认 |

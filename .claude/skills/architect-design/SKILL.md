@@ -26,6 +26,8 @@ whenToUse: 需求准入（architect-prd-digest）通过后，主人要求「出�
 
 每层装载后在方案「证据覆盖」区记录：读了什么、确认了什么、与知识库是否冲突（冲突→走知识漂移流程 `practice/knowledge-drift-cases.md`）。
 
+**多架构师协同（按需装载）**：需求涉及多架构师评审委员会、边界事实对齐或跨实例协作时，读 `architect-knowledge/scenario/architect-architect-collaboration.md` 并按其映射执行——发现用 `yuyi_peers`、发起用 `yuyi_send`（expectReply + goal 先行）、过程留痕走御驿任务记忆层（artifact 只记 git 路径/PR 引用）；无需协同则跳过，无需声明。
+
 ### 第二步：架构链路分析
 
 

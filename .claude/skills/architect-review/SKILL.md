@@ -53,6 +53,10 @@ whenToUse: 有一份技术方案（architect-design 产出或其他来源）需�
 
 方案中的 Human Decision 项是否都已有主人决策记录？未决的 → 驳回并指出待决清单。
 
+### 多架构师评审委员会（多实例参评时，按需）
+
+评审由多个架构师实例参评时，装载 `architect-knowledge/scenario/architect-architect-collaboration.md` 并执行评审委员会纪律：各参评实例**独立窗口出意见、互不通气**（防从众）→ 主评汇总分级 → 逐条对齐（同意/不同意+理由，异议 dissent 留痕）→ 修订回报 → 主评复核。过程经御驿任务链留痕（`yuyi_send` expectReply + `yuyi_task_goal` 验收清单先行 + `yuyi_task_artifact` 只记产物引用）；单实例评审跳过本节。多实例评审通过仍 ≠ 完成，落定以主人确认为准。
+
 ## 实现评审模式（编码交付后）
 
 对象：**已落定方案 + 实现 diff**（architect-implement 产出）。检查四项：

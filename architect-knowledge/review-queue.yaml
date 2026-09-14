@@ -1,4 +1,5 @@
 # review-queue.yaml · 待审核队列（与条目 frontmatter status: 待审核 一一对应）
 # 维护纪律：主人确认后移除对应行，并把条目 status 改「已确认」、更新 confirmed 日期。
 # 台账是索引，frontmatter 仍是唯一权威（防双权威漂移）。
-# 当前队列为空（2026-09-12：OpsPi 评审实证 2 条经主人确认升级为「已确认」）。
+# 当前队列 1 条（2026-09-14：协同场景条目工程事实刷新——omp 已接线、dsh 架构师身份已自验、K1=A 已落定，待主人复核）。
+- file: scenario/architect-architect-collaboration.md

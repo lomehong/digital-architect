@@ -74,3 +74,19 @@ services:
     restart: "unless-stopped"
     stdin_open: true
     tty: true
+    networks:
+      - omp-net
+
+# ── 网段冲突背景（2026-09-14 主人）──
+# 公司办公网使用 172.17.x.x ~ 172.31.x.x，Docker 默认 bridge（172.17.0.0/16）
+# 与之路由冲突：职场无法 SSH 到虚拟机、虚拟机间通信异常；且 daemon.json 的 bip
+# 管不住 compose 自动建网——必须在此显式声明编排网段。
+# 配置标准：daemon 默认 bridge = 10.249.249.1/24（宿主 daemon.json）；本编排 = 10.249.247.0/24。
+networks:
+  omp-net:
+    name: omp-architect-net
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.249.247.0/24
+          gateway: 10.249.247.1

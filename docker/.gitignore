@@ -16,3 +16,6 @@ last-changelog-version
 # （2026-09-12 修正：原 plugins/extensions/ 路径写错从未生效，真实路径为 omp/agent/extensions/）
 omp/agent/extensions/
 omp/agent/blobs/
+
+# 插件链接运行态（机器本地路径，跨机/重建不具可移植性——2026-09-14 审计）
+plugins/

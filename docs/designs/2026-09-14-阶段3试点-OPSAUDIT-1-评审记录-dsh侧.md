@@ -60,6 +60,13 @@ T1–T5：采信台账 `owner-decision` 事件（by=主人，commit `34f4c73`）
 - **亲复跑**（容器内，非采信自述）：`bun test` 单测 **15 pass/0 fail**；`npm run typecheck` **0 错**；回归抽查 `platform.test.ts` **8 pass**；
 - runtime 探针 `12-ops-audit.sh` 断言可抓信封破坏/字段丢失/报告头缺失三类回归；U2（交互冒烟人工）与 suite-map 补录已登记为未兑现项。
 
+## 收口：OPSAUDIT-3 落定与冲突路径立项（2026-09-14）
+
+- 容器采信 dsh 侧实现评审结论（台账 `review-received` 事件 by=dsh-architect，commit `317dec9`）；**主人已会话确认 OPSAUDIT-3 落定**（confirm by=主人），方案 status=已执行；
+- **冲突路径已立项 `OPSAUDIT-4`**（分支 `feature/OPSAUDIT-4-drill`），范围草案 `docs/designs/ops-audit-conflict-drill-scope.md`：D-1 A4 被拒调用 `/ops-audit` 回看闭环（必做）；D-2 无人值守双模式拒绝 / D-3 令牌单次消费（实弹复核或降级引用探针 05 证据）——**待主人批范围后执行**。
+
+至此：需求包评审（OPSAUDIT-1）→ 技术方案评审（OPSAUDIT-2，dsh 侧同核双跑 60/60）→ 实现评审（OPSAUDIT-3，亲复跑全绿）三环全部闭环，双架构师经御驿协作的真实试点流程只余冲突路径一环。
+
 ## 追加：OPSAUDIT-2 技术方案评审（dsh 侧，2026-09-14）
 
 容器架构师在 `feature/OPSAUDIT-2-design @ 3edfd0a` 产出可执行技术方案 `docs/designs/ops-audit-command-design.md`（178 行），经御驿请求 dsh 侧独立窗口评审（8 项验收准则）。结论：**通过（六维度 60/60）**。

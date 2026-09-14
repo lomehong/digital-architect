@@ -7,6 +7,7 @@
 #                                                          #  root 的 agent 目录不同 → 工具面缺失）
 #    docker compose run --rm omp -p "一次性任务"            # 无头单命令（同样建议加 -u pi）
 #    切换现场：.env 改 TARGET_PROJECT=<目标项目> → up -d
+#    首次部署：cp .env.example .env 后填值（模板可签入 git；真实 .env 已被 gitignore）
 #    知识库校验兜底：node /opt/architect/dsh-architect/scripts/lint-knowledge.mjs /opt/architect/architect-knowledge
 #  插件：omp-architect 经 `omp plugin link /opt/architect/omp-architect` 注册（已持久化，
 #        工具面由此承载）；升级 = 改仓库 push，容器内即时生效，无需重装。

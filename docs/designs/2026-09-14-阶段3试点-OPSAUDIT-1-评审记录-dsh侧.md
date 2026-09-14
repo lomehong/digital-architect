@@ -40,3 +40,12 @@ T1–T5：采信台账 `owner-decision` 事件（by=主人，commit `34f4c73`）
 1. 容器主评汇总对齐（本文结论 + 其自检）→ 主人确认 OPSAUDIT-1 需求落定；
 2. 冲突路径演练一轮（构造同 key 知识冲突 → 回源核对 → 主人裁决）；
 3. 阶段 3 收口：两轮走查记录 + 本文件归档 `docs/designs/`。
+
+## 追加：OPSAUDIT-2 技术方案评审（dsh 侧，2026-09-14）
+
+容器架构师在 `feature/OPSAUDIT-2-design @ 3edfd0a` 产出可执行技术方案 `docs/designs/ops-audit-command-design.md`（178 行），经御驿请求 dsh 侧独立窗口评审（8 项验收准则）。结论：**通过（六维度 60/60）**。
+
+- 亲验回源：信封形状探针 `v42-layer-audit-probe.ts:27-29`（`{type,customType,data}`）；三写入点 `hooks.ts:90-101`/`52-58`/`commands.ts:80,89` 均含 `data.ts`；平台面声明 `types/vendor-platform.d.ts:68-78,122-163`；
+- **跨宿主同核双跑**：dsh 侧 `architect-core checkDesign` 独立复跑 = 60/60、五问 5/5、占位符 0，与 omp 插件自检一致（同核异宿交叉验证，试点增值发现）；
+- 需求覆盖：B1–B9/D1–D7/T1–T5（owner-decision 34f4c73 + 781cef8）逐条落点，无私扩范围；
+- 非阻断备注已随结论回信：U2 人工冒烟回填台账、N2 前置 npm install、architecture-map 补录 oh-my-ops（收口后知识任务）。

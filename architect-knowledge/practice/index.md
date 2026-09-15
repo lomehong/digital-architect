@@ -2,6 +2,7 @@
 
 | 条目 | 一句话定位 | 状态 |
 |---|---|---|
+| [node-modules-symlink-cross-host.md](node-modules-symlink-cross-host.md) | 跨宿主 node_modules 软链在容器内悬空（Windows 绝对路径 junction）：两类修复路径 + 判定口诀 | 已确认 |
 | [self-contained-installer-pattern.md](self-contained-installer-pattern.md) | 自包含安装器模式：bun compile 单文件（原生件嵌入契约）+ HOME 重定向状态隔离 + 老 curl 兼容 + 打包清单断言 | 已确认 |
 | [evidence-strength-vs-conclusion.md](evidence-strength-vs-conclusion.md) | 证据强度与结论强度失配教训：单张截图误判 D-1 断言（D-1 实测反转）；截图级证据只能登记疑点不能定性 | 已确认 |
 | [dsh-twin-pending-confirms-not-rendered.md](dsh-twin-pending-confirms-not-rendered.md) | dsh-twin 活动视图漏渲染 pendingConfirms 通道（宿主侧 bug 观察） | 已确认 |

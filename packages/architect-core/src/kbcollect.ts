@@ -151,16 +151,45 @@ export function makeRefExists(root: string, opts: { soft?: boolean } = {}) {
   }
 }
 
-/** 采集 + 校验一体（CLI 与两宿主工具的唯一入口）。快照上下文自动识别：knowledge/.snapshot 标记 → R4/R5/R7 宽松。 */
-export function lintKnowledgeAt(rootArg: string, cwd = process.cwd()): LintResultAt {
+/**
+ * 隔离上下文正向证据探测（KB-R7-LEGACY 裁定承接，评审 Gap-1 定稿）：
+ * 三条件同时满足才判隔离——①父目录无 .git；②KB 根五类目录齐（证实是真实 KB 快照而非残缺导出）；
+ * ③无仓根级 docs/。任一不满足 → 维持严格（hard）。无正向证据恒 hard（残余面收敛见方案 §A.3）。
+ */
+export function detectIsolatedKb(root: string): boolean {
+  const parent = dirname(root)
+  if (existsSync(join(parent, '.git'))) return false
+  for (const d of KNOWLEDGE_DIRS) if (!existsSync(join(root, d))) return false
+  if (existsSync(join(parent, 'docs'))) return false
+  return true
+}
+
+/** lintKnowledgeAt 选项：显式覆盖优先于自动探测；ref 与队列宽松在 core 内为独立开关（Gap-4）。 */
+export interface LintKnowledgeAtOptions {
+  /** 隔离上下文总开关：true=强制隔离（soft）；false=强制严格；undefined=自动探测（.snapshot 标记或正向证据） */
+  isolated?: boolean
+  /** R7 soft 独立覆盖（缺省跟随 isolated） */
+  refExistsSoft?: boolean
+  /** R4/R5 队列宽松独立覆盖（缺省跟随 isolated） */
+  queueLenient?: boolean
+}
+
+/** 采集 + 校验一体（CLI 与两宿主工具的唯一入口）。隔离上下文识别：.snapshot 标记或正向证据探测 → R4/R5/R7 宽松。 */
+export function lintKnowledgeAt(rootArg: string, cwd = process.cwd(), opts: LintKnowledgeAtOptions = {}): LintResultAt {
   const collected = collectKnowledgeSnapshot(rootArg, cwd)
-  const isSnapshot = existsSync(join(collected.root, '.snapshot'))
-  const result = lintKnowledge(collected.snapshot, { refExists: makeRefExists(collected.root, { soft: isSnapshot }), queueLenient: isSnapshot })
+  const detected = existsSync(join(collected.root, '.snapshot')) || detectIsolatedKb(collected.root)
+  const isolated = opts.isolated ?? detected
+  const result = lintKnowledge(collected.snapshot, {
+    refExists: makeRefExists(collected.root, { soft: opts.refExistsSoft ?? isolated }),
+    queueLenient: opts.queueLenient ?? isolated,
+  })
   for (const i of collected.issues) result.errors.push(i)
   result.pass = result.errors.length === 0
-  return { ...result, root: collected.root }
+  return { ...result, root: collected.root, isolated }
 }
 
 export interface LintResultAt extends LintResult {
   root: string
+  /** 是否按隔离上下文（快照/活仓挂载）宽松判定——报告侧据此输出备案计数。 */
+  isolated: boolean
 }

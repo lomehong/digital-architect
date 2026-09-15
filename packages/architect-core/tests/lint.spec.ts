@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { devicePathHits, lintKnowledge, relativePathCandidates, type KnowledgeSnapshot } from '../src/lint.ts'
+import { detectIsolatedKb, lintKnowledgeAt } from '../src/kbcollect.ts'
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync } from 'node:fs'
+import { join } from 'node:path'
+import { tmpdir } from 'node:os'
 
 /** 达标快照：1 条已确认 + 1 条待审核（队列与索引齐）。 */
 function goodSnapshot(): KnowledgeSnapshot {
@@ -177,5 +181,69 @@ describe('queueLenient（快照上下文）', () => {
     expect(r.pass).toBe(true)
     expect(r.errors).toEqual([])
     expect(r.warnings.filter(w => w.rule === 'R4' || w.rule === 'R5').length).toBe(2)
+  })
+})
+
+/** fs 夹具：合成「父目录 + KB 根」结构。opts 控制 .git / docs / KB 完整性。 */
+function kbFixture(opts: { git?: boolean; docs?: boolean; dirs?: string[] } = {}) {
+  const parent = mkdtempSync(join(tmpdir(), 'kbproof-'))
+  const kb = join(parent, 'architect-knowledge')
+  for (const d of opts.dirs ?? ['meta', 'principle', 'scenario', 'practice', 'reference']) mkdirSync(join(kb, d), { recursive: true })
+  // 一条已确认条目，ref 指向不存在的 KB 外路径（触发 R7 的探针样本）
+  const entry = ['---', 'title: T', 'domain: dsh-ecosystem', 'source:', '  origin: o', '  ref: docs/designs/nope.md', 'confirmed: 2026-09-14', 'status: 已确认', 'owner: 主人', '---', '', '# T'].join('\n')
+  writeFileSync(join(kb, 'principle', 't.md'), entry)
+  writeFileSync(join(kb, 'principle', 'index.md'), '# principle\n\n| 条目 | 定位 | 状态 |\n|---|---|---|\n| [t.md](t.md) | t | 已确认 |\n')
+  if (opts.git) mkdirSync(join(parent, '.git'))
+  if (opts.docs) mkdirSync(join(parent, 'docs'))
+  return { parent, kb }
+}
+
+describe('隔离上下文感知（detectIsolatedKb + lintKnowledgeAt）', () => {
+  it('A 隔离上下文（无 .git 父目录 ∧ 五类目录齐 ∧ 无 docs/）→ R7 降 warning，pass=true', () => {
+    const { kb } = kbFixture()
+    expect(detectIsolatedKb(kb)).toBe(true)
+    const r = lintKnowledgeAt(kb)
+    expect(r.isolated).toBe(true)
+    expect(r.pass).toBe(true)
+    expect(r.errors).toEqual([])
+    expect(r.warnings.some(w => w.rule === 'R7')).toBe(true)
+  })
+  it('B 真实仓（父目录有 .git）→ 恒 hard（负向轴：不误降级）', () => {
+    const { kb } = kbFixture({ git: true })
+    expect(detectIsolatedKb(kb)).toBe(false)
+    const r = lintKnowledgeAt(kb)
+    expect(r.isolated).toBe(false)
+    expect(r.pass).toBe(false)
+    expect(r.errors.some(e => e.rule === 'R7')).toBe(true)
+  })
+  it('C 既有 .snapshot 标记 → 隔离（既有机制不回归）', () => {
+    const { kb } = kbFixture({ git: true })
+    writeFileSync(join(kb, '.snapshot'), 'snapshot: true\n')
+    const r = lintKnowledgeAt(kb)
+    expect(r.isolated).toBe(true)
+    expect(r.pass).toBe(true)
+  })
+  it('D 负向轴：无 .git 但有 docs/ → 恒 hard', () => {
+    const { kb } = kbFixture({ docs: true })
+    expect(detectIsolatedKb(kb)).toBe(false)
+    expect(lintKnowledgeAt(kb).errors.some(e => e.rule === 'R7')).toBe(true)
+  })
+  it('E 负向轴：KB 不完整（缺一类目录）→ 不判隔离', () => {
+    const { kb } = kbFixture({ dirs: ['principle'] })
+    expect(detectIsolatedKb(kb)).toBe(false)
+  })
+  it('F 显式覆盖双向生效：isolated:false 在 A 夹具恒 hard；isolated:true 在 B 夹具转 soft', () => {
+    const { kb: kbA } = kbFixture()
+    expect(lintKnowledgeAt(kbA, process.cwd(), { isolated: false }).errors.some(e => e.rule === 'R7')).toBe(true)
+    const { kb: kbB } = kbFixture({ git: true })
+    const r = lintKnowledgeAt(kbB, process.cwd(), { isolated: true })
+    expect(r.isolated).toBe(true)
+    expect(r.pass).toBe(true)
+  })
+  it('G 独立开关：refExistsSoft 与 queueLenient 可分别覆盖（Gap-4）', () => {
+    const { kb } = kbFixture()
+    // 隔离上下文但显式 refExistsSoft:false → R7 仍 hard；queueLenient:false → 队列仍 hard
+    const r = lintKnowledgeAt(kb, process.cwd(), { isolated: true, refExistsSoft: false })
+    expect(r.errors.some(e => e.rule === 'R7')).toBe(true)
   })
 })

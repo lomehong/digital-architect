@@ -28,6 +28,7 @@ owner: 主人
 | 官方宿主源码 | `github.com/deepseek-ai/deepseek-harness`（研究宿主 API 用，按 tag 对齐核心版本） |
 | 桌面宿主 | dsh-desktop（Tauri），核心 0.1.5-alpha.2，web 端口固定 3088〔版本号未复核〕 |
 | 家目录（DSH_HOME） | **设备特定，不入库**；查询方式：宿主日志/设置界面（dsh-desktop 为 `dsh-desktop-app-data\home`），会话内以实际环境为准 |
+| 试点仓 oh-my-ops | `github.com/lomehong/oh-my-ops`（omp 扩展运维智能体 omo；v0.7.0 起自包含安装器：bun compile 单文件运行时 + ~/.omo 私有域，与原生 omp 零接触；非套件成员，详见 oh-my-ops 仓 README 与 docs/reports/） |
 | web profile | `home\profiles\web\package.json`（相对 DSH_HOME；bundle 清单；插件经 junction/link 指向套件源码仓） |
 | 宿主 HTTP 基址 | `http://127.0.0.1:3088`（web 会话 cookie；token 在 `dsh-desktop.log` 尾部 `dsh web:` 行） |
 

@@ -155,6 +155,10 @@ export function makeRefExists(root: string, opts: { soft?: boolean } = {}) {
  * 隔离上下文正向证据探测（KB-R7-LEGACY 裁定承接，评审 Gap-1 定稿）：
  * 三条件同时满足才判隔离——①父目录无 .git；②KB 根五类目录齐（证实是真实 KB 快照而非残缺导出）；
  * ③无仓根级 docs/。任一不满足 → 维持严格（hard）。无正向证据恒 hard（残余面收敛见方案 §A.3）。
+ *
+ * 隐含假定（评审复核补充）：
+ * - KB 位于仓根下一级（探测查父目录）——KB 位于更深层时会漏判（真仓可能误判隔离），有意保守不做向上逐级搜索；
+ * - 「无 docs/」依赖仓约定「大脑仓必有 docs/」（docs/designs 落点约定，v3.3 路径基准）——若 docs/ 更名需同步本探测。
  */
 export function detectIsolatedKb(root: string): boolean {
   const parent = dirname(root)

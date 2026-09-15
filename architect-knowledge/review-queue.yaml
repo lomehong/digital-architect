@@ -1,8 +1,4 @@
 # review-queue.yaml · 待审核队列（与条目 frontmatter status: 待审核 一一对应）
 # 维护纪律：主人确认后移除对应行，并把条目 status 改「已确认」、更新 confirmed 日期。
 # 台账是索引，frontmatter 仍是唯一权威（防双权威漂移）。
-# 当前队列为空（2026-09-14：主人确认 node-modules-symlink-cross-host 升「已确认」——队列清零；同日另确认 evidence-strength 等三条）。
-
-- file: principle/self-evolving-systems-design-lessons.md
-  reason: knowledge-distill 蒸馏（OpenEvolve 文章）；含「检查器/门禁/基线变更=高风险红线」提案，待主人确认
-  queued: 2026-09-15
+# 当前队列为空（2026-09-15：OpenEvolve 蒸馏条目经主人确认升级——含「检查器/门禁/基线变更=高风险红线」提案认可；知识库 42 条全已确认）。

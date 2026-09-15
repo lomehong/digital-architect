@@ -5,7 +5,7 @@ source:
   origin: 智启新纪元公众号《代码自己进化自己：Google 的看家本事，被开源社区复刻了》（2026-09-14，OpenEvolve 拆解）
   ref: https://mp.weixin.qq.com/s/f-BUgucAGPzx4JTJEhKVRA（原文浏览器快照，主人打开；主干完整无截断）
 confirmed: 2026-09-15
-status: 待审核
+status: 已确认
 owner: 主人
 ---
 

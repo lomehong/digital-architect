@@ -20,9 +20,16 @@ jobs:
           # 子模块 lomehong/dsh-architect 已公开（2026-09-11 主人拍板路线 C，U1 销账）：
           # 默认 github.token 即可拉取；SUBMODULE_TOKEN 回退保留为无害冗余（兼容将来重新私有化）。
           token: ${{ secrets.SUBMODULE_TOKEN || github.token }}
+          # Gate Guard 需要跨 before..after 的完整历史做 diff
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Gate Guard（门禁资产变更防护——红线提案落地，error 阻断）
+        env:
+          GATE_BASE: ${{ github.event.before }}
+          GATE_HEAD: ${{ github.sha }}
+        run: node scripts/gate-guard.mjs "$GATE_BASE" "$GATE_HEAD"
       - name: 构建校验器（architect-core → dsh-architect）
         # 序不可倒：dsh-architect 的 file: 依赖在 npm ci 时会触发 core 的 prepare 构建，
         # 冷环境必须先装好 core 的 devDependencies（2026-09-11 run #53 实证 TS2688）

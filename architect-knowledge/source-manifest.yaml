@@ -139,3 +139,10 @@
   date: 2026-09-14
   used_by:
     - practice/evidence-strength-vs-conclusion.md
+- id: src-cross-host-nm-symlink
+  origin: 容器侧两实例实测——oh-my-ops 仓 @ops-pi/core 与 dsh-architect architect-core 的依赖链接解析
+  ref: 容器内 readlink -f 实测记录 + KB-R7-LEGACY 裁定（外部仓/挂载路径不入库）
+  type: 环境兼容实证
+  date: 2026-09-14
+  used_by:
+    - practice/node-modules-symlink-cross-host.md

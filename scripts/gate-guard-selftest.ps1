@@ -2,7 +2,7 @@
 # 用法：pwsh -File scripts/gate-guard-selftest.ps1 （在父仓任意位置可跑）
 # A 无保护变更 → PASS；B 触碰保护路径无标记 → FAIL；C 同改动带标记 → PASS
 $ErrorActionPreference = 'Continue'
-$repo = Split-Path -Parent $PSCommandPath
+$repo = Split-Path -Parent (Split-Path -Parent $PSCommandPath)  # 脚本在 <repo>\scripts\ 下，仓根是上级
 $tmp = Join-Path $env:TEMP ('gg-clean-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
 git clone --no-local -q $repo $tmp
 git -C $tmp config user.email t@t

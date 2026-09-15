@@ -1,0 +1,51 @@
+name: Docker
+
+# 架构师 Agent 容器镜像（docker/）——构建 + 冒烟 + 推送 GHCR。
+# 触发：docker/** 或本 workflow 变更推 main / v* tag / 手动。
+# 产物：ghcr.io/lomehong/digital-architect-omp（latest + tag 名）。
+# 注：runner 在境外，build-args 一律官方源（CN 加速源只用于本机构建）。
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docker/**'
+      - '.github/workflows/docker.yml'
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 构建（--load 本地装载，供冒烟）
+        run: |
+          docker buildx build docker \
+            --load \
+            --build-arg APT_MIRROR=deb.debian.org \
+            --build-arg NPM_REGISTRY=https://registry.npmjs.org \
+            --build-arg GH_DOWNLOAD_BASE=https://github.com/cli/cli/releases/download \
+            -t ghcr.io/lomehong/digital-architect-omp:ci
+
+      - name: 冒烟（入口可跑 + 四件运行时版本可见）
+        run: |
+          docker run --rm --entrypoint bash ghcr.io/lomehong/digital-architect-omp:ci -c \
+            'node --version && bun --version && gh --version && omp --version'
+
+      - name: 推送 GHCR（latest + tag）
+        run: |
+          docker tag ghcr.io/lomehong/digital-architect-omp:ci ghcr.io/lomehong/digital-architect-omp:latest
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            docker tag ghcr.io/lomehong/digital-architect-omp:ci "ghcr.io/lomehong/digital-architect-omp:${{ github.ref_name }}"
+          fi
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker push ghcr.io/lomehong/digital-architect-omp:latest
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            docker push "ghcr.io/lomehong/digital-architect-omp:${{ github.ref_name }}"
+          fi

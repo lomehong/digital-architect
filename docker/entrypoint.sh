@@ -63,8 +63,10 @@ else
   esac
   echo "[supervisor] GitHub credential: OK（token 未回显）"
 fi
-# 幂等配置 pi 用户的 git credential helper（gh 读 GH_TOKEN env，token 不落盘）
-gosu "${USER_NAME}" git config --global credential.helper '!/usr/local/bin/gh auth git-credential' 2>/dev/null || true
+# 幂等配置 pi 用户的 git credential helper（env 版：直接读 GH_TOKEN，不依赖 gh CLI、不落盘）。
+# 历史教训（2026-09-15）：gh 版 helper 在无 gh 的镜像里静默失效（gh: not found → 推送被拒）；
+# env 版只需 GH_TOKEN 在场即可用。GH_TOKEN 由 compose environment 注入，pi 进程天然继承。
+gosu "${USER_NAME}" git config --global credential.helper '!f() { test -n "$GH_TOKEN" || exit 1; printf "username=omo\npassword=%s\n" "$GH_TOKEN"; }; f' 2>/dev/null || true
 
 # ── 御驿 Yuyi 通信平面（yuyi-pi-extension 从 env 生成 ~/.yuyi/agent.json）──
 # pi 扩展从配置文件读 Hub 凭据（env 不直达）；容器文件系统随重建丢失，故每次启动由 env 再生。

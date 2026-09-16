@@ -107,3 +107,12 @@ T1–T5：采信台账 `owner-decision` 事件（by=主人，commit `34f4c73`）
 - **跨宿主同核双跑**：dsh 侧 `architect-core checkDesign` 独立复跑 = 60/60、五问 5/5、占位符 0，与 omp 插件自检一致（同核异宿交叉验证，试点增值发现）；
 - 需求覆盖：B1–B9/D1–D7/T1–T5（owner-decision 34f4c73 + 781cef8）逐条落点，无私扩范围；
 - 非阻断备注已随结论回信：U2 人工冒烟回填台账、N2 前置 npm install、architecture-map 补录 oh-my-ops（收口后知识任务）。
+
+## 追加：lint 根修落地验证（2026-09-15，主人重建镜像并重启容器后）
+
+- gh 2.95.0 回归 ✅
+- credential.helper = env 版（直读 GH_TOKEN）✅
+- lint bash 兜底路径：隔离提示行 + 11 处 R7 降 warning + exit 0 ✅
+- omp-architect lint 工具路径：「（隔离上下文）」+ 备案计数 11 条 ✅
+- 双路径一致 ✅
+- 备案豁免撤销条件已满足 → 已通知容器执行撤除。

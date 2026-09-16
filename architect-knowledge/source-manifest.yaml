@@ -154,3 +154,11 @@
   date: 2026-09-15
   used_by:
     - principle/self-evolving-systems-design-lessons.md
+
+- id: src-yuyi-reply-addressing
+  origin: 御驿 Hub 生产实测（协议 v2，两台设备 omp 实例双向排障 + 五组对照探针 + 离线桩夹具红绿基线）
+  ref: Hub 文档 /docs/hub-plugin 与 /docs/skills（URL 随 Hub 走）；上游分发件 /dist/omp.js v0.1.0（md5 393e21ba…）；外部试点仓 oh-my-ops 分支 feature/OMOBRIDGE-2（外部仓，本库不可回源）
+  type: 环境兼容实证
+  date: 2026-09-16
+  used_by:
+    - practice/yuyi-reply-addressing-contract.md

@@ -1,0 +1,5 @@
+id15.len=13 hits=[] stillPlain=true
+bank.good.hits=[]
+bank.bad.maskedAs=[] stillPlain=true
+restore.changed=false commandOK=true nestedOK=true
+payload.hits=5 clean=true

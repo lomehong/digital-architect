@@ -1,0 +1,4 @@
+form.test("13812345678") = n/a
+compile rules=1 errors=0
+manual="[[TEL_1]]" formTest=true
+literalFormTest=false

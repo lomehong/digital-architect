@@ -1,0 +1,11 @@
+{
+  "enabled": true,
+  "restore": true,
+  "categories": { "secret": true, "id": true, "bank": true, "phone": true, "email": true },
+  "customRules": [
+    { "name": "orderID", "pattern": "ORD-[0-9]{8}" }
+  ],
+  "aliases": [
+    { "term": "示例原词", "replacement": "示例替换词" }
+  ]
+}

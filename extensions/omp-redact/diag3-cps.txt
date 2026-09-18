@@ -1,3 +1,0 @@
-fileTerm: len=11 cps=[13812345678] regexFormTest=false
-constructed: len=9 cps=[[[TEL_1]]] regexFormTest=true
-equal=false

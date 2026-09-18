@@ -2,5 +2,8 @@
   "name": "omp-redact",
   "private": true,
   "type": "module",
-  "description": "omp 脱敏扩展（模型厂商边界双向替换）——源与测试；部署产物为本目录 omp-redact-extension.js"
+  "description": "omp 脱敏扩展（模型厂商边界双向替换）——源与测试；部署产物为本目录 omp-redact-extension.js",
+  "scripts": {
+    "test": "node --test tests/rules-mapping.test.js tests/hooks-payload.test.js"
+  }
 }

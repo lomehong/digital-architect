@@ -1,6 +1,0 @@
-A.alias.rules=1 errors=[]
-B.masked.text.len=13 placeholder=[[TEL_1]] forwardHas=true
-B.restore.changed=true cmdOK=true nestedOK=true
-C.alias.changed=true cmd="echo 腾讯云与腾讯" entries=[{"key":"某云厂","value":"腾讯云"},{"key":"某公司","value":"腾讯"}]
-D.loaded=true version=1 sessions=1
-D.tmpLeftovers=0

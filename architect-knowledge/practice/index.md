@@ -20,3 +20,4 @@
 | [review-baseline-discipline.md](review-baseline-discipline.md) | 评审基准纪律：先锁定被评审对象声明的基准并取证，再评分（拿唯一可得实现当标准的五条误判） | 已确认 |
 | [observatory-platform-bootstrap.md](observatory-platform-bootstrap.md) | 观测平台自举经验：零依赖服务/只读摄取 agent.db/事件按实例分文件/文件承载审批/治理不旁路；七坑（ESM 无 require、const TDZ、对象重复键、规则静默失败、YAML 边界、计划任务启动即退、按名批量杀） | 已确认 |
 | [yuyi-reply-addressing-contract.md](yuyi-reply-addressing-contract.md) | 御驿回信寻址契约（回信目标必须 agent 级，别名不算且会歧义）+ 闭环排障纪律（ack.detail、观察窗、上游构建件补丁回退、bundle 纯 ASCII） | 已确认 |
+| [non-producing-session-review-pilot.md](non-producing-session-review-pilot.md) | G4 评分复核首试：非产出会话独立复核内容分的四步操作面与三条边界（U1 常态化路径实测闭合） | 待审核 |

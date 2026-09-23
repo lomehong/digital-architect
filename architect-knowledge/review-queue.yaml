@@ -3,3 +3,4 @@
 # 台账是索引，frontmatter 仍是唯一权威（防双权威漂移）。
 # 当前队列为空（2026-09-14：主人确认 node-modules-symlink-cross-host 升「已确认」——队列清零；同日另确认 evidence-strength 等三条）。
 # 2026-09-16：主人确认 practice/yuyi-reply-addressing-contract 升「已确认」——队列清零。
+- file: practice/non-producing-session-review-pilot.md

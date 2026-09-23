@@ -2,6 +2,7 @@
 
 | 条目 | 一句话定位 | 状态 |
 |---|---|---|
+| [dsh-enterprise-platform-movo.md](dsh-enterprise-platform-movo.md) | MOVO——DSH 的企业化平台（12 服务生态事件、治理设计互证、license 注意、团队化触发器） | 待审核 |
 | [self-evolving-systems-design-lessons.md](self-evolving-systems-design-lessons.md) | 自进化系统设计纪律（OpenEvolve 蒸馏）：评估铁门槛/防收敛三机制/评估漏斗/Artifact/**检查器自改红线提案** | 已确认 |
 | [ai-native-team-engineering.md](ai-native-team-engineering.md) | AI 原生研发三层体系（底座/护栏/协作）+ Rules-Skills 关系 + 轻量 SDD + 去腐化双技能（腾讯 Vibe Flowing 蒸馏） | 已确认 |
 | [token-efficiency-and-human-feedback.md](token-efficiency-and-human-feedback.md) | Token 效率六法+负结论；廉价习得感警告；非开发者能力地图（Vibe Flowing Lessons） | 已确认 |

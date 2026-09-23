@@ -1,6 +1,8 @@
 # review-queue.yaml · 待审核队列（与条目 frontmatter status: 待审核 一一对应）
 # 维护纪律：主人确认后移除对应行，并把条目 status 改「已确认」、更新 confirmed 日期。
 # 台账是索引，frontmatter 仍是唯一权威（防双权威漂移）。
-# 当前队列为空（2026-09-14：主人确认 node-modules-symlink-cross-host 升「已确认」——队列清零；同日另确认 evidence-strength 等三条）。
-# 2026-09-16：主人确认 practice/yuyi-reply-addressing-contract 升「已确认」——队列清零。
+# 当前队列 2 条（2026-09-16：另一线新增 non-producing-session-review-pilot；本会话蒸馏 dsh-enterprise-platform-movo）。
 - file: practice/non-producing-session-review-pilot.md
+- file: principle/dsh-enterprise-platform-movo.md
+  reason: knowledge-distill 蒸馏（MOVO 文章+仓库 README 实读）；DSH 企业化生态事件与治理设计参照，未核实项两条已登记
+  queued: 2026-09-15

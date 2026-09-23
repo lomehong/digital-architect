@@ -162,11 +162,3 @@
   date: 2026-09-16
   used_by:
     - practice/yuyi-reply-addressing-contract.md
-
-- id: src-movo-platform
-  origin: 太初y笔记公众号《开源推荐：MOVO：基于 DeepSeek Harness 做了一个企业 Agent 平台》（2026-09-21）+ GitHub himovo/movo README 实读交叉核对
-  ref: https://mp.weixin.qq.com/s/z3X3K3un7NE4qtcs-Ja_Ww ；https://github.com/himovo/movo（README.md @ main 实读）
-  type: 公众号文章
-  date: 2026-09-15
-  used_by:
-    - principle/dsh-enterprise-platform-movo.md

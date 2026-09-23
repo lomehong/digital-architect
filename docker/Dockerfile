@@ -78,6 +78,16 @@ RUN deluser node 2>/dev/null || true \
   && useradd -m -u $PGID -g pi -s /bin/bash pi \
   && usermod -aG sudo pi
 
+# ---- Graphify 代码图谱 CLI（codebase-graph-* 技能依赖）---------------------
+# AST 建图本地跑（tree-sitter）；语义提取可选、走会话自身模型。ARG 可覆盖版本与 PyPI 源。
+ARG GRAPHIFY_VERSION=0.9.19
+ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends python3-pip \
+  && rm -rf /var/lib/apt/lists/* \
+  && pip3 install --break-system-packages --no-cache-dir -i "${PIP_INDEX_URL}" "graphifyy==${GRAPHIFY_VERSION}" \
+  && graphify --version
+
 COPY entrypoint.sh /usr/local/bin/omp-entrypoint.sh
 RUN chmod +x /usr/local/bin/omp-entrypoint.sh
 

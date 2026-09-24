@@ -88,6 +88,18 @@ RUN apt-get update \
   && pip3 install --break-system-packages --no-cache-dir -i "${PIP_INDEX_URL}" "graphifyy==${GRAPHIFY_VERSION}" \
   && graphify --version
 
+# ---- Chromium 系统依赖（omp 内置浏览器 eval prelude 的运行时底座）------------
+# omp 自带 browser.open/browser 工具（browser.enabled 默认开），驱动 ~/.cache/ms-playwright
+# 的 chromium；无显示环境下仍需整套 glib/nss/atk/X11/pango/alsa 共享库——缺一则 exit=127。
+# 该清单对齐 Playwright bookworm 官方依赖集（headless 充分集）。
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+     libglib2.0-0 libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libatspi2.0-0 \
+     libcups2 libdrm2 libdbus-1-3 libxcb1 libxkbcommon0 libx11-6 libx11-xcb1 \
+     libxcomposite1 libxdamage1 libxext6 libxfixes3 libxrandr2 libxtst6 libxi6 \
+     libgbm1 libpango-1.0-0 libcairo2 libasound2 fonts-liberation \
+  && rm -rf /var/lib/apt/lists/*
+
 COPY entrypoint.sh /usr/local/bin/omp-entrypoint.sh
 RUN chmod +x /usr/local/bin/omp-entrypoint.sh
 

@@ -21,3 +21,4 @@
 | [observatory-platform-bootstrap.md](observatory-platform-bootstrap.md) | 观测平台自举经验：零依赖服务/只读摄取 agent.db/事件按实例分文件/文件承载审批/治理不旁路；七坑（ESM 无 require、const TDZ、对象重复键、规则静默失败、YAML 边界、计划任务启动即退、按名批量杀） | 已确认 |
 | [yuyi-reply-addressing-contract.md](yuyi-reply-addressing-contract.md) | 御驿回信寻址契约（回信目标必须 agent 级，别名不算且会歧义）+ 闭环排障纪律（ack.detail、观察窗、上游构建件补丁回退、bundle 纯 ASCII） | 已确认 |
 | [non-producing-session-review-pilot.md](non-producing-session-review-pilot.md) | G4 评分复核首试：非产出会话独立复核内容分的四步操作面与三条边界（U1 常态化路径实测闭合） | 待审核 |
+| [browser-e2e-acceptance-spike-lessons.md](browser-e2e-acceptance-spike-lessons.md) | 浏览器 E2E 验收能力 Spike：能力基线（导航类 15/15、搜索与视口外 0/6 已知限制）+ 集成要点（协议兼容/补丁面/选项分块/DONE 独立校验）+ Windows 内网坑（HF 镜像禁 xet、端口双绑、CPU torch 顺序、venv 分工） | 待审核 |

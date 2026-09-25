@@ -92,7 +92,8 @@ owner: 主人
 | 提交 | 小步中文 commit（含改动归属）；**push/发布无账本对应物 → 强制 `ask` 主人**，不得静默放行 |
 | 测试证据 | 自跑测试并把**真实命令与输出**写进汇报；`ask` 汇报含 diff 摘要 + 未兑现清单 |
 | 实现评审 | 由**非编码会话**执行更佳（可另起会话或交 dsh 侧会话）；复审复跑抽查，不信自述 |
-| 降级面 | 无账本 → 治理动作（push/发布/删除）一律停并 `ask`；检查器缺席 → 流程照跑（人工六维度/五问） |
+| 浏览器验收 | `browser-acceptance/` 能力包（2026-09-25 落定）：omp 会话内直接 `bash` 驱动 `deploy.sh`/`start-stack.sh`/`run_acceptance.py`；DEEPSEEK_API_KEY 走环境变量；证据落 `$BA_ROOT/evidence/`，汇报引用路径；红线见 `skills/architect-implement/SKILL.md`「浏览器验收任务」节 |
+| 降级面 | 无账本 → 治理动作（push/发布/删除）一律停并 `ask`；检查器缺席 → 流程照跑（人工六维度/五问）；浏览器栈缺席 → 验收退回 bash 单测 |
 
 ## 与 dsh 适配的差异速查
 

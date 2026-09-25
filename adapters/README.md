@@ -27,6 +27,7 @@
 |---|---|---|
 | DeepSeek Harness（dsh / digital-twin 套件） | [`dsh.md`](dsh.md) | 已验证（自举首跑 + dsh-architect v0.1.0 接线） |
 | [oh-my-pi](https://github.com/can1357/oh-my-pi)（omp，pi 分支终端编码 Agent） | [`oh-my-pi.md`](oh-my-pi.md) | 已验收（2026-09-11 全链路走查六项全过 + 主人确认） |
+| Kimi Code（桌面 Agent 宿主） | 未建立 | **缺口登记**（2026-09-25 浏览器 E2E 验收方案 Q1）：决策门=会话内文本提问兜底，不落治理动作；待主人确认后补适配文件 |
 
 ## 新增宿主
 

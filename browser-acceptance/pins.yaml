@@ -1,0 +1,36 @@
+# browser-acceptance 供应链锁定清单（B1 决策门执行面：主人 2026-09-25 批准引入）
+# 规则：全部 pin 到不可变坐标；权重仅 safetensors；任何升级必须复跑 suite.py 基线。
+pinned_at: 2026-09-25
+components:
+  jev-ultrafast:
+    repo: https://github.com/browser-use/jev-ultrafast
+    license: MIT
+    commit: 1231850a0bf1a0c0341fe408ef1668dbbfdfac46
+    patch: patches/jev-model.patch   # 仅 model.py 两处：TYPESAFE_BASE_URL 端点与密钥容错
+    role: 浏览器循环 + DOM 快照 + 执行守卫
+  laya:
+    pypi: laya==0.3.20
+    repo: https://github.com/NandhaKishorM/laya
+    license: Apache-2.0   # 代码与权重同
+    role: 本地 System-1 决策引擎（自托管 /v1/systemone）
+  laya-browser-weights:
+    hub: https://huggingface.co/cklxx/laya-browser
+    checkpoint: v10s      # 322M；备选 v10（421M，top-1 略高、更慢）
+    sha256:
+      v10s/model.safetensors: b11217df18bf79cfcd4ab639caf1ae8652b91c9c44fcb9457fbe480237332335
+      v10/model.safetensors:  0c7f83d5de6aad2e176c03da890e2066f4a027494d751ba6493e60e687bbf9c0
+    source_note: HuggingFace 个人账号发布；下载后按上面 sha256 校验；镜像下载需 HF_HUB_DISABLE_XET=1
+    role: jev 操作/目标决策头（微调自 Laya，浏览器任务专用）
+  browser-harness:
+    pypi: browser-harness==0.1.13   # 随 jev-ultrafast 依赖锁定
+    role: CDP 连接真实 Chrome
+  text-model:
+    endpoint: https://api.deepseek.com/v1   # OpenAI 兼容；仅 TYPE_TEXT 步骤使用
+    model: deepseek-chat
+    auth: DEEPSEEK_API_KEY 环境变量（不入库、不落盘）
+    role: 打字内容的文本生成
+verification:
+  - uv run pytest            # jev 组件门禁，期望 31 passed
+  - uv run python scripts/check_guards.py   # 浏览器守卫，期望 21 项 PASS（需 stack 已启动）
+  - python contract_test.py  # systemone 端点契约
+  - python suite.py          # 基线套件，期望见 README「验收基线」

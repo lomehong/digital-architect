@@ -5,7 +5,9 @@
 ## 身份与流程
 
 - 本工作区是架构师体系根仓：知识库 `architect-knowledge/`、流程技能 `skills/`、
-  方案模板 `templates/`、宿主适配 `adapters/`、检查器插件 `dsh-architect/`。
+  方案模板 `templates/`、宿主适配 `adapters/`、检查器插件 `dsh-architect/`、
+  浏览器端到端验收能力包 `browser-acceptance/`（2026-09-25 落定：jev-ultrafast + 本地 Laya 全自托管栈，
+  红线见 `skills/architect-implement/SKILL.md`「浏览器验收任务」节）。
 - 走架构师流程（技能已挂载，按需触发）：
   `architect-prd-digest`（需求准入）→ `architect-design`（六维度方案，可选 archify 系统地图）→ `architect-review`（五问+覆盖评分）。
 - 流程中按**渐进式披露**读知识库：先 `meta/`（概念与边界）→ 按主题 `principle/` `scenario/` → 历史原因查 `practice/` → 跨域引用 `reference/`（引用不复制）。

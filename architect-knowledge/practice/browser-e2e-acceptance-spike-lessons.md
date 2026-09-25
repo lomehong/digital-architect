@@ -52,3 +52,8 @@ DAgger 二轮微调（上游管线公开，单卡 1–2h，登记为后续优化
    jev venv 的 python（实测拿错 venv 即 ModuleNotFoundError）。
 9. **不扰主人浏览器**：独立 `--user-data-dir` + `--remote-debugging-port`；主人日常 Chrome 未开远程调试时
    browser-harness daemon 起不来是预期行为，不是故障——用独立实例而非去开主人浏览器的调试开关。
+10. **Git Bash 的 `$!` 是 MSYS pid，taskkill 只认 Windows pid**：直接喂报 not found 且被 `|| true` 吞掉，
+    栈静默泄漏——先经 `ps -W` 换算 WINPID 列（`awk '$1==p {print $4}'`）再 `taskkill //T` 整树终止；
+    且 **chrome.exe 启动后会重生成主进程**（原 pid 链在 `ps -W` 消失），pid 换算也救不了 Chrome——
+    停栈须按命令行标记（`remote-debugging-port` + `chrome-profile`）兜底清扫（stop-stack.sh 已固化，
+    2026-09-25 实测：python 系两端口换算即杀，Chrome 需补刀，修复后三端口全下）。

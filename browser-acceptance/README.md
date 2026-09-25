@@ -44,7 +44,7 @@ PY="$BA_ROOT/jev-ultrafast/.venv/Scripts/python.exe"   # POSIX: .venv/bin/python
 REPEATS=3 "$PY" suite.py
 ```
 
-## 验收基线（2026-09-25 Spike 实测，CPU）
+## 验收基线（2026-09-25 实测，CPU；证据：[evidence/](evidence/README.md)）
 
 | 类别 | 基线 | 套件口径 |
 |---|---|---|

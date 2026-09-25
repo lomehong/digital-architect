@@ -54,12 +54,29 @@ def main():
     if code == 200:
         failures.append("畸形请求返回 200（应 4xx，不得静默成功）")
 
+    # 运行器拒绝路径（无需浏览器/服务）：无白名单、主机不在白名单、无独立校验，都必须拒绝启动
+    import subprocess
+    runner = os.path.join(os.path.dirname(os.path.abspath(__file__)), "run_acceptance.py")
+    refusal_cases = [
+        (["--url", "http://127.0.0.1:8901/fixture.html", "--goal", "x", "--expect-url-contains", "y"],
+         "缺 --allow-host"),
+        (["--url", "https://example.com/", "--goal", "x", "--allow-host", "127.0.0.1",
+          "--expect-url-contains", "y"], "主机不在白名单"),
+        (["--url", "http://127.0.0.1:8901/fixture.html", "--goal", "x", "--allow-host", "127.0.0.1"],
+         "缺 --expect-* 独立校验"),
+    ]
+    for args, label in refusal_cases:
+        r = subprocess.run([sys.executable, runner, *args], capture_output=True, text=True, timeout=60)
+        if r.returncode != 2:
+            failures.append(f"运行器拒绝路径「{label}」退出码 {r.returncode}（应 2）：{r.stdout[:80]}{r.stderr[:80]}")
+
     if failures:
         print("CONTRACT FAIL:")
         for f in failures:
             print(" -", f)
         return 1
-    print(f"CONTRACT PASS: systemone @ {S1} 满足 jev validate_choice 约束；畸形请求被拒。")
+    print(f"CONTRACT PASS: systemone @ {S1} 满足 jev validate_choice 约束；畸形请求被拒；"
+          f"运行器三条拒绝路径（无白名单/主机越界/无独立校验）全部拦截。")
     return 0
 
 

@@ -51,8 +51,11 @@ else
   echo "$WANT  $W" | sha256sum -c -
 fi
 
-step "5/5 组件门禁"
+step "5/6 组件门禁：jev 离线测试"
 (cd "$BA_ROOT/jev-ultrafast" && uv run pytest -q)
+
+step "6/6 组件门禁：Laya 权重自检（verify.py，CPU 约 1-2 分钟）"
+"$(vpy "$BA_ROOT/venv")" "$BA_ROOT/laya-browser/code/verify.py" "$BA_ROOT/laya-browser/v10s" | tail -4
 
 echo
 echo "部署完成。启动栈: bash start-stack.sh；验收任务: python run_acceptance.py -h"

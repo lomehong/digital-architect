@@ -6,7 +6,10 @@ components:
     repo: https://github.com/browser-use/jev-ultrafast
     license: MIT
     commit: 1231850a0bf1a0c0341fe408ef1668dbbfdfac46
-    patch: patches/jev-model.patch   # 仅 model.py 两处：TYPESAFE_BASE_URL 端点与密钥容错
+    patch: patches/jev-model.patch   # 单 hunk：choose() 端点 TYPESAFE_BASE_URL 与密钥容错。
+                                     # 上游官方补丁的 TEXT_MODEL_EXTRA_JSON hunk 不采纳——pin commit 的
+                                     # field_text() 原生支持 TEXT_MODEL_BASE_URL/TEXT_MODEL/TEXT_MODEL_REASONING
+                                     # 环境变量，DeepSeek 直连无需该扩展
     role: 浏览器循环 + DOM 快照 + 执行守卫
   laya:
     pypi: laya==0.3.20
@@ -31,6 +34,7 @@ components:
     role: 打字内容的文本生成
 verification:
   - uv run pytest            # jev 组件门禁，期望 31 passed
+  - python <BA_ROOT>/laya-browser/code/verify.py <BA_ROOT>/laya-browser/v10s   # Laya 权重自检，期望 OK（deploy.sh 第 6 步自动执行）
   - uv run python scripts/check_guards.py   # 浏览器守卫，期望 21 项 PASS（需 stack 已启动）
-  - python contract_test.py  # systemone 端点契约
+  - python contract_test.py  # systemone 端点契约 + 运行器三条拒绝路径
   - python suite.py          # 基线套件，期望见 README「验收基线」

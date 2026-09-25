@@ -27,9 +27,12 @@ DAgger 二轮微调（上游管线公开，单卡 1–2h，登记为后续优化
 
 ## 集成要点
 
-1. **协议兼容是真实的**：Laya 的 `/v1/systemone` 与 jev 调用的 TypeSafe 端点同格式；集成只需 jev `model.py`
-   两处补丁（`TYPESAFE_BASE_URL` 端点与密钥容错、`TEXT_MODEL_EXTRA_JSON`），补丁文件即 pin 对象
-   （`browser-acceptance/patches/jev-model.patch`）；上游补丁包里的 uv.lock 镜像改动不采纳。
+1. **协议兼容是真实的**：Laya 的 `/v1/systemone` 与 jev 调用的 TypeSafe 端点同格式；集成补丁为 jev `model.py`
+   **单 hunk**（`choose()` 的 `TYPESAFE_BASE_URL` 端点与密钥容错），补丁文件即 pin 对象
+   （`browser-acceptance/patches/jev-model.patch`）。上游官方补丁的第二个 hunk（`TEXT_MODEL_EXTRA_JSON`）
+   **不采纳**：pin commit 的 `field_text()` 原生支持 `TEXT_MODEL_BASE_URL`/`TEXT_MODEL`/`TEXT_MODEL_REASONING`
+   环境变量，DeepSeek 直连无需该扩展（2026-09-25 实施评审纠正：此前登记为「两处」与实物不符）；
+   上游补丁包里的 uv.lock 镜像改动同样不采纳。
 2. **zero-shot 不可用**：Laya 基础 checkpoint 对浏览器决策是随机水平（上游实测 0/16），必须用微调权重
    v10s/v10；微调最大改进点是**输入格式**（元素表从 state 移入选项列表），不是数据量。
 3. **选项预算**：Laya 单问选项约 254 短标签上限；`systemone_server.py` 的 MAXOPT 分块粗筛（两轮前向）

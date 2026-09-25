@@ -117,3 +117,4 @@ docker/ 目录提供官方 omp 宿主的容器形态。**v3 起大脑与现场�
 - 镜像：node24 + Bun（npm 分发）+ 官方 `@oh-my-pi/pi-coding-agent`（omp 18.x）；LLM 经 `docker/.env` 的 DEEPSEEK_API_KEY → `deepseek/deepseek-flash`（config.yml）；
 - 用法：`docker exec -it oh-my-pi omp`（TUI）/ `docker compose run --rm omp -p "需求"`；
 - 安全纪律（v2 教训）：默认拒绝 + 精确白名单；负向测试必须含大小写别名变体（见 `architect-knowledge/practice/ro-mount-case-alias-bypass.md`）。
+- **浏览器验收栈（2026-09-26 容器内实测通过）**：镜像含 chromium + uv；`browser-acceptance/` 以 ro 挂 `/opt/architect/browser-acceptance`，运行时卷 `ba-root` 挂 `/home/pi/.browser-acceptance`（BA_ROOT env 已注入）；首次部署 `docker exec -u pi oh-my-pi bash /opt/architect/browser-acceptance/deploy.sh`（幂等，含权重 sha256 + 双组件门禁），验收期 `start-stack.sh` 起栈（headless chromium 9222 + systemone 8791 + fixture 8901）、`stop-stack.sh` 收栈；基线证据 `browser-acceptance/evidence/suite-2026-09-26-container.json`（SUITE PASS 与宿主一致）。

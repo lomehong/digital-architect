@@ -44,6 +44,15 @@ services:
       - YUYI_HUB=${YUYI_HUB:-}
       - YUYI_DEVICE=${YUYI_DEVICE:-oh-my-pi}
       - YUYI_ALIAS=${YUYI_ALIAS:-omp-docker}
+      # ── browser-acceptance 验收栈（2026-09-25）──
+      # BA_ROOT = 运行时根（venv/权重/chrome profile/证据），落在 ba-root 命名卷上持久化；
+      # 首次部署在容器内跑 bash /opt/architect/browser-acceptance/deploy.sh（幂等，含权重 sha256 门禁）
+      - BA_ROOT=/home/pi/.browser-acceptance
+      # HF 直连不可用时经镜像（deploy.sh 已内置禁 xet）
+      - HF_ENDPOINT=${HF_ENDPOINT:-}
+      # 容器内 PyPI 加速（deploy.sh 读取；tuna simple 注意：Linux torch 轮带 CUDA 依赖）
+      - PIP_INDEX_URL=${PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}
+      - TORCH_INDEX=${TORCH_INDEX:-}
     volumes:
       # ── v3.2 白名单挂载（2026-09-11 主人否决整仓挂载，D11 同批）──
       # workspace = 架构师当前服务的目标项目——**必须显式设置，无默认回退**：
@@ -65,6 +74,8 @@ services:
       - ../scripts/task-ledger.mjs:/opt/architect/scripts/task-ledger.mjs:ro
       # 观测工具面（ro）：yuyi-transcribe 等实例侧上报工具（entrypoint 按需启停）
       - ../observatory:/opt/architect/observatory:ro
+      # 浏览器 E2E 验收能力包（ro，2026-09-25 落定；运行时状态走 ba-root 卷，见 BA_ROOT）
+      - ../browser-acceptance:/opt/architect/browser-acceptance:ro
       # ── Architect Observatory：实例上报通道（rw；观测平面数据根）──
       - ../obs:/opt/architect/obs:rw
       # 系统级能力：SKILL 挂 agent 级技能根；检查器以「插件」身份经 omp plugin link
@@ -75,6 +86,8 @@ services:
       - ../AGENTS.md:/home/pi/.omp/agent/AGENTS.md:ro
       - ./omp:/home/pi/.omp
       - ./entrypoint.sh:/usr/local/bin/omp-entrypoint.sh
+      # browser-acceptance 运行时持久卷（venv/权重/chrome profile/evidence；重建容器不丢）
+      - ba-root:/home/pi/.browser-acceptance
     restart: "unless-stopped"
     stdin_open: true
     tty: true
@@ -94,3 +107,7 @@ networks:
       config:
         - subnet: 10.249.247.0/24
           gateway: 10.249.247.1
+
+volumes:
+  ba-root:
+    name: omp-browser-acceptance

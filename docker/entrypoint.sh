@@ -46,6 +46,10 @@ fi
 echo "[supervisor] Fix ownership: /home/pi/.omp /workspace"
 mkdir -p /home/pi/.omp
 chown -R "${PUID}:${PGID}" /home/pi/.omp 2>/dev/null || true
+# browser-acceptance 运行时卷（ba-root）：命名卷首次挂载为 root 属主，需降权给 pi（2026-09-25 实测）
+if [ -d /home/pi/.browser-acceptance ]; then
+  chown "${PUID}:${PGID}" /home/pi/.browser-acceptance 2>/dev/null || true
+fi
 if [ -d /workspace ]; then
   chown "${PUID}:${PGID}" /workspace 2>/dev/null || echo "[supervisor] Note: /workspace ownership unchanged" >&2
 fi

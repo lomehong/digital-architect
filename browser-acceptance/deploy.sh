@@ -13,18 +13,21 @@ step() { echo "==> $*"; }
 
 # 平台差异：Windows venv 在 Scripts/，POSIX 在 bin/
 vpy() { local v="$1"; if [ -x "$v/Scripts/python.exe" ]; then echo "$v/Scripts/python.exe"; else echo "$v/bin/python"; fi; }
+vbin() { local v="$1" n="$2"; if [ -x "$v/Scripts/$n.exe" ]; then echo "$v/Scripts/$n.exe"; else echo "$v/bin/$n"; fi; }
 
-step "1/5 laya 决策服务环境 ($BA_ROOT/venv)"
-if [ ! -d "$BA_ROOT/venv" ]; then
-  uv venv --python 3.12 "$BA_ROOT/venv"
-  # 先装 CPU 版 torch，避免 Windows 默认拉 2.5GB CUDA 包
-  uv pip install --python "$(vpy "$BA_ROOT/venv")" torch --index-url https://download.pytorch.org/whl/cpu
-  uv pip install --python "$(vpy "$BA_ROOT/venv")" "laya[serve]==0.3.20" huggingface_hub
-else
-  echo "    已存在，跳过"
+step "1/6 laya 决策服务环境 ($BA_ROOT/venv)"
+[ -x "$(vpy "$BA_ROOT/venv")" ] || uv venv --clear --python 3.12 "$BA_ROOT/venv"
+# torch 源可配：默认 pytorch.org CPU 索引（~200MB 小轮）；慢网环境设 TORCH_INDEX 为 PyPI 镜像
+# （如 tuna simple——注意其 Linux 轮会带 CUDA 依赖，体积大数倍但国内速度快）
+if ! "$(vpy "$BA_ROOT/venv")" -c "import torch" 2>/dev/null; then
+  uv pip install --python "$(vpy "$BA_ROOT/venv")" torch --index-url "${TORCH_INDEX:-https://download.pytorch.org/whl/cpu}"
+fi
+if ! "$(vpy "$BA_ROOT/venv")" -c "import laya" 2>/dev/null; then
+  uv pip install --python "$(vpy "$BA_ROOT/venv")" --index-url "${PIP_INDEX_URL:-https://pypi.org/simple}" \
+    "laya[serve]==0.3.20" huggingface_hub
 fi
 
-step "2/5 jev-ultrafast（pin $JEV_COMMIT）"
+step "2/6 jev-ultrafast（pin $JEV_COMMIT）"
 if [ ! -d "$BA_ROOT/jev-ultrafast" ]; then
   git clone https://github.com/browser-use/jev-ultrafast.git "$BA_ROOT/jev-ultrafast"
   git -C "$BA_ROOT/jev-ultrafast" checkout "$JEV_COMMIT"
@@ -33,20 +36,20 @@ else
   echo "    已存在，跳过"
 fi
 
-step "3/5 应用端点补丁（仅 model.py）"
+step "3/6 应用端点补丁（仅 model.py）"
 if git -C "$BA_ROOT/jev-ultrafast" diff --quiet -- jev_ultrafast/model.py; then
   git -C "$BA_ROOT/jev-ultrafast" apply "$PKG_DIR/patches/jev-model.patch"
 else
   echo "    已打补丁，跳过"
 fi
 
-step "4/5 laya-browser 权重（v10s，sha256 校验）"
+step "4/6 laya-browser 权重（v10s，sha256 校验）"
 W="$BA_ROOT/laya-browser/v10s/model.safetensors"
 WANT="b11217df18bf79cfcd4ab639caf1ae8652b91c9c44fcb9457fbe480237332335"
 if [ -f "$W" ] && echo "$WANT  $W" | sha256sum -c - >/dev/null 2>&1; then
   echo "    已存在且 hash 一致，跳过"
 else
-  HF_HUB_DISABLE_XET=1 "$(vpy "$BA_ROOT/venv")" -m huggingface_hub.cli.hf download \
+  HF_HUB_DISABLE_XET=1 "$(vbin "$BA_ROOT/venv" hf)" download \
     cklxx/laya-browser --local-dir "$BA_ROOT/laya-browser"
   echo "$WANT  $W" | sha256sum -c -
 fi

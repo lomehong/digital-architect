@@ -1,20 +1,30 @@
 #!/usr/bin/env bash
-# 启动验收栈：独立 Chrome（CDP）+ 本地 Laya systemone 服务 + fixture 静态服务。
-# 纪律：独立 user-data-dir，不触碰主人浏览器；pid 登记到 $BA_ROOT/stack.pids，stop-stack.sh 只杀登记 pid。
+# 启动验收栈：独立浏览器（CDP）+ 本地 Laya systemone 服务 + fixture 静态服务。
+# 纪律：独立 user-data-dir，不触碰日常浏览器；pid 登记到 $BA_ROOT/stack.pids，stop-stack.sh 只杀登记 pid。
+# 平台：Linux 容器用 apt 版 chromium（无显示自动 headless + --no-sandbox）；Windows 用本机 Chrome。
 set -euo pipefail
 BA_ROOT="${BA_ROOT:-$HOME/.browser-acceptance}"
 CDP_PORT="${BA_CDP_PORT:-9222}"
 S1_PORT="${BA_S1_PORT:-8791}"
 FIXTURE_PORT="${BA_FIXTURE_PORT:-8901}"
-CHROME_EXE="${CHROME_EXE:-/c/Program Files/Google/Chrome/Application/chrome.exe}"
 START_DIR="$PWD"
 
 vpy() { local v="$1"; if [ -x "$v/Scripts/python.exe" ]; then echo "$v/Scripts/python.exe"; else echo "$v/bin/python"; fi; }
 LPY="$(vpy "$BA_ROOT/venv")"
 
+if [ -z "${CHROME_EXE:-}" ]; then
+  for c in chromium chromium-browser google-chrome; do
+    command -v "$c" >/dev/null 2>&1 && CHROME_EXE="$c" && break
+  done
+  CHROME_EXE="${CHROME_EXE:-/c/Program Files/Google/Chrome/Application/chrome.exe}"
+fi
+CHROME_FLAGS=""
+[ -z "${DISPLAY:-}" ] && CHROME_FLAGS="--headless=new --no-sandbox --disable-dev-shm-usage"
+
 : > "$BA_ROOT/stack.pids"
 
-"$CHROME_EXE" --remote-debugging-port="$CDP_PORT" \
+# shellcheck disable=SC2086
+"$CHROME_EXE" $CHROME_FLAGS --remote-debugging-port="$CDP_PORT" \
   --user-data-dir="$BA_ROOT/chrome-profile" --no-first-run --no-default-browser-check about:blank &
 echo $! >> "$BA_ROOT/stack.pids"
 

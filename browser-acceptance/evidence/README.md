@@ -41,3 +41,14 @@ verify.py / systemone 服务加载权重会触发 `DefaultCPUAllocator: not enou
 2. chrome.exe 启动后会**重生成主进程**（原 pid 链在 `ps -W` 消失），pid 换算仍救不了 Chrome——
    增加按本栈专属标记（`remote-debugging-port` + `chrome-profile`）的命令行清扫兜底。
    两处均已在修复后完整启停闭环复测通过；教训同步沉淀 practice 条目「环境坑」第 10 条。
+
+## 2026-09-26 容器基线（docker-omp 容器内，CPU，headless chromium，bookworm）
+
+| 证据 | 出处命令 | 结果 |
+|---|---|---|
+| `suite-2026-09-26-container.json` | 容器内 `REPEATS=3 python suite.py`（栈由容器内 `start-stack.sh` 启动：headless chromium `--no-sandbox` + systemone + fixture） | **SUITE PASS**：nav 15/15 + fixture-click 3/3；fixture-composite 3/3 正确 blocked；known-limit 0/6——与宿主基线完全一致 |
+
+同日容器组件门禁（终端实录）：`deploy.sh` 全六步通过（uv 托管 Python 3.12.14、torch 经 tuna 源、权重 sha256 OK、
+jev pytest **31 passed**、verify.py **OK** conf 0.92 / 2788ms 每步）；`contract_test.py` **CONTRACT PASS**
+（端点契约 + 三条运行器拒绝路径）。部署修订：`deploy.sh` 的 torch/PyPI 源参数化（TORCH_INDEX/PIP_INDEX_URL，
+pytorch.org 直连实测 ~90KB/s 不可用）；命名卷属主降权在 entrypoint 固化。

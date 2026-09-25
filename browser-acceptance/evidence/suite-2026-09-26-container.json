@@ -1,0 +1,245 @@
+[
+ {
+  "name": "gh-issues",
+  "kind": "nav",
+  "ok": true,
+  "steps": 1,
+  "status": "done",
+  "wall": 28.8,
+  "final": "https://github.com/tile-ai/tilelang/issues"
+ },
+ {
+  "name": "gh-issues",
+  "kind": "nav",
+  "ok": true,
+  "steps": 1,
+  "status": "done",
+  "wall": 50.0,
+  "final": "https://github.com/tile-ai/tilelang/issues"
+ },
+ {
+  "name": "gh-issues",
+  "kind": "nav",
+  "ok": true,
+  "steps": 1,
+  "status": "done",
+  "wall": 29.8,
+  "final": "https://github.com/tile-ai/tilelang/issues"
+ },
+ {
+  "name": "py-downloads",
+  "kind": "nav",
+  "ok": true,
+  "steps": 1,
+  "status": "done",
+  "wall": 14.9,
+  "final": "https://www.python.org/downloads/"
+ },
+ {
+  "name": "py-downloads",
+  "kind": "nav",
+  "ok": true,
+  "steps": 1,
+  "status": "done",
+  "wall": 12.5,
+  "final": "https://www.python.org/downloads/"
+ },
+ {
+  "name": "py-downloads",
+  "kind": "nav",
+  "ok": true,
+  "steps": 1,
+  "status": "done",
+  "wall": 12.3,
+  "final": "https://www.python.org/downloads/"
+ },
+ {
+  "name": "books-travel",
+  "kind": "nav",
+  "ok": true,
+  "steps": 1,
+  "status": "done",
+  "wall": 27.9,
+  "final": "https://books.toscrape.com/catalogue/category/books/travel_2/index.html"
+ },
+ {
+  "name": "books-travel",
+  "kind": "nav",
+  "ok": true,
+  "steps": 1,
+  "status": "done",
+  "wall": 8.6,
+  "final": "https://books.toscrape.com/catalogue/category/books/travel_2/index.html"
+ },
+ {
+  "name": "books-travel",
+  "kind": "nav",
+  "ok": true,
+  "steps": 1,
+  "status": "done",
+  "wall": 8.7,
+  "final": "https://books.toscrape.com/catalogue/category/books/travel_2/index.html"
+ },
+ {
+  "name": "books-open-book",
+  "kind": "nav",
+  "ok": true,
+  "steps": 1,
+  "status": "done",
+  "wall": 6.4,
+  "final": "https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html"
+ },
+ {
+  "name": "books-open-book",
+  "kind": "nav",
+  "ok": true,
+  "steps": 1,
+  "status": "done",
+  "wall": 6.0,
+  "final": "https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html"
+ },
+ {
+  "name": "books-open-book",
+  "kind": "nav",
+  "ok": true,
+  "steps": 1,
+  "status": "done",
+  "wall": 6.1,
+  "final": "https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html"
+ },
+ {
+  "name": "quotes-tag-love",
+  "kind": "nav",
+  "ok": true,
+  "steps": 1,
+  "status": "done",
+  "wall": 14.5,
+  "final": "https://quotes.toscrape.com/tag/love/"
+ },
+ {
+  "name": "quotes-tag-love",
+  "kind": "nav",
+  "ok": true,
+  "steps": 1,
+  "status": "done",
+  "wall": 12.7,
+  "final": "https://quotes.toscrape.com/tag/love/"
+ },
+ {
+  "name": "quotes-tag-love",
+  "kind": "nav",
+  "ok": true,
+  "steps": 1,
+  "status": "done",
+  "wall": 11.1,
+  "final": "https://quotes.toscrape.com/tag/love/"
+ },
+ {
+  "name": "books-page2",
+  "kind": "known-limit",
+  "ok": false,
+  "steps": 1,
+  "status": "done",
+  "wall": 6.0,
+  "final": "https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html"
+ },
+ {
+  "name": "books-page2",
+  "kind": "known-limit",
+  "ok": false,
+  "steps": 1,
+  "status": "done",
+  "wall": 6.0,
+  "final": "https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html"
+ },
+ {
+  "name": "books-page2",
+  "kind": "known-limit",
+  "ok": false,
+  "steps": 1,
+  "status": "done",
+  "wall": 6.0,
+  "final": "https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html"
+ },
+ {
+  "name": "arxiv-search",
+  "kind": "known-limit",
+  "ok": false,
+  "steps": 0,
+  "status": "error:StalePage",
+  "wall": 15.2,
+  "final": ""
+ },
+ {
+  "name": "arxiv-search",
+  "kind": "known-limit",
+  "ok": false,
+  "steps": 2,
+  "status": "done",
+  "wall": 27.3,
+  "final": "https://arxiv.org/search/physics"
+ },
+ {
+  "name": "arxiv-search",
+  "kind": "known-limit",
+  "ok": false,
+  "steps": 3,
+  "status": "done",
+  "wall": 34.6,
+  "final": "https://arxiv.org/search/physics?query=&searchtype=all&abstracts=show&order=-ann"
+ },
+ {
+  "name": "fixture-click",
+  "kind": "fixture-must",
+  "ok": true,
+  "steps": 8,
+  "status": "done",
+  "wall": 19.2,
+  "final": "http://127.0.0.1:8901/fixture.html#casa-flora"
+ },
+ {
+  "name": "fixture-click",
+  "kind": "fixture-must",
+  "ok": true,
+  "steps": 8,
+  "status": "done",
+  "wall": 19.2,
+  "final": "http://127.0.0.1:8901/fixture.html#casa-flora"
+ },
+ {
+  "name": "fixture-click",
+  "kind": "fixture-must",
+  "ok": true,
+  "steps": 8,
+  "status": "done",
+  "wall": 19.4,
+  "final": "http://127.0.0.1:8901/fixture.html#casa-flora"
+ },
+ {
+  "name": "fixture-composite",
+  "kind": "fixture-lock",
+  "ok": false,
+  "steps": 9,
+  "status": "blocked",
+  "wall": 22.4,
+  "final": "http://127.0.0.1:8901/fixture.html#"
+ },
+ {
+  "name": "fixture-composite",
+  "kind": "fixture-lock",
+  "ok": false,
+  "steps": 9,
+  "status": "blocked",
+  "wall": 22.3,
+  "final": "http://127.0.0.1:8901/fixture.html#"
+ },
+ {
+  "name": "fixture-composite",
+  "kind": "fixture-lock",
+  "ok": false,
+  "steps": 9,
+  "status": "blocked",
+  "wall": 22.1,
+  "final": "http://127.0.0.1:8901/fixture.html#"
+ }
+]

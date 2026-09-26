@@ -52,3 +52,12 @@ verify.py / systemone 服务加载权重会触发 `DefaultCPUAllocator: not enou
 jev pytest **31 passed**、verify.py **OK** conf 0.92 / 2788ms 每步）；`contract_test.py` **CONTRACT PASS**
 （端点契约 + 三条运行器拒绝路径）。部署修订：`deploy.sh` 的 torch/PyPI 源参数化（TORCH_INDEX/PIP_INDEX_URL，
 pytorch.org 直连实测 ~90KB/s 不可用）；命名卷属主降权在 entrypoint 固化。
+
+## 2026-09-26 08:57 首次 agent 自主验收（容器 omp TUI，GLM-5.3-Flash 会话驱动）
+
+| 证据 | 出处 | 结果 |
+|---|---|---|
+| `agent-run-2026-09-26-0858/`（trace.json + verdict.json） | 主人在容器 omp TUI 发自然语言验收指令，agent 自主起栈 → `run_acceptance.py` → 收栈 | **FAIL（正确捕获）**：执行栈第 2 步误点 "Reading room" 偏离目标，模型自报 DONE（conf 0.58），独立校验 `--expect-url-contains casa-flora` 证实实际 URL 为 `#reading` → pass=false。「DONE 不算证据」红线首次实战生效 |
+
+同时证明：Laya 在容器内被真实调用（systemone.log 08:57 决策行）；agent 按 README 纪律用毕收栈（三端口全下）。
+变量注意：本次目标为中文表述（fixture 英文目标昨晚 3/3 过）——方案 U7（中文场景）第一条实证，待对照实验确认。

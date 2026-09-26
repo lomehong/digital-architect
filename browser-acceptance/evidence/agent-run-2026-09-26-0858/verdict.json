@@ -1,0 +1,12 @@
+{
+ "status": "done",
+ "wall_s": 5.7,
+ "checks": {
+  "url_contains": false
+ },
+ "pass": false,
+ "final": {
+  "url": "http://127.0.0.1:8901/fixture.html#reading",
+  "title": "Forma · Reading room"
+ }
+}

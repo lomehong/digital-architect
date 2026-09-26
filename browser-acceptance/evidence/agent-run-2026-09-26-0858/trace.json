@@ -1,0 +1,283 @@
+{
+ "goal": "打开 Casa Flora 详情页",
+ "url": "http://127.0.0.1:8901/fixture.html",
+ "history": [
+  {
+   "step": 1,
+   "action": "View Casa Flora",
+   "kind": "click",
+   "choice": "e11",
+   "probability": 0.9306,
+   "confidence": 0.9135,
+   "latency_ms": 3069,
+   "text": null,
+   "text_helper": null,
+   "text_latency_ms": 0,
+   "operation": "CLICK",
+   "target": "8",
+   "page_changed": true,
+   "url": "http://127.0.0.1:8901/fixture.html#casa-flora",
+   "usage": {
+    "input_tokens": 2414,
+    "output_tokens": 0
+   },
+   "executed_ms": 3091,
+   "elapsed_ms": 3147
+  },
+  {
+   "step": 2,
+   "action": "Reading room",
+   "kind": "click",
+   "choice": "e3",
+   "probability": 0.2959,
+   "confidence": 0.8879,
+   "latency_ms": 1001,
+   "text": null,
+   "text_helper": null,
+   "text_latency_ms": 0,
+   "operation": "CLICK",
+   "target": "3",
+   "page_changed": true,
+   "url": "http://127.0.0.1:8901/fixture.html#reading",
+   "usage": {
+    "input_tokens": 1001,
+    "output_tokens": 0
+   },
+   "executed_ms": 4161,
+   "elapsed_ms": 4219
+  }
+ ],
+ "decisions": [
+  {
+   "choice": "e11",
+   "operation": "CLICK",
+   "target": "8",
+   "confidence": 0.9135,
+   "probabilities": {
+    "e1": 0.0083,
+    "e2": 0.0086,
+    "e3": 0.0102,
+    "e5": 0.0071,
+    "e6": 0.0103,
+    "e10": 0.0075,
+    "e11": 0.9306,
+    "e12": 0.0086,
+    "e13": 0.0088
+   },
+   "operation_probabilities": {
+    "CLICK": 0.9731,
+    "TYPE_TEXT": 0.0072,
+    "SELECT": 0.0086,
+    "SCROLL_DOWN": 0.0028,
+    "WAIT": 0.0028,
+    "DONE": 0.0028,
+    "BLOCKED": 0.0028
+   },
+   "target_probabilities": {
+    "1": 0.0083,
+    "2": 0.0086,
+    "3": 0.0102,
+    "4": 0.0071,
+    "5": 0.0103,
+    "7": 0.0075,
+    "8": 0.9306,
+    "9": 0.0086,
+    "10": 0.0088
+   },
+   "target_confidence": 0.8197,
+   "raw_answers": {
+    "operation": {
+     "type": "choice",
+     "choice": "CLICK",
+     "probabilities": {
+      "CLICK": 0.9731,
+      "TYPE_TEXT": 0.0072,
+      "SELECT": 0.0086,
+      "SCROLL_DOWN": 0.0028,
+      "WAIT": 0.0028,
+      "DONE": 0.0028,
+      "BLOCKED": 0.0028
+     },
+     "confidence": 0.9135,
+     "action": {
+      "act_probability": 1.0
+     }
+    },
+    "click_target": {
+     "type": "choice",
+     "choice": "8",
+     "probabilities": {
+      "1": 0.0083,
+      "2": 0.0086,
+      "3": 0.0102,
+      "4": 0.0071,
+      "5": 0.0103,
+      "7": 0.0075,
+      "8": 0.9306,
+      "9": 0.0086,
+      "10": 0.0088
+     },
+     "confidence": 0.8197,
+     "action": {
+      "act_probability": 1.0
+     }
+    },
+    "type_text_target": {
+     "type": "choice",
+     "choice": "4",
+     "probabilities": {
+      "4": 1.0
+     },
+     "confidence": 1.0,
+     "action": {
+      "act_probability": 1.0
+     }
+    },
+    "select_target": {
+     "type": "choice",
+     "choice": "6:2",
+     "probabilities": {
+      "6:1": 0.1926,
+      "6:2": 0.5604,
+      "6:3": 0.247
+     },
+     "confidence": 0.1014,
+     "action": {
+      "act_probability": 1.0
+     }
+    }
+   },
+   "model": "laya-/home/pi/.browser-acceptance/laya-browser/v10s",
+   "usage": {
+    "input_tokens": 2414,
+    "output_tokens": 0
+   },
+   "latency_ms": 3069,
+   "fingerprint": "e8afc55d9fe7df23cbc43a3d0b72abe9cebafe47b7a9e45eca8567e2ea401def",
+   "elapsed_ms": 3075
+  },
+  {
+   "choice": "e3",
+   "operation": "CLICK",
+   "target": "3",
+   "confidence": 0.8879,
+   "probabilities": {
+    "e1": 0.2925,
+    "e2": 0.2081,
+    "e3": 0.2959,
+    "e4": 0.2035
+   },
+   "operation_probabilities": {
+    "CLICK": 0.9696,
+    "WAIT": 0.003,
+    "DONE": 0.0245,
+    "BLOCKED": 0.0029
+   },
+   "target_probabilities": {
+    "1": 0.2925,
+    "2": 0.2081,
+    "3": 0.2959,
+    "4": 0.2035
+   },
+   "target_confidence": 0.0113,
+   "raw_answers": {
+    "operation": {
+     "type": "choice",
+     "choice": "CLICK",
+     "probabilities": {
+      "CLICK": 0.9696,
+      "WAIT": 0.003,
+      "DONE": 0.0245,
+      "BLOCKED": 0.0029
+     },
+     "confidence": 0.8879,
+     "action": {
+      "act_probability": 1.0
+     }
+    },
+    "click_target": {
+     "type": "choice",
+     "choice": "3",
+     "probabilities": {
+      "1": 0.2925,
+      "2": 0.2081,
+      "3": 0.2959,
+      "4": 0.2035
+     },
+     "confidence": 0.0113,
+     "action": {
+      "act_probability": 1.0
+     }
+    }
+   },
+   "model": "laya-/home/pi/.browser-acceptance/laya-browser/v10s",
+   "usage": {
+    "input_tokens": 1001,
+    "output_tokens": 0
+   },
+   "latency_ms": 1001,
+   "fingerprint": "b117cdf62880d8883f9743bfc7be601124e8393ad04a607c6e8ca9e8391943f9",
+   "elapsed_ms": 4151
+  },
+  {
+   "choice": "DONE",
+   "operation": "DONE",
+   "target": null,
+   "confidence": 0.5767,
+   "probabilities": {
+    "DONE": 0.6566
+   },
+   "operation_probabilities": {
+    "CLICK": 0.3371,
+    "SCROLL_UP": 0.002,
+    "WAIT": 0.0021,
+    "DONE": 0.6566,
+    "BLOCKED": 0.0021
+   },
+   "target_probabilities": {},
+   "target_confidence": null,
+   "raw_answers": {
+    "operation": {
+     "type": "choice",
+     "choice": "DONE",
+     "probabilities": {
+      "CLICK": 0.3371,
+      "SCROLL_UP": 0.002,
+      "WAIT": 0.0021,
+      "DONE": 0.6566,
+      "BLOCKED": 0.0021
+     },
+     "confidence": 0.5767,
+     "action": {
+      "act_probability": 1.0
+     }
+    },
+    "click_target": {
+     "type": "choice",
+     "choice": "1",
+     "probabilities": {
+      "1": 0.3291,
+      "2": 0.1165,
+      "3": 0.1735,
+      "4": 0.1301,
+      "5": 0.1458,
+      "6": 0.1051
+     },
+     "confidence": 0.0496,
+     "action": {
+      "act_probability": 1.0
+     }
+    }
+   },
+   "model": "laya-/home/pi/.browser-acceptance/laya-browser/v10s",
+   "usage": {
+    "input_tokens": 1179,
+    "output_tokens": 0
+   },
+   "latency_ms": 1190,
+   "fingerprint": "6832d28f164e8ed6bd4df05e3c71566ba5723629ad22a9c3362e40088e717e0f",
+   "elapsed_ms": 5411
+  }
+ ],
+ "text_calls": []
+}

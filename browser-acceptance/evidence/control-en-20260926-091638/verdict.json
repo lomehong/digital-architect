@@ -1,0 +1,12 @@
+{
+ "status": "done",
+ "wall_s": 34.3,
+ "checks": {
+  "url_contains": true
+ },
+ "pass": true,
+ "final": {
+  "url": "http://127.0.0.1:8901/fixture.html#casa-flora",
+  "title": "Forma · Find a place to slow down"
+ }
+}

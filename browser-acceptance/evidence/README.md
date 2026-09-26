@@ -61,3 +61,11 @@ pytorch.org 直连实测 ~90KB/s 不可用）；命名卷属主降权在 entrypo
 
 同时证明：Laya 在容器内被真实调用（systemone.log 08:57 决策行）；agent 按 README 纪律用毕收栈（三端口全下）。
 变量注意：本次目标为中文表述（fixture 英文目标昨晚 3/3 过）——方案 U7（中文场景）第一条实证，待对照实验确认。
+
+## 2026-09-26 09:16 U7 对照实验（容器内，run_acceptance.py 直跑 ×3）
+
+| 证据 | 出处 | 结果 |
+|---|---|---|
+| `control-en-20260926-091638/091712/091730/` | 同 fixture 任务、**英文**目标（"Open the Casa Flora listing…"），`run_acceptance.py --allow-host 127.0.0.1 --expect-url-contains casa-flora` | **3/3 PASS**（对照 08:57 中文目标 run 的 FAIL）→ U7 升级为实证结论：验收目标暂用英文表述 |
+
+附带闭合：run_acceptance.py 独立运行此前未实测（实施评审遗留），本轮 3 次实跑补齐。

@@ -36,4 +36,10 @@ Agent 产出 typed JSON IR → Archify 确定性编译为**自包含交互式 HT
 
 - archify 只列 authored 事实——**不推断影响、风险、合并安全**；架构判断仍是架构师（评审证据回源）的职责。
 - 升级：`skills/archify/` 更新后同步 `.omp/skills/` 与 `.claude/skills/` 双根副本，并刷新 PINNED.txt。
+- **omp 容器形态（docker/workspace）第三同步目标（2026-09-26 补装）**：workspace 卷内物理副本
+  `docker/workspace/.agents/skills/archify` + `docker/workspace/.claude/skills/archify`（omp 双根发现，
+  与既有 4 技能同模式；workspace 不入 git，为运行时卷）。升级时此处**易漏**——与三副本纪律并列检查；
+  容器内 `/opt/architect/skills` 为只读规则面挂载，omp 不在该根发现技能。
 - dsh 侧卸载（兼容性失败时）：`dsh plugin --profile web remove @tt-a1i/archify-dsh`。
+- dsh 项目级挂载（2026-09-26）：`.dsh/skills/archify` junction → `skills/archify`（`.dsh/` 已入 gitignore，
+  挂载点机器本地；dsh 技能发现 rank 100）。

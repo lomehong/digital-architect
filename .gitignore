@@ -9,3 +9,5 @@ observatory/server.pid
 # Model B：平台独立部署打包产物（pack.mjs 重建即得）与 governor 缺省状态目录（未显式 --state 时）
 observatory/dist/
 observatory/governor-state/
+# dsh 宿主技能挂载点（junction → skills/<name>，机器本地；权威源在 skills/，镜像纪律见 .claude/.omp 双根）
+.dsh/

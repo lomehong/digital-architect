@@ -11,7 +11,7 @@
  * 退出码: 0=pass 1=fail 2=内部错误（对齐 gate-guard 三值语义）。
  * 治理: 本脚本自身纳入 gate-guard PROTECTED（2026-10-10 主人拍板）——改造本脚本的提交需 Gate-Approved。
  */
-import { existsSync, mkdirSync, rmSync, writeFileSync, symlinkSync, realpathSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync, symlinkSync, realpathSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 

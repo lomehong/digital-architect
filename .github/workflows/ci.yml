@@ -40,8 +40,10 @@ jobs:
           npm --prefix dsh-architect run build
       - name: knowledge-lint（error 阻断——主人 2026-09-10 拍板 Q1）
         run: node dsh-architect/scripts/lint-knowledge.mjs architect-knowledge
-      - name: SKILL 三副本一致性校验（G3，权威源 skills/）
-        run: node scripts/check-skills-sync.mjs
+      - name: 技能发现根链接健康检查（链接化收敛，2026-10-10——先建后检两步）
+        run: |
+          bash scripts/link-skills.sh
+          bash scripts/link-skills.sh --check
       - name: 任务台账契约校验（Task Surface：自测红绿 + 结构校验）
         run: |
           node scripts/task-ledger.mjs --selftest

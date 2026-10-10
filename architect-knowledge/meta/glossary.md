@@ -35,3 +35,5 @@ owner: 主人
 | 就绪边界 | 所有 blocker 已落定的票集合，可并发执行 | `skills/architect-implement/SKILL.md` |
 | 单向门/双向门 | 可逆性分级：回滚成本高 / 可常规回滚 | `principle/task-and-memory-surface.md` report |
 | 爆炸半径 | 变更失误时受影响的面 | `principle/task-and-memory-surface.md` report |
+| 发现根 | 宿主扫描技能的目录（.claude/.omp/.dsh/容器直挂） | `docs/designs/2026-10-10-技能发现根链接化收敛-技术方案.md` |
+| 兼容链接 | 指回权威源 skills/ 的机器本地链接 | `scripts/link-skills.ps1|.sh` |

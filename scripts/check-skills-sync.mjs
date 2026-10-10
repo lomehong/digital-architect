@@ -71,7 +71,7 @@ function selftest() {
   }
 }
 
-if (process.argv.includes('--selftest')) { selftest(); }
+if (process.argv.includes('--selftest')) { selftest(); process.exit(0); }
 
 const problems = healthProblems()
 if (problems.length === 0) {

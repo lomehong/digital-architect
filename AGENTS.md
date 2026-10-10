@@ -10,6 +10,7 @@
   红线见 `skills/architect-implement/SKILL.md`「浏览器验收任务」节）。
 - 走架构师流程（技能已挂载，按需触发）：
   `architect-prd-digest`（需求准入）→ `architect-design`（六维度方案，可选 archify 系统地图）→ `architect-review`（五问+覆盖评分）。
+- 术语表：`architect-knowledge/meta/glossary.md`——统一语言索引（写文档/交付物前先对词；新术语经需求拷问或 retro 即时登记）。
 - 流程中按**渐进式披露**读知识库：先 `meta/`（概念与边界）→ 按主题 `principle/` `scenario/` → 历史原因查 `practice/` → 跨域引用 `reference/`（引用不复制）。
 
 ## 纪律（不可协商）

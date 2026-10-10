@@ -5,3 +5,4 @@
 | [dsh-ecosystem-concept-model.md](dsh-ecosystem-concept-model.md) | 一个 dsh 实例 = 一个数字分身；实例级资产与会话窗口；工程知识库与人格记忆的边界 | 已确认 |
 | [key-decisions.md](key-decisions.md) | 项目关键设计决策 D1~D10（载体/自举/位置/关系/宿主中立/总仓边界）与 SKILL 挂载方式 | 已确认 |
 | [project-scope-and-roles.md](project-scope-and-roles.md) | 项目一句话、四阶段边界、角色纪律四条、非同义词表 | 已确认 |
+| [glossary.md](glossary.md) | 架构师体系统一语言术语表（~20 条索引+权威定义指针；digest 拷问/retro 即时登记） | 待审核 |

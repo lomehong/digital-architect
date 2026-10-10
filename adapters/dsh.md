@@ -38,7 +38,7 @@ owner: 主人
 |---|---|
 | `create` | `task_delegate` 立项（任务描述含可验收条目，附方案路径） |
 | `claim` | `task_claim`（会话压缩后 session 变化由看板接管语义处理） |
-| `report` | `task_report` |
+| `report` | `task_report`（内容含可逆性分级：单向门/双向门 + 爆炸半径，2026-10-10 契约字段扩展） |
 | `confirm` | 今日待办确认/驳回（**只有主人可发起**） |
 | `list` | 看板面板 / activity 查询 |
 

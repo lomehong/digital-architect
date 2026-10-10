@@ -40,7 +40,7 @@ owner: 主人
 |---|---|
 | `create` | `node scripts/task-ledger.mjs new --id <任务号> --title … --accept … --root <目标项目>` |
 | `claim` | `… claim --id … --by <会话标识>`（分支名带同一任务号，便于追溯） |
-| `report` | `… report --id … --summary "diff 摘要 + 测试证据 + 未兑现清单"` |
+| `report` | `… report --id … --summary "diff 摘要 + 测试证据 + 未兑现清单 + 可逆性分级（单向门/双向门+爆炸半径）"` |
 | `confirm` | `… confirm --id … --confirmed-by <主人标识> --confirmed-via <ask 交互引用>`（**只有主人可发起**；脚本拒绝无来源确认） |
 | `list`/`archive` | `… list` / `… archive`（归档需已落定或显式 --force） |
 

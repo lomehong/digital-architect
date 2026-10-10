@@ -18,3 +18,4 @@
 | [solution-completeness-standard.md](solution-completeness-standard.md) | 可执行方案六要素与 95% 完备度语义（内容覆盖度≠结构分） | 已确认 |
 | [suite-federation-principles.md](suite-federation-principles.md) | 套件联邦四原则与合规细则（宪法） | 已确认 |
 | [task-and-memory-surface.md](task-and-memory-surface.md) | 任务面五操作+四态状态机+四不变量；记忆面最小契约（宿主无关）；落点改 docs/tasks 待重确认 | 已确认 |
+| [writing-for-agents.md](writing-for-agents.md) | 给 Agent 写文档的纪律（信息层级/两预算/完成判据两杠杆/leading words/否定式失败/pruning 四则——mattpocock skills 蒸馏） | 待审核 |

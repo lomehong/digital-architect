@@ -1,6 +1,8 @@
 # review-queue.yaml · 待审核队列（与条目 frontmatter status: 待审核 一一对应）
 # 维护纪律：主人确认后移除对应行，并把条目 status 改「已确认」、更新 confirmed 日期。
 # 台账是索引，frontmatter 仍是唯一权威（防双权威漂移）。
-# 当前队列 2 条（2026-09-16 non-producing-session-review-pilot；2026-09-25 browser-e2e-acceptance-spike-lessons）。
+# 当前队列 4 条（2026-09-16 non-producing-session-review-pilot；2026-09-25 browser-e2e-acceptance-spike-lessons；2026-10-10 principle/writing-for-agents；2026-10-10 meta/glossary）。
 - file: practice/non-producing-session-review-pilot.md
 - file: practice/browser-e2e-acceptance-spike-lessons.md
+- file: principle/writing-for-agents.md
+- file: meta/glossary.md

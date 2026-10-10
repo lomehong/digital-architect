@@ -5,7 +5,7 @@
 
 ## 一句话
 
-基于**数字分身套件已有的 Harness 机制**（任务看板/账本治理/共享记忆/守卫纪律/验收语义）+ **两篇方法论文章**（阿里技术《AI Friendly 后端架构》与千问平台《架构师 Agent 系统化落地》），搭建架构师 Agent。**架构师 Agent ≠ 从零写新 Agent**：分身已有的 Harness 不动，补三个新件——知识工程（`architect-knowledge/`）、**五个流程 SKILL**（`skills/`）、产出规范（`templates/`）。
+基于**数字分身套件已有的 Harness 机制**（任务看板/账本治理/共享记忆/守卫纪律/验收语义）+ **两篇方法论文章**（阿里技术《AI Friendly 后端架构》与千问平台《架构师 Agent 系统化落地》），搭建架构师 Agent。**架构师 Agent ≠ 从零写新 Agent**：分身已有的 Harness 不动，补三个新件——知识工程（`architect-knowledge/`）、**流程 SKILL 集**（`skills/`，现 13 个：五流程 + knowledge-distill + archify + codebase-graph×2 + yuyi×5）、产出规范（`templates/`）。
 
 ## 目录结构
 
@@ -22,12 +22,30 @@ digital-architect\
 │   ├── scenario\                   ← 场景→技术映射（架构设计流水线）
 │   ├── practice\                   ← 历史决策/事故教训/可复用模式
 │   └── reference\                  ← 外部领域引用（不复制对方知识）
-├── skills\
-│   ├── architect-prd-digest\       ← 需求准入：六项覆盖检查 → 结构化需求包
-│   ├── architect-design\           ← 设计主流程：渐进披露四层装载 → Gap Analysis → 六维度方案
-│   ├── architect-review\           ← 方案评审 + 实现评审：五问检查 + 六维度覆盖评分
-│   ├── architect-implement\        ← 开发执行：测试清单先行 → feature 分支 → 小步提交 → 对照自检
-│   └── knowledge-distill\          ← 知识蒸馏：外部材料 → 五类结构落库（待审核入库）
+├── skills\                            ← 技能权威源（13 个：五流程 + knowledge-distill + archify + codebase-graph×2 + yuyi×5；宿主发现根经 scripts/link-skills 链接化挂载）
+│   ├── architect-prd-digest\       ← 需求准入：需求拷问 → 六项覆盖检查 → 结构化需求包
+│   ├── architect-design\           ← 设计主流程：渐进披露四层装载 → Gap Analysis → 六维度方案（§五规则拆解法）
+│   ├── architect-review\           ← 方案评审 + 实现评审：五问检查 + 六维度覆盖评分 + 双轴子代理评审
+│   ├── architect-implement\        ← 开发执行：测试清单先行 → ready-frontier 并行 → 小步提交 → 对照自检 → retro
+│   ├── knowledge-distill\          ← 知识蒸馏：外部材料 → 五类结构落库（待审核入库）
+│   ├── archify\                    ← 外部技能：架构系统地图（pin c1443b3，接入记录见 reference/archify-integration.md）
+│   ├── codebase-graph-*\           ← 外部技能：代码库业务/模块规则图（×2）
+│   └── yuyi-*\                     ← 外部技能：御驿协作知识层（×5）
+├── browser-acceptance\             ← 浏览器端到端验收能力包（jev-ultrafast + 本地 Laya System-1 决策 + 独立 Chrome；2026-09-25 落定，README 有用法与红线）
+├── scripts\                            ← 门禁与工具（link-skills bootstrap / check-skills-sync 链接健康检查 / gate-guard / task-ledger / lint-knowledge）
+├── docs\
+│   ├── 能力地图.md                   ← 一页读完体系能力（纯索引，维护纪律见文件头）
+│   └── designs\                      ← 设计档案（需求包/技术方案/评审结论/走查记录）
+├── templates\
+│   └── executable-design.md        ← 可执行技术方案模板（六维度+五问）
+├── packages\
+│   └── architect-core\              ← 宿主中立核心（纯函数唯一事实源：coverage/digest/lint/kbcollect）
+├── dsh-architect\                    ← submodule：dsh 宿主外壳插件（lomehong/dsh-architect，决策 D10/D11）
+├── omp-architect\                    ← submodule：omp 宿主外壳（lomehong/omp-architect，决策 D11）
+└── dsh-yuyi\                         ← submodule：御驿通信（lomehong/dsh-yuyi，双总仓共享——架构师经它与数字分身通讯）
+
+> 技能发现根（`.claude/skills`、`.omp/skills`、`.dsh/skills`）= 机器本地链接 → `skills/`，
+> 由 `scripts/link-skills` bootstrap 维护（新克隆先跑一次；不入 git）。
 ├── templates\
 │   └── executable-design.md        ← 可执行技术方案模板（六维度+五问）
 ├── packages\
@@ -41,14 +59,17 @@ digital-architect\
 
 **digital-architect 与数字分身套件是两个平级总仓**：本仓是架构师体系根仓（知识 + SKILL + 模板 + 适配层 + 宿主中立核心 `packages/architect-core` + 两个宿主外壳子模块）；dsh-architect 已从套件清单退出（宪章 v1.4），以 submodule 归入本仓。**dsh-yuyi 以 submodule 双总仓共享**——两个总仓各持独立指针，同一协议底座：套件侧服务分身，本仓侧支撑架构师 Agent 与数字分身通讯（场景见 `architect-knowledge/scenario/architect-twin-collaboration.md`）。
 
-## 多宿主支持（dsh + oh-my-pi）
+## 多宿主支持（dsh + oh-my-pi + Kimi Code 缺口登记）
 
-架构师 Agent 的核心资产——知识库、**五个 SKILL**、方案模板——是**宿主中立**的（决策 D9，原则见 `architect-knowledge/principle/host-neutral-core.md`）。宿主特定机制（会话内提问、审批、任务面、记忆面、技能挂载、检查器安装）收敛在 `adapters/`，一个宿主一个文件；SKILL 执行前按会话可用工具判别宿主并装载对应适配文件，判别不了直接问主人，**治理机制缺席一律收敛保守侧（停止问主人，不静默放行）**。
+架构师 Agent 的核心资产——知识库、**流程 SKILL 集**、方案模板——是**宿主中立**的（决策 D9，原则见 `architect-knowledge/principle/host-neutral-core.md`）。宿主特定机制（会话内提问、审批、任务面、记忆面、技能挂载、检查器安装）收敛在 `adapters/`，一个宿主一个文件；SKILL 执行前按会话可用工具判别宿主并装载对应适配文件，判别不了直接问主人，**治理机制缺席一律收敛保守侧（停止问主人，不静默放行）**。
 
 | 宿主 | 适配文件 | 检查工具 |
 |---|---|---|
 | dsh（DeepSeek Harness / digital-twin 套件） | [`adapters/dsh.md`](adapters/dsh.md) | dsh-architect 插件（tool-architect） |
-| [oh-my-pi](https://github.com/can1357/oh-my-pi)（omp） | [`adapters/oh-my-pi.md`](adapters/oh-my-pi.md) | omp-architect（CustomToolFactory ×4，同一核心） |
+| [oh-my-pi](https://github.com/can1357/oh-my-pi)（omp，容器形态） | [`adapters/oh-my-pi.md`](adapters/oh-my-pi.md) | omp-architect（CustomToolFactory ×4，同一核心） |
+| Kimi Code（桌面 Agent 宿主） | 未建立（**缺口登记**，2026-09-25 方案 Q1） | —— |
+
+**技能发现根**（2026-10-10 链接化收敛）：`.claude/skills`、`.omp/skills`、`.dsh/skills` = 机器本地链接 → `skills/`，由 `scripts/link-skills` bootstrap 一键铺装（新克隆先跑一次）；omp 容器形态 = 权威源 rw 直挂（零同步）。
 
 新增宿主 = 复制一份适配文件覆盖五个面；不修改 SKILL 与知识库。
 
@@ -78,19 +99,20 @@ digital-architect\
 
 知识蒸馏来源（全在手边）：
 
-1. `E:\Development\Code\nodejs\digital-twin\docs\suite-charter.md`（套件宪章 = Architecture Map 级）
+1. 数字分身总仓 `docs/suite-charter.md`（套件宪章 = Architecture Map 级）
 2. 两篇文章条目（dsh-memory：`mem_1788973443918_oagd2n`、`mem_1788978083156_yycfzp`）
 3. 各仓 README + `docs\HANDOFF.md`
 4. 源码本身（10 仓，service-knowledge 阶段再系统生成）
 
-## 路线（2026-09-09 状态）
+## 路线（2026-09-09 状态起步；阶段 5 更新于 2026-10-10）
 
 - **阶段 1 ✅**：知识工程地基——五类 13 条 + 3 SKILL + 模板（纯文件，零代码）。
 - **阶段 2 ✅**：自举首跑——三件套走查（`docs/designs/`），SKILL 挂载实测被宿主发现；方案已获主人五问验收落定（2026-09-09）。
 - **阶段 3 ✅**：dsh-architect 插件 v0.1.0（`lomehong/dsh-architect`，24 测试全绿，宪章 v1.2 准入）；主人确认接线——profile 已接（junction + bundles），**重启桌面版生效**；分身工具行经 dsh-twin PRESET_VERSION 11 条件装配（aa88a49）。
 - **阶段 4 ✅（首批）**：dsh-desktop System Card + 公众号采集 runbook（`docs\runbook-公众号采集.md`）；service-knowledge 全量化与管道常态化待主人排期。
+- **阶段 5 ✅（2026-09-25 ~ 10-10）**：浏览器端到端验收能力（browser-acceptance 能力包，独立评审 59/60 + 实测）；编排流程吸收整合（mattpocock/skills 四模式：拷问/五规则拆解/双轴评审/可逆性分级）；技能发现根链接化收敛（单一技能面 + bootstrap，独立评审 59/60）；GLOSSARY 统一语言；知识库 32→48 条目。
 
-详见 `docs\HANDOFF.md` §6 与 `docs\designs\`。
+详见 `docs\HANDOFF.md` §6 与 `docs\designs\`；能力全景见 `docs\能力地图.md`。
 
 ## 纪律（主人叮嘱，见 HANDOFF §9）
 

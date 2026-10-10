@@ -14,12 +14,8 @@ case "${1:-}" in
   --check) CHECK=1; MODE=check ;;
   --mode) MODE="${2:-copy}"; shift 2 2>/dev/null || true ;;
 esac
-[ "${1:-}" = "--mode" ] && { MODE="${2:-copy}"; shift; } 2>/dev/null || true
 
 # 防自污染: 发现根不得位于权威源内部
-case "$(cd "$REPO/skills" && pwd -P)/" in
-  "$REPO/$ROOTS"*) : ;;
-esac
 for r in .claude/skills .omp/skills .dsh/skills; do
   rp="$(cd "$REPO" && realpath -m "$r" 2>/dev/null || echo "$REPO/$r")"
   sp="$(cd "$REPO/skills" && pwd -P)"

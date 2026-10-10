@@ -51,11 +51,16 @@ whenToUse: 方案经 architect-review 通过且主人确认落定后，主人点
 - **触及治理面**（push、发布、删除数据、对外承诺）→ 停：按宿主适配文件走审批（dsh=账本 L2+ 今日待办；omp=强制 `ask` 主人，无账本不得静默放行）；
 - **超范围**：发现需要改方案外文件 → 停，列入待确认。
 
+### 多票并行模式（ready-frontier）
+
+方案拆解为多票且看板带 `blocked_by` 阻断边时：**就绪边界**（所有 blocker 已落定的票）可派子代理并发执行，单票内部仍串行；每票独立自报、独立走第六步验收。上下文预算不允许并发时退回串行，不阻塞流程。
+
 ### 第六步：自报与验收
 
 1. 任务面 `report` 自报（实现按适配文件映射：dsh=看板 task_report / oh-my-pi=`scripts/task-ledger.mjs report`）：**diff 摘要 + 测试证据 + 未兑现清单 + 分支与 commit 范围**；
 2. **自报 ≠ 完成**：实现评审（`architect-review` 实现评审模式，由非编码会话执行更佳）→ 主人确认 → 方可合并主分支/交付；
 3. 合并后经验回灌 `architect-knowledge/practice/`（走待审核流程）。
+4. **retro 一问**：本次会话暴露哪些 agent 环境改进点（导航/自动检查/纪律/工具）？按严重度列 ≤3 条——进 GLOSSARY 修订或知识漂移通道。
 
 ## 浏览器验收任务（browser-acceptance，2026-09-25 落定）
 

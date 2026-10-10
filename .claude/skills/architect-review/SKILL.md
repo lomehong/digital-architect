@@ -67,6 +67,14 @@ whenToUse: 有一份技术方案（architect-design 产出或其他来源）需�
 4. **分支与提交纪律**：feature 分支存在、提交信息含改动归属、工作树无夹带改动；
 5. **知识库机械校验**：涉知识库改动时**亲自复跑** knowledge-lint（`architect_lint` 工具或 CLI），确认 error 为空——不轻信提交者自述。
 
+**双轴子代理评审**（diff >200 行或 >5 文件时启用双代理并行；小 diff 单代理双轴串行）：
+
+- **标准轴**（子代理 1）：本仓纪律（各 SKILL.md 纪律摘要与红线）+ 12 条 Fowler smell 基线——Mysterious Name、Duplicated Code、Feature Envy、Data Clumps、Primitive Obsession、Repeated Switches、Shotgun Surgery、Divergent Change、Speculative Generality、Message Chains、Middle Man、Refused Bequest（每条=是什么→怎么改）。绑定规则：仓库纪律覆盖基线；smell 全部是 judgement call 非硬违规；工具已强制的跳过；
+- **规格轴**（子代理 2）：对照方案验收条目逐条核——缺失/走样 + scope creep（未被要求的行为）；
+- **brief 纪律**：两轴各自携带完整判据与 diff 范围，输出分轴、引原文、≤400 字；
+- **聚合纪律**：分轴呈现、每轴一行总结、**永不跨轴 rerank**——轴分离的存在理由就是防止一轴掩盖另一轴；
+- **组合点（不变量）**：规格轴 findings 逐条**证据回源**后才成立；与本节五项检查叠加，不替代。
+
 结论格式同方案评审（通过/驳回 + 缺口清单）；**实现评审通过 ≠ 交付完成**，仍须主人确认后方可合并或发布。
 
 ## 评审结论（固定格式）

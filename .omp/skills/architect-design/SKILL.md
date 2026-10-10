@@ -66,7 +66,15 @@ whenToUse: 需求准入（architect-prd-digest）通过后，主人要求「出�
 
 
 1. 技术方案写入主人指定位置（默认**目标项目** `docs/designs/<slug>.md`——落点规则见路径基准；文件头标注来源需求包路径）；
-2. 方案经 architect-review 通过、主人确认后，把六维度内容**拆解为任务**——用**任务面操作名**（契约见 `architect-knowledge/principle/task-and-memory-surface.md`）：`create` 立项（含任务号与可验收条目）→ 执行方 `claim` 认领 → `report` 自报 → 主人 `confirm` 落定；**具体实现按适配文件映射**（dsh=看板任务工具 + 今日待办；oh-my-pi=`scripts/task-ledger.mjs` 文件台账 + `ask` 确认）；
+2. 方案经 architect-review 通过、主人确认后，把六维度内容**拆解为任务**——用**任务面操作名**（契约见 `architect-knowledge/principle/task-and-memory-surface.md`）：`create` 立项（含任务号与可验收条目）→ 执行方 `claim` 认领 → `report` 自报 → 主人 `confirm` 落定；**具体实现按适配文件映射**（dsh=看板任务工具 + 今日待办；oh-my-pi=`scripts/task-ledger.mjs` 文件台账 + `ask` 确认）。拆解遵循**五规则拆解法**（2026-10-10 吸收整合，源自 to-tickets 模式）：
+
+   - **垂直切片**：每票切穿所有层、可独立验收、单会话上下文可容——不做单层横切片；
+   - **预重构先行**：先让改动变容易，再做容易的改动——预重构单独成票；
+   - **阻断边显式**：每票声明 `blocked_by`（映射看板/台账原生阻断关系）；
+   - **quiz 迭代**：拆解呈主人确认粒度（粗/细）、阻断边正确性、合并/拆分——迭代至批准；
+   - **expand–contract 例外**：宽改（爆炸半径遍布全库的机械变更）不硬切垂直片——先扩展（新旧并存）→ 分批迁移（每批一票，保 CI 绿）→ 收缩（删旧形式）；批间无法独立保绿时共享集成分支、汇入最终验证票；
+   - **防陈旧**：票内不写会过时的文件路径；决策性片段（schema/状态机/类型形状）可内联并注明出处；
+   - **执行方式**：只做就绪边界（所有 blocker 已落定的票），就绪边界可派子代理并发（见 architect-implement 多票并行模式）。
 3. **执行方由主人点名**（自编 / 委派，规则见 `principle/coding-delegation-and-branch-discipline.md`）；执行方是数字分身且不在本宿主时，经御驿（yuyi）委派（场景映射见 `architect-knowledge/scenario/architect-twin-collaboration.md`）：委派内容带任务号与可验收条目，执行结果经 yuyi 回流 + 任务面 `report` 自报——自报 ≠ 完成，仍须主人 `confirm`；
 4. 执行结果回流后，把新经验回灌 `architect-knowledge/practice/`（Knowledge Evolution，沉淀路径同样按适配文件：dsh=另存 dsh-memory / oh-my-pi=指针 retain，仓库 git 均为权威）。
 

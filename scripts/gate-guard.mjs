@@ -27,6 +27,7 @@ const PROTECTED = [
   'dsh-architect/scripts/**',
   'docs/metrics/**',
   'scripts/gate-guard.mjs',
+  'scripts/check-skills-sync.mjs',
 ]
 
 function git(args) {

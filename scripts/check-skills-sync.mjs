@@ -1,106 +1,83 @@
 #!/usr/bin/env node
 /**
- * check-skills-sync.mjs —— SKILL 三副本一致性校验（母包 G3，2026-09-11）。
+ * check-skills-sync.mjs — 技能发现根链接健康检查（2026-10-10 改造）。
  *
- * 背景：canonical `skills/` 与镜像 `.claude/skills/`、`.omp/skills/` 曾靠手工同步
- * （adapters/oh-my-pi.md L81 自述），属知识漂移防线盲区。本脚本以 skills/ 为权威，
- * 逐文件比对两处镜像的内容哈希：缺失、单侧新增、内容不一致均报错 exit 1。
- * 纪律：解析/IO 异常一律 exit 非 0，绝不静默绿；--selftest 用临时夹具自证红绿。
+ * 历史：原名「SKILL 三副本一致性校验」（母包 G3，2026-09-11）——.claude/.omp 双物理镜像随
+ * 「技能发现根链接化收敛」方案退役（docs/designs/2026-10-10-技能发现根链接化收敛-技术方案.md §2.2），
+ * 本脚本改造为**链接健康检查**：逐根逐技能断言「发现根/<name> 存在、可解析至 skills/<name>、SKILL.md 可读」。
+ * 发现根链接由 scripts/link-skills.ps1|.sh bootstrap 维护（本脚本只验证不修复，fail-closed）。
+ *
+ * 用法: node scripts/check-skills-sync.mjs [--selftest]
+ * 退出码: 0=pass 1=fail 2=内部错误（对齐 gate-guard 三值语义）。
+ * 治理: 本脚本自身纳入 gate-guard PROTECTED（2026-10-10 主人拍板）——改造本脚本的提交需 Gate-Approved。
  */
-import { createHash } from 'node:crypto'
-import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { join, relative } from 'node:path'
+import { existsSync, mkdirSync, rmSync, writeFileSync, symlinkSync, realpathSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import path from 'node:path'
 
-const ROOT = process.cwd()
-const CANONICAL = 'skills'
-const MIRRORS = ['.claude/skills', '.omp/skills']
+const ROOTS = ['.claude/skills', '.omp/skills', '.dsh/skills']
+const repo = process.cwd()
+const src = path.join(repo, 'skills')
 
-/** 递归收集 dir 下全部文件的相对路径（POSIX 风格）。 */
-function collectFiles(dir, prefix = '') {
-  const out = []
-  if (!existsSync(dir)) return out
-  for (const name of readdirSync(dir)) {
-    const full = join(dir, name)
-    if (statSync(full).isDirectory()) out.push(...collectFiles(full, prefix ? `${prefix}/${name}` : name))
-    else out.push(prefix ? `${prefix}/${name}` : name)
-  }
-  return out
+function skillNames() {
+  return readdirSync(src).filter(n => {
+    try { return existsSync(path.join(src, n, 'SKILL.md')) } catch { return false }
+  })
 }
 
-function hashFile(path) {
-  return createHash('sha256').update(readFileSync(path)).digest('hex')
-}
-
-/** 核心：返回 [errors: string[], checked: number]。纯比较，不做 IO 副作用。 */
-export function compareTrees(canonicalDir, mirrorDirs) {
-  const errors = []
-  const canonical = new Map(collectFiles(canonicalDir).map(rel => [rel, hashFile(join(canonicalDir, rel))]))
-  let checked = canonical.size
-  for (const mirror of mirrorDirs) {
-    if (!existsSync(mirror)) {
-      errors.push(`镜像目录缺失：${mirror}`)
-      continue
-    }
-    const seen = new Set()
-    for (const rel of collectFiles(mirror)) {
-      seen.add(rel)
-      if (!canonical.has(rel)) {
-        errors.push(`${mirror}/${rel}：单侧多出（canonical 无此文件）`)
+function healthProblems() {
+  const problems = []
+  const names = skillNames()
+  for (const root of ROOTS) {
+    for (const name of names) {
+      const link = path.join(repo, root.replace(/\//g, path.sep), name)
+      if (!existsSync(path.join(link, 'SKILL.md'))) {
+        problems.push(`缺失/断链: ${root}/${name}`)
         continue
       }
-      if (hashFile(join(mirror, rel)) !== canonical.get(rel)) {
-        errors.push(`${mirror}/${rel}：内容与 ${CANONICAL}/${rel} 不一致`)
+      try {
+        const rl = realpathSync(link)
+        const rt = realpathSync(path.join(src, name))
+        if (path.relative(rl, rt) !== '') problems.push(`指错: ${root}/${name} → ${rl}`)
+      } catch {
+        problems.push(`不可解析: ${root}/${name}`)
       }
     }
-    for (const rel of canonical.keys()) {
-      if (!seen.has(rel)) errors.push(`${mirror}/${rel}：缺失（canonical 有此文件）`)
-    }
   }
-  return [errors, checked]
+  return problems
 }
 
 function selftest() {
-  const tmp = mkdtempSync(join(tmpdir(), 'skills-sync-'))
+  const t = path.join(tmpdir(), `skill-links-selftest-${Date.now()}`)
   try {
-    const canon = join(tmp, 'skills')
-    const mirror = join(tmp, 'mirror')
-    mkdirSync(join(canon, 'a'), { recursive: true })
-    mkdirSync(join(mirror, 'a'), { recursive: true })
-    writeFileSync(join(canon, 'a', 'SKILL.md'), 'v1')
-    // 绿：完全一致
-    cpSync(canon, mirror, { recursive: true })
-    let [errors] = compareTrees(canon, [mirror])
-    if (errors.length !== 0) throw new Error(`selftest 绿态失败：${errors}`)
-    // 红 1：内容漂移
-    writeFileSync(join(mirror, 'a', 'SKILL.md'), 'v2')
-    ;[errors] = compareTrees(canon, [mirror])
-    if (errors.length !== 1 || !errors[0].includes('不一致')) throw new Error(`selftest 漂移态失败：${errors}`)
-    // 红 2：单侧多出
-    writeFileSync(join(mirror, 'extra.md'), 'x')
-    ;[errors] = compareTrees(canon, [mirror])
-    if (errors.length !== 2 || !errors.some(e => e.includes('单侧多出'))) throw new Error(`selftest 多出态失败：${errors}`)
-    // 红 3：镜像缺失文件
-    rmSync(join(mirror, 'a', 'SKILL.md'))
-    ;[errors] = compareTrees(canon, [mirror])
-    if (errors.length !== 2 || !errors.some(e => e.includes('缺失'))) throw new Error(`selftest 缺失态失败：${errors}`)
-    console.log('selftest 通过（绿 1 态 + 红 3 态）')
-  } finally {
-    rmSync(tmp, { recursive: true, force: true })
+    const canon = path.join(t, 'skills', 'demo')
+    const rootDir = path.join(t, 'roots', 'r1')
+    mkdirSync(canon, { recursive: true })
+    writeFileSync(path.join(canon, 'SKILL.md'), 'demo')
+    mkdirSync(rootDir, { recursive: true })
+    symlinkSync(canon, path.join(rootDir, 'demo'), 'junction')
+    const link = path.join(rootDir, 'demo')
+    const green = existsSync(path.join(link, 'SKILL.md')) &&
+      path.relative(realpathSync(link), realpathSync(canon)) === ''
+    rmSync(canon, { recursive: true, force: true })   // 拆目标——链接应转断（红态）
+    const red = !existsSync(path.join(link, 'SKILL.md'))
+    rmSync(t, { recursive: true, force: true })
+    if (green && red) { console.log('SELFTEST GREEN（链接健康断言红绿两态均验证）'); return }
+    console.error(`SELFTEST 异常: green=${green} red=${red}`)
+    process.exit(2)
+  } catch (e) {
+    console.error('SELFTEST 异常:', e.message)
+    process.exit(2)
   }
 }
 
-// ---- main ----
-if (process.argv.includes('--selftest')) {
-  selftest()
+if (process.argv.includes('--selftest')) { selftest(); }
+
+const problems = healthProblems()
+if (problems.length === 0) {
+  console.log(`链接健康检查 PASS: ${ROOTS.length} 根 × ${skillNames().length} 技能（链接全存在、全解析、全可达）`)
   process.exit(0)
 }
-const [errors, checked] = compareTrees(join(ROOT, CANONICAL), MIRRORS.map(m => join(ROOT, m)))
-if (errors.length > 0) {
-  console.error(`SKILL 副本同步校验失败（${errors.length} 处）：`)
-  for (const e of errors) console.error(`  - ${e}`)
-  console.error(`权威源：${CANONICAL}/；请同步镜像后重试。`)
-  process.exit(1)
-}
-console.log(`SKILL 副本同步校验通过：${CANONICAL}/ 共 ${checked} 个文件 × ${MIRRORS.length} 镜像全部一致`)
+problems.forEach(p => console.error('FAIL: ' + p))
+console.error(`链接健康检查 FAIL（${problems.length} 处）——运行 scripts/link-skills bootstrap 修复`)
+process.exit(1)

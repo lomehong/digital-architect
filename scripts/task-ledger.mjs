@@ -20,7 +20,7 @@ const TRANSITIONS = {
   confirm: { from: [STATUS.REVIEW], to: STATUS.DONE },
   reject: { from: [STATUS.REVIEW], to: STATUS.RUNNING },
 }
-const FIELDS = ['id', 'title', 'level', 'status', 'root', 'createdAt', 'claimedBy', 'reportedAt', 'reportSummary', 'confirmedBy', 'confirmedVia', 'confirmedAt', 'archived']
+const FIELDS = ['id', 'title', 'level', 'blockedBy', 'status', 'root', 'createdAt', 'claimedBy', 'reportedAt', 'reportSummary', 'confirmedBy', 'confirmedVia', 'confirmedAt', 'archived']
 
 // ── 极简 YAML 读写（本契约固定形状：扁平标量 + events 字符串列表；未知形状一律报错）──
 function esc(v) { return String(v).replace(/\\/g, '\\\\').replace(/\n/g, '\\n') }
@@ -93,10 +93,12 @@ export function run(argv) {
       if (!opt('id') || !title) throw new Error('new 需要 --id 与 --title')
       const level = opt('level', 'L1')
       const accept = opt('accept')
+      const blockedBy = opt('blocked-by')
       const task = {
         id, title, level, status: STATUS.PENDING, root,
+        ...(blockedBy ? { blockedBy } : {}),
         createdAt: stamp(),
-        events: [`${stamp()} | create | by=${by} | level=${level}${accept ? ' | accept=' + accept : ''}`],
+        events: [`${stamp()} | create | by=${by} | level=${level}${blockedBy ? ' | blocked_by=' + blockedBy : ''}${accept ? ' | accept=' + accept : ''}`],
       }
       const p = taskPath(root, id)
       if (existsSync(p)) throw new Error(`台账已存在：${p}`)
@@ -141,7 +143,7 @@ export function run(argv) {
       const rows = readdirSync(dir).filter(f => f.endsWith('.yaml') || f.endsWith('.yml')).sort()
       for (const f of rows) {
         const t = parse(readFileSync(join(dir, f), 'utf8'))
-        console.log(`${t.id}\t${t.status}\t${t.level ?? ''}\t${t.title}${t.archived ? '\t[已归档]' : ''}`)
+        console.log(`${t.id}\t${t.status}\t${t.level ?? ''}\t${t.title}${t.blockedBy ? `\t[blocked_by: ${t.blockedBy}]` : ''}${t.archived ? '\t[已归档]' : ''}`)
       }
       return 0
     }
@@ -170,7 +172,7 @@ export function run(argv) {
     }
     case '--selftest': return selftest()
     default:
-      console.log('用法：task-ledger.mjs new|claim|report|confirm|reject|list|archive|--validate|--selftest [--root <dir>] [--id <id>] [--title ...] [--summary ...] [--confirmed-by ...] [--confirmed-via ...] [--force]')
+      console.log('用法：task-ledger.mjs new|claim|report|confirm|reject|list|archive|--validate|--selftest [--root <dir>] [--id <id>] [--title ...] [--level L1|L2|L3] [--blocked-by <id,id,...>] [--accept ...] [--summary ...] [--confirmed-by ...] [--confirmed-via ...] [--force]')
       return cmd === undefined || cmd === '--help' || cmd === 'help' ? 0 : 1
   }
 }
@@ -189,6 +191,9 @@ function selftest() {
   const dir = mkdtempSync(join(tmpdir(), 'task-ledger-'))
   const r = (...a) => run([...a, '--root', dir])
   r('new', '--id', 'T-1', '--title', '自测任务', '--level', 'L1', '--accept', '可验收条目A')
+  r('new', '--id', 'T-2b', '--title', '阻断边样本', '--level', 'L2', '--blocked-by', 'T-1', '--accept', '可验收条目B')
+  const dep = parse(readFileSync(join(ledgerDir(dir), 'T-2b.yaml'), 'utf8'))
+  if (dep.blockedBy !== 'T-1') throw new Error('blockedBy 未写入或丢失：' + String(dep.blockedBy))
   r('claim', '--id', 'T-1', '--by', 'tester')
   r('report', '--id', 'T-1', '--by', 'tester', '--summary', '完成X')
   expectThrow(() => r('archive', '--id', 'T-1'), '仅「已落定」可归档')
@@ -223,7 +228,7 @@ function selftest() {
   rmSync(dir3, { recursive: true, force: true })
   if (code === 0) throw new Error('--validate 应对「已落定但缺 confirmedBy」报错')
 
-  console.log('selftest 通过（绿：立项→认领→自报→确认→归档 + 校验；红：4 类跳步/缺来源/归档前置/损坏台账）')
+  console.log('selftest 通过（绿：立项→认领→自报→确认→归档 + 阻断边字段 + 校验；红：4 类跳步/缺来源/归档前置/损坏台账）')
   return 0
 }
 

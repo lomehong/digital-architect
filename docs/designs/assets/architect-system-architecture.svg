@@ -27,13 +27,20 @@
   <text x="145" y="352" text-anchor="middle" font-size="11" fill="#065f46">链接 .claude/skills .omp/skills</text>
 
   <!-- 宿主→权威源 链接虚线 -->
-  <line x1="110" y1="206" x2="110" y2="462" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="4,2"/>
-  <line x1="140" y1="286" x2="140" y2="462" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="4,2"/>
-  <line x1="170" y1="366" x2="170" y2="462" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="4,2"/>
-  <path d="M 110 462 L 110 466" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrGray)"/>
-  <path d="M 140 462 L 140 466" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrGray)"/>
-  <path d="M 170 462 L 170 466" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrGray)"/>
+  <line x1="110" y1="206" x2="110" y2="486" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <line x1="140" y1="286" x2="140" y2="486" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <line x1="170" y1="366" x2="170" y2="486" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <path d="M 110 486 L 110 492" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrGray)"/>
+  <path d="M 140 486 L 140 492" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrGray)"/>
+  <path d="M 170 486 L 170 492" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrGray)"/>
   <text x="36" y="440" font-size="11" fill="#6b7280">发现根链接 ×3</text>
+  <g>
+    <path d="M 75 494 L 75 585 A 70 13 0 0 0 215 585 L 215 494" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1.5"/>
+    <ellipse cx="145" cy="494" rx="70" ry="13" fill="#bfdbfe" stroke="#1d4ed8" stroke-width="1.5"/>
+    <text x="145" y="540" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e3a8a">skills/ 技能权威源</text>
+    <text x="145" y="560" text-anchor="middle" font-size="11" fill="#1e3a8a">13 技能 · 唯一 git 技能面</text>
+    <text x="145" y="576" text-anchor="middle" font-size="11" fill="#1e3a8a">宿主发现根 = 链接至此</text>
+  </g>
 
   <!-- 流程层 -->
   <rect x="300" y="160" width="860" height="260" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="6,3"/>

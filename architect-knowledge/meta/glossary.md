@@ -37,3 +37,9 @@ owner: 主人
 | 爆炸半径 | 变更失误时受影响的面 | `principle/task-and-memory-surface.md` report |
 | 发现根 | 宿主扫描技能的目录（.claude/.omp/.dsh/容器直挂） | `docs/designs/2026-10-10-技能发现根链接化收敛-技术方案.md` |
 | 兼容链接 | 指回权威源 skills/ 的机器本地链接 | `scripts/link-skills.ps1|.sh` |
+| 流程 D | 研发执行编排链路：grilling→spec-align→ticket-split→impl-discipline→dual-axis-review→retro | `principle/dev-orchestration-pipeline.md` |
+| 流程 K | 架构师决策产出流程：digest→design→review→implement→回灌 | `skills/architect-*/SKILL.md` |
+| 规格对齐 | 对话收敛成可拆票规格（用户故事级）+GLOSSARY/ADR 内联维护 | `skills/spec-align/SKILL.md` |
+| 接缝（seam） | 测试只打的公共边界点；先约定接缝清单后写测试 | `skills/impl-discipline/SKILL.md` |
+| 双轴评审 | 标准轴+规格轴并行子代理评审，分轴呈现永不 rerank | `skills/dual-axis-review/SKILL.md` |
+| 诊断闭环 | 硬 bug 六阶段：反馈环→复现最小化→假设排序→单变量探针→修复回归→清理 | `skills/impl-discipline/SKILL.md` |

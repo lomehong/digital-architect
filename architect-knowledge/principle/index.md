@@ -19,3 +19,4 @@
 | [suite-federation-principles.md](suite-federation-principles.md) | 套件联邦四原则与合规细则（宪法） | 已确认 |
 | [task-and-memory-surface.md](task-and-memory-surface.md) | 任务面五操作+四态状态机+四不变量；记忆面最小契约（宿主无关）；落点改 docs/tasks 待重确认 | 已确认 |
 | [writing-for-agents.md](writing-for-agents.md) | 给 Agent 写文档的纪律（信息层级/两预算/完成判据两杠杆/leading words/否定式失败/pruning 四则——mattpocock skills 蒸馏） | 待审核 |
+| [dev-orchestration-pipeline.md](dev-orchestration-pipeline.md) | 流程 D 研发编排链路：六件技能映射+双流程分工契约（K=决策产出与知识/D=研发执行编排）+本仓化改写点 | 待审核 |

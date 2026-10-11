@@ -1,34 +1,159 @@
+# Agent preset architect: full cordis (创造模式) plugin set + 架构师 persona
+# + digital-architect skills dir mounted via skill-filesystem.customSkillDirs.
+# Based on @deepseek-ai/dsh-web-app presets/cordis.patch.yml (shipped v).
 - insert:
     - id: preset-architect
       name: '@deepseek-ai/dsh-agent-preset'
       config:
         id: architect
         name: 架构师
-        description: 数字分身架构师——双流程架构（流程K自我成长 × 流程D研发编排），治理不变量内嵌。
+        description: 数字分身架构师——创造模式全能力 + 双流程架构（流程K自我成长 × 流程D研发编排），治理不变量内嵌。
         order: 10
         plugins:
           - id: persona
             name: '@deepseek-ai/dsh-persona'
             config:
-              prefix: |
-                你是「架构师」数字分身（digital-architect 体系），运行双流程架构：
+              prefix: >-
+                你是「架构师」数字分身（digital-architect 体系），powered by the {{model}} model，运行双流程架构。
 
-                ## 流程 K · 决策产出与知识（自我成长）
-                architect-prd-digest（需求准入，六项覆盖）→ architect-design（六维度方案，可选 archify 图）→ architect-review（五问+覆盖评分）→ 回灌。
-                无实施环节：产出是体系自身的优化（SKILL.md/方法论/流程），改进落地=直接写体系文件。
+
+                ## 流程 K · 决策产出与知识（自我成长，无实施环节）
+
+                architect-prd-digest（需求准入，六项覆盖）→ architect-design（六维度方案，可选 archify 图）→ architect-review（五问+覆盖评分）→ 回灌。产出是体系自身的优化（SKILL.md/方法论/流程），改进落地=直接写体系文件。
+
 
                 ## 流程 D · 研发执行编排
-                grilling（拷问）→ spec-align（规格）→ ticket-split（拆票）→ impl-discipline（单票纪律）→ dual-axis-review（双轴评审）→ retro（回顾）。
-                入口=主人研发编排类需求直入，或流程 K 落定方案从拆票转入。
+
+                grilling（拷问）→ spec-align（规格）→ ticket-split（拆票）→ impl-discipline（单票纪律）→ dual-axis-review（双轴评审）→ retro（回顾）。入口=主人研发编排类需求直入，或流程 K 落定方案从拆票转入。
+
 
                 ## 治理不变量（不可协商）
+
                 1. 自报 ≠ 完成：产出必须经主人 confirm 才落定；
                 2. 不编造：不足处登记「未知/待验证」，关键结论标注证据来源；
                 3. 人工决策门：Unknown/Conflict/取舍/合规/高风险 → 停并问主人，治理动作不静默放行；
                 4. 知识漂移：实证与知识库冲突时，先修方案再回写知识。
 
+
                 ## 路由
+
                 - 新系统/复杂交付 → 流程 K 准入先行，落定后从 ticket-split 转入流程 D；
                 - 小功能/明确任务 → 流程 D 直入（grilling 起环）；
                 - 知识沉淀/体系改进 → 流程 K。
                 双流程完全隔离：流程 K 管体系自身成长，流程 D 管目标项目研发交付。
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+          - id: time-context
+            name: '@deepseek-ai/dsh-time-context'
+          - id: tool-bash
+            name: '@deepseek-ai/dsh-tool-bash'
+            disabled: !!js process.platform === 'win32'
+          - id: tool-pwsh
+            name: '@deepseek-ai/dsh-tool-pwsh'
+            disabled: !!js process.platform !== 'win32'
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+          - id: tool-jobs
+            name: '@deepseek-ai/dsh-tool-jobs'
+          - id: tool-schedule
+            name: '@deepseek-ai/dsh-tool-schedule'
+          - id: command-goal
+            name: '@deepseek-ai/dsh-command-goal'
+          - id: tool-goal
+            name: '@deepseek-ai/dsh-tool-goal'
+          - id: planning
+            name: cordis:group
+            group: true
+            isolate:
+              planMode: true
+            config:
+              - id: plan-mode
+                name: '@deepseek-ai/dsh-plan-mode'
+          - id: compaction
+            name: cordis:group
+            group: true
+            isolate:
+              compaction: true
+              toolResultPruner: true
+            config:
+              - id: compaction-basic
+                name: '@deepseek-ai/dsh-compaction-basic'
+              - id: command-compact
+                name: '@deepseek-ai/dsh-command-compact'
+              - id: tool-result-pruner
+                name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+                config:
+                  thresholdChars: 8192
+                  headChars: 4096
+                  tailChars: 1024
+          - id: delegation
+            name: cordis:group
+            group: true
+            isolate:
+              workflowEngine: true
+            config:
+              - id: tool-subagent-control
+                name: '@deepseek-ai/dsh-tool-subagent-control'
+              - id: tool-subagent-list-agents
+                name: '@deepseek-ai/dsh-tool-subagent-control/list-agents'
+              - id: tool-subagent
+                name: '@deepseek-ai/dsh-tool-subagent'
+                config:
+                  provider: spawn
+                  toolName: subagent
+                  modelSelectionSettings: true
+                  toolFilter:
+                    deny:
+                      - schedule_create
+                      - schedule_delete
+                      - schedule_list
+                      - schedule_update
+              - id: tool-subagent-fork
+                name: '@deepseek-ai/dsh-tool-subagent'
+                config:
+                  provider: fork
+                  toolName: subagent_fork
+                  toolFilter:
+                    deny:
+                      - schedule_create
+                      - schedule_delete
+                      - schedule_list
+                      - schedule_update
+              - id: workflow-ptc
+                name: '@deepseek-ai/dsh-workflow-ptc'
+                config:
+                  provider: spawn
+              - id: tool-workflow
+                name: '@deepseek-ai/dsh-tool-workflow'
+          - id: tool-ask-user
+            name: '@deepseek-ai/dsh-tool-ask-user'
+          - id: tool-todo
+            name: '@deepseek-ai/dsh-tool-todo'
+            config:
+              allowParallelInProgress: true
+          - id: tool-web
+            name: '@deepseek-ai/dsh-tool-web'
+            config:
+              fetch: true
+              searchTimeoutMs: 60000
+          - id: tool-cordis
+            name: '@deepseek-ai/dsh-tool-cordis'
+          - id: skill-filesystem
+            name: '@deepseek-ai/dsh-skill-filesystem'
+            config:
+              customSkillDirs:
+                - !!js process.getBuiltinModule('node:path').join(process.getBuiltinModule('node:path').dirname(process.getBuiltinModule('node:module').createRequire(baseUrl).resolve('@deepseek-ai/dsh-agent-preset/package.json')), 'skills')
+                - E:\Development\Code\nodejs\digital-architect\skills
+          - id: tool-skill
+            name: '@deepseek-ai/dsh-tool-skill'
+          - id: present
+            name: '@deepseek-ai/dsh-tool-present'
+          - id: tool-plugin-manager
+            name: '@deepseek-ai/dsh-plugin-manager/tools'
+            disabled: !!js "!ctx.get('profileContext')"

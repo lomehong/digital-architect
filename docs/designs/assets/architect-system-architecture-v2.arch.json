@@ -1,0 +1,436 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "架构师 Agent 体系架构（双流程 · 2026-10-11）",
+    "locale": "zh-CN",
+    "output": "architect-system-architecture.html",
+    "quality_profile": "showcase",
+    "viewBox": [1380, 960],
+    "repository": {
+      "url": "https://github.com/lomehong/digital-architect",
+      "provider": "github",
+      "revision": "af01cdef10e9ebe13270c9e1379fd91cfe92b789"
+    },
+    "views": [
+      {
+        "id": "dual-process",
+        "label": "双流程架构",
+        "focus": [
+          "digest",
+          "design",
+          "review",
+          "impl",
+          "distill",
+          "grilling",
+          "spec-align",
+          "ticket-split",
+          "impl-discipline",
+          "dual-axis-review",
+          "retro"
+        ],
+        "note": "流程 K（决策产出与知识）× 流程 D（研发执行编排），共享治理不变量与知识底座。"
+      },
+      {
+        "id": "discovery",
+        "label": "链接化收敛·单一技能面",
+        "focus": [
+          "host-dsh",
+          "host-omp",
+          "host-cc",
+          "skills-src"
+        ],
+        "note": "三宿主发现根=机器本地链接→权威源；19 技能全量。"
+      },
+      {
+        "id": "governance",
+        "label": "治理与知识防线",
+        "focus": [
+          "owner",
+          "gov",
+          "kb"
+        ],
+        "note": "决策门/链接健康/knowledge-lint/台账契约。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "owner",
+      "type": "external",
+      "label": "主人（owner）",
+      "sublabel": "需求 · 决策门拍板 · confirm 落定（自报≠完成）",
+      "pos": [580, 30],
+      "size": [280, 72]
+    },
+    {
+      "id": "host-dsh",
+      "type": "frontend",
+      "label": "dsh 宿主会话",
+      "sublabel": "junction .dsh/skills",
+      "pos": [60, 150],
+      "size": [180, 76]
+    },
+    {
+      "id": "host-omp",
+      "type": "frontend",
+      "label": "omp 容器会话",
+      "sublabel": "rw 直挂权威源（零同步）",
+      "pos": [60, 270],
+      "size": [180, 76]
+    },
+    {
+      "id": "host-cc",
+      "type": "frontend",
+      "label": "Claude Code · 本地 omp",
+      "sublabel": "链接 .claude/.omp/skills",
+      "pos": [60, 390],
+      "size": [180, 76]
+    },
+    {
+      "id": "skills-src",
+      "type": "database",
+      "label": "skills/ 技能权威源",
+      "sublabel": "19 技能 · 唯一 git 技能面",
+      "tag": "链接化收敛",
+      "pos": [340, 240],
+      "size": [200, 96],
+      "sources": [
+        {
+          "path": "README.md",
+          "label": "目录树·技能清单·链接化说明"
+        }
+      ]
+    },
+    {
+      "id": "digest",
+      "type": "backend",
+      "label": "需求准入 digest",
+      "sublabel": "需求拷问 + 六项覆盖",
+      "pos": [620, 170],
+      "size": [150, 92]
+    },
+    {
+      "id": "design",
+      "type": "backend",
+      "label": "技术方案 design",
+      "sublabel": "六维度 + 五规则拆解",
+      "pos": [810, 170],
+      "size": [150, 92]
+    },
+    {
+      "id": "review",
+      "type": "backend",
+      "label": "方案评审 review",
+      "sublabel": "五问+六维度+双轴",
+      "pos": [1000, 170],
+      "size": [150, 92]
+    },
+    {
+      "id": "impl",
+      "type": "backend",
+      "label": "实现 implement",
+      "sublabel": "清单先行 + ready-frontier",
+      "pos": [1190, 170],
+      "size": [150, 92]
+    },
+    {
+      "id": "distill",
+      "type": "backend",
+      "label": "知识回灌 distill",
+      "sublabel": "五类结构 + 待审核",
+      "pos": [1190, 320],
+      "size": [150, 92]
+    },
+    {
+      "id": "grilling",
+      "type": "backend",
+      "label": "grilling 拷问",
+      "sublabel": "设计树闭合 · 3 轮上限",
+      "pos": [620, 540],
+      "size": [150, 92]
+    },
+    {
+      "id": "spec-align",
+      "type": "backend",
+      "label": "spec-align 规格对齐",
+      "sublabel": "用户故事 + quiz 接缝",
+      "pos": [810, 540],
+      "size": [150, 92]
+    },
+    {
+      "id": "ticket-split",
+      "type": "backend",
+      "label": "ticket-split 拆票",
+      "sublabel": "曳光弹 + 阻断边",
+      "pos": [1000, 540],
+      "size": [150, 92]
+    },
+    {
+      "id": "impl-discipline",
+      "type": "backend",
+      "label": "impl-discipline 纪律",
+      "sublabel": "红绿循环 + 诊断闭环",
+      "pos": [1000, 680],
+      "size": [150, 92]
+    },
+    {
+      "id": "dual-axis-review",
+      "type": "backend",
+      "label": "dual-axis-review 双轴",
+      "sublabel": "标准轴 + 规格轴",
+      "pos": [810, 680],
+      "size": [150, 92]
+    },
+    {
+      "id": "retro",
+      "type": "backend",
+      "label": "retro 回顾",
+      "sublabel": "七类改进面扫描",
+      "pos": [620, 680],
+      "size": [150, 92]
+    },
+    {
+      "id": "kb",
+      "type": "database",
+      "label": "工程知识库",
+      "sublabel": "48 条目 + GLOSSARY",
+      "pos": [620, 820],
+      "size": [180, 92],
+      "sources": [
+        {
+          "path": "architect-knowledge/README.md",
+          "label": "知识库结构与检索路径"
+        }
+      ]
+    },
+    {
+      "id": "gov",
+      "type": "security",
+      "label": "治理与门禁脚本",
+      "sublabel": "gate-guard · 链接健康 · 台账",
+      "pos": [340, 820],
+      "size": [200, 92],
+      "sources": [
+        {
+          "path": "scripts/gate-guard.mjs"
+        },
+        {
+          "path": "scripts/check-skills-sync.mjs"
+        },
+        {
+          "path": "scripts/task-ledger.mjs"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "宿主层（技能发现根 = 机器本地链接）",
+      "pad": 12,
+      "wraps": [
+        "host-dsh",
+        "host-omp",
+        "host-cc"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "流程 K · 知识工程（决策产出与知识）",
+      "pad": 12,
+      "wraps": [
+        "digest",
+        "design",
+        "review",
+        "impl",
+        "distill"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "流程 D · 研发执行编排（本地化改编）",
+      "pad": 12,
+      "wraps": [
+        "grilling",
+        "spec-align",
+        "ticket-split",
+        "impl-discipline",
+        "dual-axis-review",
+        "retro"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "owner-to-digest",
+      "from": "owner",
+      "to": "digest",
+      "label": "需求 / 决策门 / 落定",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "digest-to-design",
+      "from": "digest",
+      "to": "design"
+    },
+    {
+      "id": "design-to-review",
+      "from": "design",
+      "to": "review"
+    },
+    {
+      "id": "review-to-impl",
+      "from": "review",
+      "to": "impl",
+      "label": "落定后拆票",
+      "labelAt": [1130, 290]
+    },
+    {
+      "id": "impl-to-distill",
+      "from": "impl",
+      "to": "distill",
+      "label": "经验回灌",
+      "labelAt": [1265, 294]
+    },
+    {
+      "id": "owner-to-grilling",
+      "from": "owner",
+      "to": "grilling",
+      "label": "研发编排需求直入",
+      "variant": "emphasis",
+      "fromSide": "left",
+      "via": [[560, 66], [560, 586]],
+      "labelAt": [594, 440]
+    },
+    {
+      "id": "grilling-to-spec",
+      "from": "grilling",
+      "to": "spec-align",
+      "label": "拷问闭合的规格",
+      "labelAt": [820, 646]
+    },
+    {
+      "id": "spec-to-tickets",
+      "from": "spec-align",
+      "to": "ticket-split",
+      "label": "规格拆票",
+      "labelAt": [980, 646]
+    },
+    {
+      "id": "tickets-to-discipline",
+      "from": "ticket-split",
+      "to": "impl-discipline",
+      "label": "就绪边界的票",
+      "labelAt": [1075, 656]
+    },
+    {
+      "id": "discipline-to-dual",
+      "from": "impl-discipline",
+      "to": "dual-axis-review",
+      "label": "双轴评审",
+      "labelAt": [980, 796]
+    },
+    {
+      "id": "dual-to-retro",
+      "from": "dual-axis-review",
+      "to": "retro",
+      "label": "环境改进",
+      "labelAt": [790, 796]
+    },
+    {
+      "id": "review-to-tickets",
+      "from": "review",
+      "to": "ticket-split",
+      "label": "流程 K 落定方案转入",
+      "variant": "emphasis",
+      "labelAt": [1075, 276]
+    },
+    {
+      "id": "impl-to-dual",
+      "from": "impl",
+      "to": "dual-axis-review",
+      "label": "验收/评审手段",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "bottom",
+      "via": [[1360, 216], [1360, 440], [1170, 440], [1170, 810], [885, 810]],
+      "labelAt": [1170, 655]
+    },
+    {
+      "id": "dsh-link",
+      "from": "host-dsh",
+      "to": "skills-src",
+      "label": "junction 挂载"
+    },
+    {
+      "id": "omp-link",
+      "from": "host-omp",
+      "to": "skills-src",
+      "label": "rw 直挂（零同步）"
+    },
+    {
+      "id": "cc-link",
+      "from": "host-cc",
+      "to": "skills-src",
+      "label": "链接（U1 首验）"
+    },
+    {
+      "id": "gov-link-health",
+      "from": "gov",
+      "to": "skills-src",
+      "label": "链接健康检查",
+      "variant": "security"
+    },
+    {
+      "id": "gov-kb-lint",
+      "from": "gov",
+      "to": "kb",
+      "label": "knowledge-lint error 阻断",
+      "variant": "security",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [580, 800]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "决策与验收语义（双流程共享）",
+      "items": [
+        "自报 ≠ 完成：report/评审结论须主人 confirm",
+        "confirm 只能主人发起",
+        "治理动作不静默放行"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "单一事实源（链接化收敛）",
+      "items": [
+        "skills/ 19 技能 = 唯一 git 技能面",
+        "宿主发现根 = 机器本地链接（bootstrap 维护）",
+        "omp 容器 rw 直挂权威源（零同步）"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "门禁与治理",
+      "items": [
+        "gate-guard 保护 ci.yml/脚本（Gate-Approved）",
+        "check-skills-sync 已纳入 PROTECTED",
+        "knowledge-lint error 阻断提交"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "System-1 验收栈",
+      "items": [
+        "browser-acceptance 全本地零出域",
+        "Laya systemone :8791 · conf 0.92",
+        "jev 守卫 + evidence 落盘"
+      ]
+    }
+  ]
+}

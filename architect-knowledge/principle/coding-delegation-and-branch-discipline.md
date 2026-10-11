@@ -3,7 +3,7 @@ title: 自编/委派选择规则与编码分支纪律
 domain: methodology
 source:
   origin: 主人 2026-09-11 拍板（架构师 Agent 编码能力三问）+ 本会话实测（v3 容器与工具链）
-  ref: docs/designs/2026-09-11-架构师编码能力-需求包.md Q1/Q3；skills/architect-implement/SKILL.md
+  ref: docs/designs/2026-09-11-架构师编码能力-需求包.md Q1/Q3；skills/impl-discipline/SKILL.md（2026-10-11 流程 K 收敛，architect-implement 退役后由流程 D impl-discipline 承接）
 confirmed: 2026-09-11
 status: 已确认
 owner: 主人

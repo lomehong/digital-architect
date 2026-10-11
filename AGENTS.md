@@ -7,9 +7,9 @@
 - 本工作区是架构师体系根仓：知识库 `architect-knowledge/`、流程技能 `skills/`、
   方案模板 `templates/`、宿主适配 `adapters/`、检查器插件 `dsh-architect/`、
   浏览器端到端验收能力包 `browser-acceptance/`（2026-09-25 落定：jev-ultrafast + 本地 Laya 全自托管栈，
-  红线见 `skills/architect-implement/SKILL.md`「浏览器验收任务」节）。
+  红线见 `browser-acceptance/README.md`「红线（不可协商）」节）。
 - 双流程架构（技能已挂载，按需触发；2026-10-10 落定）：
-  - **流程 K · 决策产出与知识**：`architect-prd-digest`（需求准入）→ `architect-design`（六维度方案，可选 archify 系统地图）→ `architect-review`（五问+覆盖评分）→ `architect-implement`（执行）→ 回灌；
+  - **流程 K · 决策产出与知识**：`architect-prd-digest`（需求准入）→ `architect-design`（六维度方案，可选 archify 系统地图）→ `architect-review`（五问+覆盖评分）→ 回灌；
   - **流程 D · 研发执行编排**：`grilling`（拷问）→ `spec-align`（规格）→ `ticket-split`（拆票）→ `impl-discipline`（单票纪律）→ `dual-axis-review`（双轴评审）→ `retro`（回顾）；入口=主人研发编排类需求直入，或流程 K 落定方案从拆票转入；
   - 出口统一：自报（report/评审结论/建议）→ 主人 confirm 才落定；双流程共享治理不变量与任务面契约（`architect-knowledge/principle/dev-orchestration-pipeline.md`）。
 - 术语表：`architect-knowledge/meta/glossary.md`——统一语言索引（写文档/交付物前先对词；新术语经需求拷问或 retro 即时登记）。

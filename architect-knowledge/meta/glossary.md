@@ -21,7 +21,7 @@ owner: 主人
 | 评审五问 | 改哪里/为什么改/影响谁/如何验证/还有什么没确认 | `skills/architect-review/SKILL.md` |
 | 六维度覆盖评分 | 需求/系统/证据/风险/验证/不确定性各 0-10 分 | `skills/architect-review/SKILL.md` |
 | 证据回源 | 关键结论必须回源真实代码/输出，不信自述 | `practice/evidence-strength-vs-conclusion.md` |
-| 红灯不提交 | 验证清单先行，红灯状态不得进入提交 | `skills/architect-implement/SKILL.md` |
+| 红灯不提交 | 验证清单先行，红灯状态不得进入提交 | `skills/impl-discipline/SKILL.md` |
 | 自报≠完成 | report 只送入待确认，主人 confirm 才落定 | `principle/task-and-memory-surface.md` |
 | 治理动作 | push/发布/删除数据/对外承诺——未授权即停 | `principle/task-and-memory-surface.md` |
 | 决策门 | Unknown/Conflict/取舍/合规/高风险 → 停并问主人 | `skills/architect-prd-digest/SKILL.md` 第五步 |
@@ -32,7 +32,7 @@ owner: 主人
 | 曳光弹切片 | 切穿所有层、可独立验收的垂直薄片 | `skills/architect-design/SKILL.md` 五规则 |
 | expand–contract | 宽改三段式：扩展→分批迁移→收缩 | `skills/architect-design/SKILL.md` 五规则 |
 | 阻断边 | 票间依赖显式声明（看板 `blocked_by`） | `skills/architect-design/SKILL.md` 五规则 |
-| 就绪边界 | 所有 blocker 已落定的票集合，可并发执行 | `skills/architect-implement/SKILL.md` |
+| 就绪边界 | 所有 blocker 已落定的票集合，可并发执行 | `skills/ticket-split/SKILL.md` |
 | 单向门/双向门 | 可逆性分级：回滚成本高 / 可常规回滚 | `principle/task-and-memory-surface.md` report |
 | 爆炸半径 | 变更失误时受影响的面 | `principle/task-and-memory-surface.md` report |
 | 发现根 | 宿主扫描技能的目录（.claude/.omp/.dsh/容器直挂） | `docs/designs/2026-10-10-技能发现根链接化收敛-技术方案.md` |

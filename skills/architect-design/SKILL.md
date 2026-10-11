@@ -75,6 +75,7 @@ whenToUse: 需求准入（architect-prd-digest）通过后，主人要求「出�
    - **expand–contract 例外**：宽改（爆炸半径遍布全库的机械变更）不硬切垂直片——先扩展（新旧并存）→ 分批迁移（每批一票，保 CI 绿）→ 收缩（删旧形式）；批间无法独立保绿时共享集成分支、汇入最终验证票；
    - **防陈旧**：票内不写会过时的文件路径；决策性片段（schema/状态机/类型形状）可内联并注明出处；
    - **执行方式**：只做就绪边界（所有 blocker 已落定的票），就绪边界可派子代理并发（见 architect-implement 多票并行模式）。
+   - **流程 D 衔接（2026-10-10 落定）**：拆解可装载 `ticket-split` 技能（流程 D）执行——规则与本节同源，该技能含完整 quiz 协议与本仓 tracker 常量节。
 3. **执行方由主人点名**（自编 / 委派，规则见 `principle/coding-delegation-and-branch-discipline.md`）；执行方是数字分身且不在本宿主时，经御驿（yuyi）委派（场景映射见 `architect-knowledge/scenario/architect-twin-collaboration.md`）：委派内容带任务号与可验收条目，执行结果经 yuyi 回流 + 任务面 `report` 自报——自报 ≠ 完成，仍须主人 `confirm`；
 4. 执行结果回流后，把新经验回灌 `architect-knowledge/practice/`（Knowledge Evolution，沉淀路径同样按适配文件：dsh=另存 dsh-memory / oh-my-pi=指针 retain，仓库 git 均为权威）。
 

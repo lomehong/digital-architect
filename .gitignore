@@ -14,3 +14,6 @@ observatory/governor-state/
 .dsh/
 .claude/skills/
 .omp/skills/
+
+# Chrome 探针 profile（headless 测试产物，含本地浏览器数据，一律不入库）
+docs/designs/assets/.chrome-tmp/

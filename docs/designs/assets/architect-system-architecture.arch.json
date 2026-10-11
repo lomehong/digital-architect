@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "架构师 Agent 体系架构（链接化收敛后）",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/lomehong/digital-architect",
+      "provider": "github",
+      "revision": "2ea830857429bf5514c953aae997cf803eab041f"
+    },
+    "views": [
+      { "id": "host-skills", "label": "宿主×技能面", "focus": ["host-dsh", "host-omp", "host-cc", "skills-src", "gov"], "note": "三宿主以机器本地链接发现唯一 git 技能面，gov 守护链接健康。" },
+      { "id": "main-flow", "label": "五流程主链", "focus": ["owner", "digest", "design", "review", "impl", "distill"], "note": "需求→方案→评审→实现→回灌；自报≠完成，决策门由主人拍板落定。" },
+      { "id": "kb-loop", "label": "知识回灌与门禁", "focus": ["distill", "kb", "gov", "skills-src"], "note": "五类结构落库，knowledge-lint error 阻断；漂移先修方案再回写。" },
+      { "id": "acceptance", "label": "浏览器验收", "focus": ["impl", "s1stack"], "note": "System-1 栈：jev-ultrafast + Laya :8791 + Chrome :9222。" }
+    ]
+  },
+  "components": [
+    { "id": "owner", "type": "external", "label": "主人（owner）", "sublabel": "需求 · 决策门拍板 · confirm 落定（自报≠完成）", "pos": [720, 28], "size": [180, 64] },
+    { "id": "host-dsh", "type": "frontend", "label": "dsh 宿主会话", "sublabel": "junction .dsh/skills", "pos": [60, 28], "size": [160, 64] },
+    { "id": "host-omp", "type": "frontend", "label": "omp 容器会话", "sublabel": "rw 直挂权威源（零同步）", "pos": [250, 28], "size": [175, 64] },
+    { "id": "host-cc", "type": "frontend", "label": "Claude Code · 本地 omp", "sublabel": "链接 .claude/.omp/skills", "pos": [455, 28], "size": [190, 64] },
+    { "id": "skills-src", "type": "database", "label": "skills/ 技能权威源", "sublabel": "13 技能 · 唯一 git 技能面", "pos": [240, 196], "size": [200, 68], "sources": [{ "path": "README.md" }] },
+    { "id": "digest", "type": "backend", "label": "需求准入 digest", "sublabel": "需求拷问（3 轮上限）+ 六项覆盖", "pos": [720, 140], "size": [180, 64], "sources": [{ "path": "skills/architect-prd-digest/SKILL.md" }] },
+    { "id": "design", "type": "backend", "label": "技术方案 design", "sublabel": "六维度 + 五规则拆解法", "pos": [720, 264], "size": [180, 64], "sources": [{ "path": "skills/architect-design/SKILL.md" }] },
+    { "id": "review", "type": "backend", "label": "方案/实现评审 review", "sublabel": "五问+六维度+双轴子代理", "pos": [720, 388], "size": [180, 64], "sources": [{ "path": "skills/architect-review/SKILL.md" }] },
+    { "id": "impl", "type": "backend", "label": "实现 implement", "sublabel": "清单先行 + ready-frontier + retro", "pos": [720, 512], "size": [180, 64], "sources": [{ "path": "skills/architect-implement/SKILL.md" }] },
+    { "id": "distill", "type": "backend", "label": "知识回灌 distill", "sublabel": "五类结构 + 待审核", "pos": [720, 640], "size": [180, 64], "sources": [{ "path": "skills/knowledge-distill/SKILL.md" }] },
+    { "id": "kb", "type": "database", "label": "工程知识库", "sublabel": "48 条目 + GLOSSARY", "pos": [720, 768], "size": [180, 64], "sources": [{ "path": "architect-knowledge/README.md" }] },
+    { "id": "gov", "type": "security", "label": "治理与门禁脚本", "sublabel": "gate-guard · 链接健康 · 台账", "pos": [60, 512], "size": [220, 64], "sources": [{ "path": "scripts/gate-guard.mjs" }] },
+    { "id": "s1stack", "type": "backend", "label": "System-1 浏览器验收栈", "sublabel": "jev-ultrafast + Laya :8791 + Chrome :9222", "pos": [420, 512], "size": [230, 64] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "宿主层（技能发现根 = 机器本地链接）", "wraps": ["host-dsh", "host-omp", "host-cc"], "pad": 20 },
+    { "kind": "region", "label": "架构师流程（五流程技能）", "wraps": ["digest", "design", "review", "impl", "distill"], "pad": 12 }
+  ],
+  "connections": [
+    { "id": "owner-digest", "from": "owner", "to": "digest", "label": "需求 / 决策门 / 落定", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "labelAt": [810, 116] },
+    { "id": "dsh-skills", "from": "host-dsh", "to": "skills-src", "label": "发现根链接（junction）", "variant": "dashed", "fromSide": "bottom", "toSide": "left", "labelAt": [140, 165] },
+    { "id": "omp-skills", "from": "host-omp", "to": "skills-src", "label": "rw 直挂权威源（零同步）", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "labelAt": [337, 130] },
+    { "id": "cc-skills", "from": "host-cc", "to": "skills-src", "label": "发现根链接（U1 首验）", "variant": "dashed", "fromSide": "bottom", "toSide": "right", "labelAt": [550, 165] },
+    { "id": "digest-design", "from": "digest", "to": "design", "label": "结构化需求包", "labelAt": [810, 218] },
+    { "id": "design-review", "from": "design", "to": "review", "label": "五问 + 六维度评分", "labelAt": [810, 342] },
+    { "id": "review-impl", "from": "review", "to": "impl", "label": "落定后拆票", "labelAt": [810, 466] },
+    { "id": "impl-review", "from": "impl", "to": "review", "label": "实现评审·双轴", "variant": "dashed", "fromSide": "right", "toSide": "right", "via": [[970, 544], [970, 420]], "labelAt": [970, 482] },
+    { "id": "impl-distill", "from": "impl", "to": "distill", "label": "经验回灌", "labelAt": [810, 590] },
+    { "id": "distill-kb", "from": "distill", "to": "kb", "label": "五类结构落库", "labelAt": [810, 718] },
+    { "id": "gov-kb", "from": "gov", "to": "kb", "label": "knowledge-lint error 阻断", "variant": "security" },
+    { "id": "gov-skills", "from": "gov", "to": "skills-src", "label": "链接健康检查（存在·解析·可达）", "variant": "security", "fromSide": "top", "toSide": "bottom", "labelAt": [170, 390] },
+    { "id": "impl-s1stack", "from": "impl", "to": "s1stack", "label": "验收手段（browser-acceptance）", "variant": "dashed", "fromSide": "left", "toSide": "right", "labelAt": [685, 498] }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "宿主与技能面", "items": [
+      "三宿主会话以机器本地链接发现技能：dsh junction、omp rw 直挂、Claude Code 链接",
+      "skills/ 是唯一 git 技能面（13 技能），零同步、无拷贝"
+    ] },
+    { "dot": "violet", "title": "五流程链与决策门", "items": [
+      "digest → design → review → impl → distill 主链推进",
+      "需求拷问 3 轮上限；自报 ≠ 完成，决策门由主人拍板 confirm 落定",
+      "实现评审双轴为反馈环，落定后才拆票"
+    ] },
+    { "dot": "rose", "title": "治理与验收", "items": [
+      "gate-guard：knowledge-lint error 阻断落库；技能面链接健康检查（存在·解析·可达）",
+      "System-1 浏览器验收栈：jev-ultrafast + Laya :8791 + Chrome :9222"
+    ] }
+  ]
+}
